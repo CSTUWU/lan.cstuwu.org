@@ -118,21 +118,18 @@ export default function AdminTeamsPage() {
       t.captain.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       t.players.some(
         (p) =>
-          p.ign.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (p.ign || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
           p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          p.steamId.toLowerCase().includes(searchQuery.toLowerCase())
-      ) ||
-      (t.substitute &&
-        (t.substitute.ign.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          t.substitute.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          t.substitute.steamId.toLowerCase().includes(searchQuery.toLowerCase())));
+          (p.faculty || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (p.steamId || '').toLowerCase().includes(searchQuery.toLowerCase())
+      );
 
     if (statusFilter === 'approved') return matchesSearch && t.status === 'approved';
     if (statusFilter === 'pending') return matchesSearch && t.status === 'pending';
     return matchesSearch;
   });
 
-  const totalPlayersCount = teams.reduce((acc, t) => acc + t.players.length + (t.substitute ? 1 : 0), 0);
+  const totalPlayersCount = teams.reduce((acc, t) => acc + t.players.length, 0);
   const approvedCount = teams.filter((t) => t.status === 'approved').length;
 
   return (
@@ -280,7 +277,7 @@ export default function AdminTeamsPage() {
                           </h3>
                         </div>
                         <p className="text-xs font-mono text-secondaryText">
-                          {team.university} • {team.players.length} Starters {team.substitute ? '+ 1 Sub' : ''}
+                          {team.university} • {team.players.length} Active Players
                         </p>
                       </div>
                     </div>
@@ -382,78 +379,40 @@ export default function AdminTeamsPage() {
                                   </span>
                                 </div>
                                 
-                                {/* In-Game Name */}
-                                <div className="font-display font-black text-base text-white truncate" title={player.ign}>
-                                  {player.ign}
+                                {/* In-Game Name / Full Real Name */}
+                                <div className="font-display font-black text-base text-white truncate" title={player.name || player.ign}>
+                                  {player.name || player.ign}
                                 </div>
 
-                                {/* Full Real Name */}
-                                <div className="text-xs font-mono text-secondaryText truncate mt-0.5" title={player.name}>
-                                  {player.name}
+                                {/* Faculty / IGN */}
+                                <div className="text-xs font-mono text-cyan truncate mt-0.5" title={player.faculty || player.name}>
+                                  {player.faculty || (player.ign ? `(${player.ign})` : '')}
                                 </div>
                               </div>
 
-                              {/* Steam ID & Copy */}
+                              {/* Steam ID & Copy or Faculty */}
                               <div className="mt-3 pt-2.5 border-t border-tactical-border/60 flex items-center justify-between text-[11px] font-mono">
-                                <span className="text-secondaryText truncate max-w-[120px]" title={player.steamId}>
-                                  {player.steamId}
+                                <span className="text-secondaryText truncate max-w-[120px]" title={player.steamId || player.faculty}>
+                                  {player.steamId || player.faculty}
                                 </span>
-                                <button
-                                  onClick={() => copyToClipboard(player.steamId)}
-                                  className="text-cyan hover:text-white transition-colors ml-1 shrink-0"
-                                  title="Copy Steam ID"
-                                >
-                                  {copiedSteamId === player.steamId ? (
-                                    <Check className="w-3.5 h-3.5 text-emerald-400" />
-                                  ) : (
-                                    <Copy className="w-3.5 h-3.5" />
-                                  )}
-                                </button>
+                                {player.steamId && (
+                                  <button
+                                    onClick={() => copyToClipboard(player.steamId!)}
+                                    className="text-cyan hover:text-white transition-colors ml-1 shrink-0"
+                                    title="Copy Steam ID"
+                                  >
+                                    {copiedSteamId === player.steamId ? (
+                                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                                    ) : (
+                                      <Copy className="w-3.5 h-3.5" />
+                                    )}
+                                  </button>
+                                )}
                               </div>
                             </div>
                           ))}
                         </div>
                       </div>
-
-                      {/* Designated Substitute Player */}
-                      {team.substitute && (
-                        <div>
-                          <h4 className="font-display font-bold text-xs uppercase tracking-wider text-secondaryText mb-2 flex items-center gap-2">
-                            <Shield className="w-3.5 h-3.5 text-orange" />
-                            <span>DESIGNATED SQUAD SUBSTITUTE (6TH PLAYER)</span>
-                          </h4>
-
-                          <div className="p-3 bg-surface/30 border border-dashed border-tactical-border/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono">
-                            <div className="flex items-center gap-3">
-                              <span className="px-2 py-0.5 bg-orange/10 border border-orange/40 text-orange font-bold text-[10px] uppercase">
-                                SUB
-                              </span>
-                              <div>
-                                <span className="text-white font-bold">{team.substitute.ign}</span>{' '}
-                                <span className="text-secondaryText">({team.substitute.name})</span>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-4 text-secondaryText text-[11px]">
-                              <span>EMAIL: <span className="text-white">{team.substitute.email || 'N/A'}</span></span>
-                              <div className="flex items-center gap-1.5">
-                                <span>STEAM: <span className="text-white font-bold">{team.substitute.steamId}</span></span>
-                                <button
-                                  onClick={() => copyToClipboard(team.substitute!.steamId)}
-                                  className="text-cyan hover:text-white transition-colors"
-                                  title="Copy Steam ID"
-                                >
-                                  {copiedSteamId === team.substitute.steamId ? (
-                                    <Check className="w-3.5 h-3.5 text-emerald-400" />
-                                  ) : (
-                                    <Copy className="w-3.5 h-3.5" />
-                                  )}
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
 
                     </div>
                   )}

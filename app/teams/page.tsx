@@ -247,16 +247,16 @@ export default function TeamsPage() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-secondaryText">
                 <div>NAME: <span className="text-white font-medium">{selectedTeam.captain.name}</span></div>
-                <div>EMAIL: <span className="text-white font-medium truncate block">{selectedTeam.captain.email}</span></div>
-                <div>PHONE: <span className="text-white font-medium">{selectedTeam.captain.phone}</span></div>
+                <div>WHATSAPP: <span className="text-emerald-400 font-bold">{selectedTeam.captain.whatsappNumber || selectedTeam.captain.phone}</span></div>
+                <div>FACULTY: <span className="text-white font-medium">{selectedTeam.captain.faculty || selectedTeam.faculty || 'UWU'}</span></div>
               </div>
             </div>
 
             {/* 5 Main Players */}
             <div className="mb-6">
               <h3 className="font-display font-bold text-sm text-white uppercase tracking-wider mb-3 flex items-center justify-between">
-                <span>5 MAIN PLAYERS (REQUIRED)</span>
-                <span className="text-xs font-mono text-cyan">ACTIVE STARTING FIVE</span>
+                <span>5 SQUAD PLAYERS</span>
+                <span className="text-xs font-mono text-cyan">ACTIVE LINEUP</span>
               </h3>
 
               <div className="space-y-2">
@@ -268,13 +268,18 @@ export default function TeamsPage() {
                     <div className="flex items-center gap-3">
                       <span className="text-cyan font-bold w-4">0{idx + 1}</span>
                       <div>
-                        <span className="text-white font-bold">{player.ign}</span>{' '}
-                        <span className="text-secondaryText">({player.name})</span>
+                        <span className="text-white font-bold">{player.name || player.ign}</span>
+                        {player.ign && player.ign !== player.name && (
+                          <span className="text-secondaryText"> ({player.ign})</span>
+                        )}
+                        {player.faculty && (
+                          <span className="block text-[10px] text-cyan/80 mt-0.5">{player.faculty}</span>
+                        )}
                       </div>
                     </div>
 
                     <div className="flex items-center gap-4 text-secondaryText text-[11px]">
-                      <span>{player.steamId}</span>
+                      {player.steamId ? <span>{player.steamId}</span> : null}
                       {player.role && (
                         <span className="px-2 py-0.5 bg-card border border-tactical-border text-cyan">
                           {player.role}
@@ -285,25 +290,6 @@ export default function TeamsPage() {
                 ))}
               </div>
             </div>
-
-            {/* Optional Substitute */}
-            {selectedTeam.substitute && (
-              <div className="mb-6">
-                <h3 className="font-display font-bold text-sm text-secondaryText uppercase tracking-wider mb-2">
-                  DESIGNATED SUBSTITUTE (OPTIONAL)
-                </h3>
-                <div className="bg-surface/30 border border-dashed border-tactical-border p-3 text-xs font-mono flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div>
-                    <span className="text-orange font-bold mr-2">[SUB]</span>
-                    <span className="text-white font-bold">{selectedTeam.substitute.ign}</span>{' '}
-                    <span className="text-secondaryText">({selectedTeam.substitute.name})</span>
-                  </div>
-                  <div className="text-[11px] text-secondaryText">
-                    {selectedTeam.substitute.steamId}
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* Modal Bottom Close */}
             <div className="pt-4 border-t border-tactical-border flex justify-end">

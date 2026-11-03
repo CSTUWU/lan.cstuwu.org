@@ -9,8 +9,8 @@ export default function TournamentFormat() {
     {
       num: '01',
       title: 'ROSTER REGISTRATION',
-      subtitle: '5 Starters + 1 Optional Sub',
-      desc: 'Each university squad consists of exactly 5 active players and 1 designated optional substitute. All players must be verified undergraduate or postgraduate university students.',
+      subtitle: '5 Active Squad Players',
+      desc: 'Each squad consists of exactly 5 active players representing Uva Wellassa University faculties (Applied Sciences, Management, Technological Studies, Animal Science & Export Agriculture, Medicine).',
       tag: 'PHASE 1',
       color: 'border-cyan/40 text-cyan',
     },

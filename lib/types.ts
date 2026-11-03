@@ -1,16 +1,29 @@
+export const UWU_FACULTIES = [
+  'Faculty of Applied Sciences',
+  'Faculty of Management',
+  'Faculty of Technological Studies',
+  'Faculty of Animal Science and Export Agriculture',
+  'Faculty of Medicine',
+] as const;
+
+export type UWUFaculty = (typeof UWU_FACULTIES)[number];
+
 export interface Player {
   id: string;
   name: string;
-  ign: string; // in-game name
-  steamId: string;
-  email: string;
+  faculty: string;
+  ign?: string; // in-game name (optional)
+  steamId?: string; // steam ID (optional)
+  email?: string;
   role?: string;
 }
 
 export interface Captain {
   name: string;
-  email: string;
-  phone: string;
+  whatsappNumber: string;
+  faculty?: string;
+  email?: string;
+  phone?: string;
 }
 
 export type ApprovalStatus = 'approved' | 'pending' | 'rejected';
@@ -25,7 +38,7 @@ export interface Team {
   createdAt: string;
   captain: Captain;
   players: Player[]; // exactly 5 players
-  substitute?: Player;
+  faculty?: string;
   matchesPlayed?: number;
   wins?: number;
   losses?: number;

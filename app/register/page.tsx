@@ -6,8 +6,21 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { saveTeam } from '@/lib/storage';
-import { Team, Player, Captain } from '@/lib/types';
-import { Shield, Check, ChevronRight, ChevronLeft, Upload, AlertCircle, CheckCircle2, User, Users, Crosshair, Loader2 } from 'lucide-react';
+import { Team, Player, Captain, UWU_FACULTIES } from '@/lib/types';
+import {
+  Shield,
+  Check,
+  ChevronRight,
+  ChevronLeft,
+  Upload,
+  AlertCircle,
+  CheckCircle2,
+  Users,
+  Crosshair,
+  Loader2,
+  Phone,
+  GraduationCap,
+} from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 
@@ -23,33 +36,27 @@ export default function RegisterPage() {
   const [teamInfo, setTeamInfo] = useState({
     name: '',
     tag: '',
-    university: '',
+    university: 'Uva Wellassa University of Sri Lanka',
     logo: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200&auto=format&fit=crop&q=80',
     logoPreview: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200&auto=format&fit=crop&q=80',
+    logoFile: null as File | null,
   });
 
   const [captainInfo, setCaptainInfo] = useState<Captain>({
     name: '',
+    whatsappNumber: '',
+    faculty: 'Faculty of Applied Sciences',
     email: '',
     phone: '',
   });
 
   const [players, setPlayers] = useState<Player[]>([
-    { id: '1', name: '', ign: '', steamId: '', email: '', role: 'In-Game Leader' },
-    { id: '2', name: '', ign: '', steamId: '', email: '', role: 'Entry Fragger' },
-    { id: '3', name: '', ign: '', steamId: '', email: '', role: 'Sniper' },
-    { id: '4', name: '', ign: '', steamId: '', email: '', role: 'Support' },
-    { id: '5', name: '', ign: '', steamId: '', email: '', role: 'Lurker' },
+    { id: '1', name: '', faculty: 'Faculty of Applied Sciences', ign: '', steamId: '', email: '', role: 'Player 1' },
+    { id: '2', name: '', faculty: 'Faculty of Applied Sciences', ign: '', steamId: '', email: '', role: 'Player 2' },
+    { id: '3', name: '', faculty: 'Faculty of Applied Sciences', ign: '', steamId: '', email: '', role: 'Player 3' },
+    { id: '4', name: '', faculty: 'Faculty of Applied Sciences', ign: '', steamId: '', email: '', role: 'Player 4' },
+    { id: '5', name: '', faculty: 'Faculty of Applied Sciences', ign: '', steamId: '', email: '', role: 'Player 5' },
   ]);
-
-  const [substitute, setSubstitute] = useState<Player>({
-    id: 'sub',
-    name: '',
-    ign: '',
-    steamId: '',
-    email: '',
-    role: 'Substitute',
-  });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -57,6 +64,7 @@ export default function RegisterPage() {
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setTeamInfo((prev) => ({ ...prev, logoFile: file }));
       const reader = new FileReader();
       reader.onloadend = () => {
         const result = reader.result as string;
@@ -64,35 +72,39 @@ export default function RegisterPage() {
           ...prev,
           logo: result,
           logoPreview: result,
+          logoFile: file,
         }));
       };
       reader.readAsDataURL(file);
     }
   };
 
-  // Validation
+  // Validation per step
   const validateStep = (step: number): boolean => {
     const newErrors: Record<string, string> = {};
 
     if (step === 1) {
       if (!teamInfo.name.trim()) newErrors.teamName = 'Team name is required';
       if (!teamInfo.tag.trim()) newErrors.teamTag = 'Team tag (e.g. UWU.V) is required';
-      if (!teamInfo.university.trim()) newErrors.university = 'University affiliation is required';
     }
 
     if (step === 2) {
-      if (!captainInfo.name.trim()) newErrors.capName = 'Captain full name is required';
-      if (!captainInfo.email.trim() || !captainInfo.email.includes('@')) newErrors.capEmail = 'Valid student email required';
-      if (!captainInfo.phone.trim()) newErrors.capPhone = 'Contact phone number required';
+      if (!captainInfo.name.trim()) newErrors.capName = 'Team leader full name is required';
+      const cleanWa = captainInfo.whatsappNumber.replace(/[\s\-\+]/g, '');
+      if (!cleanWa || cleanWa.length < 9) {
+        newErrors.capWhatsapp = 'Valid WhatsApp contact number required (e.g. 0771234567)';
+      }
+      if (!captainInfo.faculty) newErrors.capFaculty = 'Leader faculty is required';
     }
 
     if (step === 3) {
-      players.forEach((p, idx) => {
-        if (!p.name.trim()) newErrors[`p_${idx}_name`] = `Player ${idx + 1} name required`;
-        if (!p.ign.trim()) newErrors[`p_${idx}_ign`] = `Player ${idx + 1} IGN required`;
-        if (!p.steamId.trim()) newErrors[`p_${idx}_steamId`] = `Player ${idx + 1} Steam ID required`;
-        if (!p.email.trim()) newErrors[`p_${idx}_email`] = `Player ${idx + 1} email required`;
-      });
+      // Slot 01 is automatically the Team Leader entered in Step 2.
+      // Validate the 4 other squad members (players 2 to 5).
+      for (let idx = 1; idx < 5; idx++) {
+        const p = players[idx];
+        if (!p || !p.name.trim()) newErrors[`p_${idx}_name`] = `Player 0${idx + 1} name required`;
+        if (!p || !p.faculty.trim()) newErrors[`p_${idx}_faculty`] = `Select faculty for Player 0${idx + 1}`;
+      }
     }
 
     setErrors(newErrors);
@@ -101,6 +113,22 @@ export default function RegisterPage() {
 
   const handleNext = () => {
     if (validateStep(currentStep)) {
+      if (currentStep === 2) {
+        // Automatically sync Leader into players[0]
+        setPlayers((prev) => {
+          const updated = [...prev];
+          updated[0] = {
+            id: '1',
+            name: captainInfo.name.trim(),
+            faculty: captainInfo.faculty || 'Faculty of Applied Sciences',
+            ign: '',
+            steamId: '',
+            email: captainInfo.email?.trim() || '',
+            role: 'Team Leader',
+          };
+          return updated;
+        });
+      }
       setCurrentStep((prev) => prev + 1);
       window.scrollTo({ top: 100, behavior: 'smooth' });
     }
@@ -120,70 +148,108 @@ export default function RegisterPage() {
       return;
     }
 
-    const hasSub = substitute.name.trim() && substitute.ign.trim();
     setIsSubmitting(true);
 
-    const payload = {
-      teamName: teamInfo.name,
-      teamTag: teamInfo.tag.toUpperCase(),
-      university: teamInfo.university,
-      teamLogo: teamInfo.logo,
-      captain: captainInfo,
-      players: players.map((p) => ({
-        fullName: p.name,
-        inGameName: p.ign,
-        steamId: p.steamId,
-        email: p.email,
-        role: p.role,
+    // Ensure slot 1 is strictly synced with Team Leader details from Step 2
+    const rosterPlayers = [
+      {
+        fullName: captainInfo.name.trim(),
+        faculty: (captainInfo.faculty || 'Faculty of Applied Sciences').trim(),
+        inGameName: '',
+        steamId: '',
+        email: captainInfo.email?.trim() || '',
+        role: 'Team Leader',
+      },
+      ...players.slice(1, 5).map((p, idx) => ({
+        fullName: p.name.trim(),
+        faculty: p.faculty.trim(),
+        inGameName: (p.ign || '').trim(),
+        steamId: (p.steamId || '').trim(),
+        email: p.email?.trim() || '',
+        role: `Player 0${idx + 2}`,
       })),
-      ...(hasSub
-        ? {
-            substitute: {
-              fullName: substitute.name,
-              inGameName: substitute.ign,
-              steamId: substitute.steamId,
-              email: substitute.email,
-              role: 'SUBSTITUTE',
-            },
-          }
-        : {}),
+    ];
+
+    const payload = {
+      teamName: teamInfo.name.trim(),
+      teamTag: teamInfo.tag.trim().toUpperCase(),
+      university: 'Uva Wellassa University of Sri Lanka',
+      teamLogo: teamInfo.logo,
+      captain: {
+        name: captainInfo.name.trim(),
+        whatsappNumber: captainInfo.whatsappNumber.trim(),
+        faculty: captainInfo.faculty,
+        email: captainInfo.email?.trim() || '',
+        phone: captainInfo.whatsappNumber.trim(),
+      },
+      players: rosterPlayers,
     };
 
     try {
-      // 1. Try real backend API
-      const res = await api.registrations.submit(payload);
+      let res;
+      if (teamInfo.logoFile) {
+        const formData = new FormData();
+        formData.append('data', JSON.stringify(payload));
+        formData.append('logo', teamInfo.logoFile);
+        res = await api.registrations.submit(formData);
+      } else {
+        res = await api.registrations.submit(payload);
+      }
+
       if (res.success && res.data) {
         setCreatedTeam({
           id: res.data.registrationNumber,
           name: res.data.teamName,
           tag: res.data.teamTag,
-          university: teamInfo.university,
+          university: 'Uva Wellassa University of Sri Lanka',
           logo: teamInfo.logo,
           status: 'pending',
           createdAt: res.data.createdAt,
-          captain: captainInfo,
-          players,
+          captain: {
+            ...captainInfo,
+            phone: captainInfo.whatsappNumber,
+          },
+          players: [
+            {
+              id: '1',
+              name: captainInfo.name.trim(),
+              faculty: captainInfo.faculty || 'Faculty of Applied Sciences',
+              ign: '',
+              steamId: '',
+              email: captainInfo.email?.trim() || '',
+              role: 'Team Leader',
+            },
+            ...players.slice(1, 5),
+          ],
         });
         setIsSubmitted(true);
         window.scrollTo({ top: 80, behavior: 'smooth' });
         return;
       }
     } catch (err: any) {
-      console.warn('Backend API submission warning:', err);
+      console.warn('Backend API submission note:', err);
       if (err.errors && err.errors.length > 0) {
         setApiError(err.errors.map((e: any) => e.message).join(' | '));
         setIsSubmitting(false);
         return;
       }
-      // If server unreachable, use local fallback
+      if (err.message && err.message !== 'Failed to fetch') {
+        setApiError(err.message);
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Local fallback for offline mode
       const created = saveTeam({
         name: teamInfo.name,
         tag: teamInfo.tag.toUpperCase(),
-        university: teamInfo.university,
+        university: 'Uva Wellassa University of Sri Lanka',
         logo: teamInfo.logo,
-        captain: captainInfo,
+        captain: {
+          ...captainInfo,
+          phone: captainInfo.whatsappNumber,
+        },
         players,
-        ...(hasSub ? { substitute } : {}),
       });
 
       setCreatedTeam(created);
@@ -196,38 +262,33 @@ export default function RegisterPage() {
 
   const handleQuickFillDemo = () => {
     setTeamInfo({
-      name: 'UWU Shadow Operatives',
-      tag: 'UWU.SO',
+      name: 'UWU Tactical Vanguard',
+      tag: 'UWU.V',
       university: 'Uva Wellassa University of Sri Lanka',
       logo: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200&auto=format&fit=crop&q=80',
       logoPreview: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200&auto=format&fit=crop&q=80',
+      logoFile: null,
     });
     setCaptainInfo({
-      name: 'Praneeth Wijesinghe',
-      email: 'praneeth.w@std.uwu.ac.lk',
-      phone: '+94 77 456 7890',
+      name: 'Kasun Bandara',
+      whatsappNumber: '0771234567',
+      faculty: 'Faculty of Applied Sciences',
+      email: 'kasun.b@std.uwu.ac.lk',
+      phone: '0771234567',
     });
     setPlayers([
-      { id: '1', name: 'Praneeth Wijesinghe', ign: 'Sh4dow_IGL', steamId: 'STEAM_0:1:78291034', email: 'praneeth.w@std.uwu.ac.lk', role: 'In-Game Leader' },
-      { id: '2', name: 'Janith Senanayake', ign: 'Crossfire', steamId: 'STEAM_0:0:19283745', email: 'janith.s@std.uwu.ac.lk', role: 'Entry Fragger' },
-      { id: '3', name: 'Charith Disanayaka', ign: 'SilentBullet', steamId: 'STEAM_0:1:48291056', email: 'charith.d@std.uwu.ac.lk', role: 'Sniper' },
-      { id: '4', name: 'Malith Jayawardena', ign: 'CyberShield', steamId: 'STEAM_0:0:93820147', email: 'malith.j@std.uwu.ac.lk', role: 'Support' },
-      { id: '5', name: 'Lahiru Rathnayake', ign: 'Nightfall', steamId: 'STEAM_0:1:38291048', email: 'lahiru.r@std.uwu.ac.lk', role: 'Lurker' },
+      { id: '1', name: 'Kasun Bandara', faculty: 'Faculty of Applied Sciences', ign: '', steamId: '', email: 'kasun.b@std.uwu.ac.lk', role: 'Player 1' },
+      { id: '2', name: 'Ravindu Senarath', faculty: 'Faculty of Applied Sciences', ign: '', steamId: '', email: 'ravindu.s@std.uwu.ac.lk', role: 'Player 2' },
+      { id: '3', name: 'Dinuka Perera', faculty: 'Faculty of Technological Studies', ign: '', steamId: '', email: 'dinuka.p@std.uwu.ac.lk', role: 'Player 3' },
+      { id: '4', name: 'Naveen Jayasuriya', faculty: 'Faculty of Management', ign: '', steamId: '', email: 'naveen.j@std.uwu.ac.lk', role: 'Player 4' },
+      { id: '5', name: 'Shehan Alwis', faculty: 'Faculty of Applied Sciences', ign: '', steamId: '', email: 'shehan.a@std.uwu.ac.lk', role: 'Player 5' },
     ]);
-    setSubstitute({
-      id: 'sub',
-      name: 'Sudeera Madushan',
-      ign: 'BackupAce',
-      steamId: 'STEAM_0:0:58291034',
-      email: 'sudeera.m@std.uwu.ac.lk',
-      role: 'Substitute',
-    });
   };
 
   const steps = [
-    { num: 1, label: 'TEAM INFO' },
-    { num: 2, label: 'CAPTAIN' },
-    { num: 3, label: 'ROSTER (5+1)' },
+    { num: 1, label: 'TEAM IDENTITY' },
+    { num: 2, label: 'LEADER CONTACT' },
+    { num: 3, label: '4 SQUAD MEMBERS' },
     { num: 4, label: 'CONFIRM' },
   ];
 
@@ -244,13 +305,24 @@ export default function RegisterPage() {
           <span className="text-white">ENLISTMENT PORTAL</span>
         </div>
 
-        {/* Prototype Banner */}
-        <div className="bg-surface/80 border border-tactical-border p-3.5 mb-8 flex items-center justify-between text-xs font-mono text-secondaryText">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-cyan animate-pulse" />
-            <span>FRONTEND PROTOTYPE: Registrations persist in browser localStorage.</span>
+        {/* University Notice Banner */}
+        <div className="bg-surface/90 border border-cyan/40 p-4 mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-cyan/10 border border-cyan/50 flex items-center justify-center shrink-0 text-cyan">
+              <Shield className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="text-white font-bold block">
+                UVA WELLASSA UNIVERSITY OF SRI LANKA // OFFICIAL REGISTRATION
+              </span>
+              <span className="text-secondaryText text-[11px]">
+                CS2 Inter-Faculty Championship • Exclusively for Uva Wellassa University Students
+              </span>
+            </div>
           </div>
-          <span className="text-cyan font-bold hidden sm:inline">CST // UWU</span>
+          <span className="text-cyan font-bold px-2.5 py-1 bg-surface border border-cyan/30 text-[10px] uppercase shrink-0">
+            5V5 MR12 COMPETITIVE
+          </span>
         </div>
 
         {/* Header */}
@@ -262,7 +334,7 @@ export default function RegisterPage() {
             TEAM <span className="text-cyan">ENLISTMENT</span>
           </h1>
           <p className="text-xs sm:text-sm font-mono text-secondaryText mt-1">
-            Organized by the <strong className="text-white">Computer Science and Technology Degree Programme</strong>, Uva Wellassa University of Sri Lanka.
+            Organized by the <strong className="text-white">Computer Science and Technology Degree Programme</strong>, Faculty of Applied Sciences, Uva Wellassa University.
           </p>
         </div>
 
@@ -293,6 +365,14 @@ export default function RegisterPage() {
           </div>
         )}
 
+        {/* API Error Notification */}
+        {apiError && (
+          <div className="p-4 bg-rose-500/10 border border-rose-500/40 text-rose-400 text-xs font-mono mb-8 flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 shrink-0" />
+            <span>{apiError}</span>
+          </div>
+        )}
+
         {/* SUCCESS CONFIRMATION SCREEN */}
         {isSubmitted && createdTeam ? (
           <div className="bg-card border border-emerald-500/50 p-8 sm:p-12 text-center shadow-2xl">
@@ -301,7 +381,7 @@ export default function RegisterPage() {
             </div>
 
             <Badge variant="green" size="md" className="mb-4">
-              ENLISTMENT RECORDED IN LOCAL REGISTRY
+              ENLISTMENT RECORDED IN TOURNAMENT REGISTRY
             </Badge>
 
             <h2 className="font-display font-black text-3xl sm:text-4xl uppercase text-white tracking-wider mb-2">
@@ -309,7 +389,7 @@ export default function RegisterPage() {
             </h2>
 
             <p className="text-xs sm:text-sm font-mono text-secondaryText max-w-lg mx-auto mb-8">
-              Your registration for <strong className="text-white">{createdTeam.name} [{createdTeam.tag}]</strong> representing <strong className="text-cyan">{createdTeam.university}</strong> has been logged into the demonstration database under status: <span className="text-tactical-gold font-bold">PENDING APPROVAL</span>.
+              Your registration for <strong className="text-white">{createdTeam.name} [{createdTeam.tag}]</strong> has been registered under reference: <span className="text-cyan font-bold">{createdTeam.id}</span>. Status: <span className="text-tactical-gold font-bold">PENDING ADMINISTRATIVE APPROVAL</span>.
             </p>
 
             {/* Squad Summary Preview */}
@@ -320,16 +400,33 @@ export default function RegisterPage() {
                 </div>
                 <div>
                   <div className="text-cyan font-bold">{createdTeam.name} [{createdTeam.tag}]</div>
-                  <div className="text-secondaryText">{createdTeam.university}</div>
+                  <div className="text-secondaryText">Uva Wellassa University of Sri Lanka</div>
                 </div>
               </div>
 
-              <div className="space-y-1.5 text-secondaryText">
-                <div>CAPTAIN: <span className="text-white">{createdTeam.captain.name} ({createdTeam.captain.phone})</span></div>
-                <div>ACTIVE ROSTER: <span className="text-white">{createdTeam.players.map((p: Player) => p.ign).join(', ')}</span></div>
-                {createdTeam.substitute && (
-                  <div>SUBSTITUTE: <span className="text-orange">{createdTeam.substitute.ign} ({createdTeam.substitute.name})</span></div>
-                )}
+              <div className="space-y-2 text-secondaryText">
+                <div>
+                  <span className="text-white font-bold">TEAM LEADER:</span> {createdTeam.captain.name}
+                  {createdTeam.captain.whatsappNumber && (
+                    <span className="text-emerald-400 ml-2 font-bold">
+                      [WhatsApp: {createdTeam.captain.whatsappNumber}]
+                    </span>
+                  )}
+                  {createdTeam.captain.faculty && (
+                    <span className="text-secondaryText ml-2">({createdTeam.captain.faculty})</span>
+                  )}
+                </div>
+                <div>
+                  <span className="text-white font-bold">5-PLAYER LINEUP:</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mt-2">
+                    {createdTeam.players.map((p, idx) => (
+                      <div key={idx} className="p-1.5 bg-card border border-tactical-border/60 text-[11px]">
+                        <span className="text-cyan font-bold">0{idx + 1}. {p.name || `Player ${idx + 1}`}</span>
+                        <div className="text-secondaryText truncate">{p.faculty}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -344,15 +441,16 @@ export default function RegisterPage() {
                   setTeamInfo({
                     name: '',
                     tag: '',
-                    university: '',
+                    university: 'Uva Wellassa University of Sri Lanka',
                     logo: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200&auto=format&fit=crop&q=80',
                     logoPreview: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200&auto=format&fit=crop&q=80',
+                    logoFile: null,
                   });
                 }}
                 variant="ghost"
                 size="md"
               >
-                ENLIST ANOTHER TEAM
+                ENLIST ANOTHER SQUAD
               </Button>
             </div>
           </div>
@@ -366,10 +464,10 @@ export default function RegisterPage() {
                 <div className="border-b border-tactical-border pb-4 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <h3 className="font-display font-black text-xl text-white uppercase tracking-wider">
-                      STEP 1: SQUAD & UNIVERSITY IDENTITY
+                      STEP 1: SQUAD DETAILS & LOGO
                     </h3>
                     <p className="text-xs font-mono text-secondaryText">
-                      Specify the formal squad designation and collegiate institution.
+                      Provide your squad designation and official team emblem.
                     </p>
                   </div>
                   <button
@@ -388,7 +486,7 @@ export default function RegisterPage() {
                     </label>
                     <input
                       type="text"
-                      placeholder="e.g. UWU Cyber Knights"
+                      placeholder="e.g. UWU Tactical Vanguard"
                       value={teamInfo.name}
                       onChange={(e) => setTeamInfo({ ...teamInfo, name: e.target.value })}
                       className="w-full bg-surface border border-tactical-border px-4 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-cyan"
@@ -398,11 +496,11 @@ export default function RegisterPage() {
 
                   <div>
                     <label className="block text-xs font-mono text-secondaryText uppercase tracking-wider mb-2">
-                      TEAM TAG (3-6 CHARACTERS) <span className="text-cyan">*</span>
+                      TEAM TAG (2-8 CHARACTERS) <span className="text-cyan">*</span>
                     </label>
                     <input
                       type="text"
-                      placeholder="e.g. UWU.CK"
+                      placeholder="e.g. UWU.V"
                       maxLength={8}
                       value={teamInfo.tag}
                       onChange={(e) => setTeamInfo({ ...teamInfo, tag: e.target.value.toUpperCase() })}
@@ -412,24 +510,26 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
+                {/* Locked University Display */}
                 <div>
                   <label className="block text-xs font-mono text-secondaryText uppercase tracking-wider mb-2">
-                    COLLEGIATE INSTITUTION / UNIVERSITY <span className="text-cyan">*</span>
+                    UNIVERSITY AFFILIATION
                   </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Uva Wellassa University of Sri Lanka"
-                    value={teamInfo.university}
-                    onChange={(e) => setTeamInfo({ ...teamInfo, university: e.target.value })}
-                    className="w-full bg-surface border border-tactical-border px-4 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-cyan"
-                  />
-                  {errors.university && <p className="text-[11px] font-mono text-rose-500 mt-1">{errors.university}</p>}
+                  <div className="w-full bg-surface/50 border border-tactical-border px-4 py-2.5 text-xs font-mono text-white flex items-center justify-between">
+                    <span className="font-bold text-cyan">Uva Wellassa University of Sri Lanka</span>
+                    <span className="text-[10px] text-emerald-400 font-mono px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/30">
+                      ✓ UWU INTRA-CHAMPIONSHIP
+                    </span>
+                  </div>
+                  <p className="text-[10px] font-mono text-secondaryText mt-1">
+                    This tournament is exclusively for registered students of Uva Wellassa University of Sri Lanka.
+                  </p>
                 </div>
 
                 {/* Logo Upload & Preview */}
                 <div className="pt-2">
                   <label className="block text-xs font-mono text-secondaryText uppercase tracking-wider mb-2">
-                    TEAM LOGO (IMAGE UPLOAD OR URL)
+                    TEAM LOGO (FILE UPLOAD OR PREVIEW)
                   </label>
                   <div className="flex flex-col sm:flex-row items-center gap-6 p-4 bg-surface/50 border border-tactical-border">
                     <div className="relative w-20 h-20 bg-surface border border-cyan/40 shrink-0 overflow-hidden">
@@ -449,12 +549,12 @@ export default function RegisterPage() {
                           <span>UPLOAD LOGO FILE</span>
                           <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
                         </label>
-                        <span className="text-[10px] font-mono text-secondaryText">PNG, JPG, or WEBP</span>
+                        <span className="text-[10px] font-mono text-secondaryText">PNG, JPG, or WEBP (Max 5MB)</span>
                       </div>
 
                       <input
                         type="url"
-                        placeholder="Or paste external image URL..."
+                        placeholder="Or paste image URL..."
                         value={teamInfo.logo}
                         onChange={(e) => setTeamInfo({ ...teamInfo, logo: e.target.value, logoPreview: e.target.value })}
                         className="w-full bg-surface border border-tactical-border px-3 py-1.5 text-xs font-mono text-white focus:outline-none focus:border-cyan"
@@ -465,36 +565,75 @@ export default function RegisterPage() {
               </div>
             )}
 
-            {/* STEP 2: CAPTAIN INFORMATION */}
+            {/* STEP 2: TEAM LEADER (WHATSAPP REQUIRED) */}
             {currentStep === 2 && (
               <div className="space-y-6">
                 <div className="border-b border-tactical-border pb-4 mb-6">
                   <h3 className="font-display font-black text-xl text-white uppercase tracking-wider">
-                    STEP 2: DESIGNATED CAPTAIN INFORMATION
+                    STEP 2: TEAM LEADER CONTACT INFORMATION
                   </h3>
                   <p className="text-xs font-mono text-secondaryText">
-                    Official liaison responsible for scheduling, map vetoes, and communications with CST admins.
+                    Only the team leader requires a WhatsApp contact number. All match schedules, server IPs, and veto links are sent to the leader.
                   </p>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-mono text-secondaryText uppercase tracking-wider mb-2">
-                    CAPTAIN FULL LEGAL NAME <span className="text-cyan">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Kasun Bandara"
-                    value={captainInfo.name}
-                    onChange={(e) => setCaptainInfo({ ...captainInfo, name: e.target.value })}
-                    className="w-full bg-surface border border-tactical-border px-4 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-cyan"
-                  />
-                  {errors.capName && <p className="text-[11px] font-mono text-rose-500 mt-1">{errors.capName}</p>}
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-xs font-mono text-secondaryText uppercase tracking-wider mb-2">
-                      STUDENT / CONTACT EMAIL <span className="text-cyan">*</span>
+                      LEADER FULL NAME <span className="text-cyan">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Kasun Bandara"
+                      value={captainInfo.name}
+                      onChange={(e) => setCaptainInfo({ ...captainInfo, name: e.target.value })}
+                      className="w-full bg-surface border border-tactical-border px-4 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-cyan"
+                    />
+                    {errors.capName && <p className="text-[11px] font-mono text-rose-500 mt-1">{errors.capName}</p>}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-mono text-secondaryText uppercase tracking-wider mb-2 flex items-center justify-between">
+                      <span>LEADER WHATSAPP NUMBER <span className="text-cyan">*</span></span>
+                      <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-1">
+                        <Phone className="w-3 h-3 text-emerald-400" /> WHATSAPP ONLY
+                      </span>
+                    </label>
+                    <input
+                      type="tel"
+                      placeholder="e.g. 0771234567 or +94 77 123 4567"
+                      value={captainInfo.whatsappNumber}
+                      onChange={(e) => setCaptainInfo({ ...captainInfo, whatsappNumber: e.target.value, phone: e.target.value })}
+                      className="w-full bg-surface border border-tactical-border px-4 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-cyan"
+                    />
+                    {errors.capWhatsapp && <p className="text-[11px] font-mono text-rose-500 mt-1">{errors.capWhatsapp}</p>}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {/* Faculty Dropdown */}
+                  <div>
+                    <label className="block text-xs font-mono text-secondaryText uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                      <GraduationCap className="w-3.5 h-3.5 text-cyan" />
+                      <span>LEADER FACULTY <span className="text-cyan">*</span></span>
+                    </label>
+                    <select
+                      value={captainInfo.faculty}
+                      onChange={(e) => setCaptainInfo({ ...captainInfo, faculty: e.target.value })}
+                      className="w-full bg-surface border border-tactical-border px-4 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-cyan"
+                    >
+                      {UWU_FACULTIES.map((fac) => (
+                        <option key={fac} value={fac} className="bg-[#080B10] text-white">
+                          {fac}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.capFaculty && <p className="text-[11px] font-mono text-rose-500 mt-1">{errors.capFaculty}</p>}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-mono text-secondaryText uppercase tracking-wider mb-2">
+                      LEADER STUDENT EMAIL (OPTIONAL)
                     </label>
                     <input
                       type="email"
@@ -503,198 +642,135 @@ export default function RegisterPage() {
                       onChange={(e) => setCaptainInfo({ ...captainInfo, email: e.target.value })}
                       className="w-full bg-surface border border-tactical-border px-4 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-cyan"
                     />
-                    {errors.capEmail && <p className="text-[11px] font-mono text-rose-500 mt-1">{errors.capEmail}</p>}
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-mono text-secondaryText uppercase tracking-wider mb-2">
-                      PHONE NUMBER / WHATSAPP <span className="text-cyan">*</span>
-                    </label>
-                    <input
-                      type="tel"
-                      placeholder="e.g. +94 77 123 4567"
-                      value={captainInfo.phone}
-                      onChange={(e) => setCaptainInfo({ ...captainInfo, phone: e.target.value })}
-                      className="w-full bg-surface border border-tactical-border px-4 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-cyan"
-                    />
-                    {errors.capPhone && <p className="text-[11px] font-mono text-rose-500 mt-1">{errors.capPhone}</p>}
                   </div>
                 </div>
               </div>
             )}
 
-            {/* STEP 3: PLAYER INFORMATION (5 REQUIRED + 1 OPTIONAL SUB) */}
+            {/* STEP 3: 4 ACTIVE TEAM MEMBERS (SLOT 01 IS AUTO-ASSIGNED TO LEADER) */}
             {currentStep === 3 && (
-              <div className="space-y-8">
+              <div className="space-y-6">
                 <div className="border-b border-tactical-border pb-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
                       <h3 className="font-display font-black text-xl text-white uppercase tracking-wider">
-                        STEP 3: 5 ACTIVE PLAYERS + 1 SUBSTITUTE
+                        STEP 3: 4 SQUAD MEMBERS (PLAYERS 02–05)
                       </h3>
                       <p className="text-xs font-mono text-secondaryText">
-                        Exact competitive lineup required. All 5 starters must be complete.
+                        Team Leader (<span className="text-cyan font-bold">{captainInfo.name || 'Captain'}</span>) is registered as Player 01. Enter details for the remaining 4 students.
                       </p>
                     </div>
-                    <Badge variant="cyan" size="sm">5 REQUIRED</Badge>
+                    <Badge variant="cyan" size="sm">4 MEMBERS + 1 LEADER = 5 PLAYERS</Badge>
                   </div>
                 </div>
 
-                {/* 5 Main Players */}
-                <div className="space-y-6">
-                  {players.map((player, idx) => (
-                    <div key={idx} className="p-4 bg-surface/50 border border-tactical-border">
-                      <div className="flex items-center justify-between mb-3 border-b border-tactical-border/60 pb-2">
-                        <span className="text-xs font-mono font-bold text-cyan uppercase">
-                          {`PLAYER 0${idx + 1} // ${player.role}`}
-                        </span>
-                        <span className="text-[10px] font-mono text-secondaryText uppercase">STARTER</span>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div>
-                          <label className="block text-[10px] font-mono text-secondaryText uppercase mb-1">
-                            FULL NAME *
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="Player name"
-                            value={player.name}
-                            onChange={(e) => {
-                              const updated = [...players];
-                              updated[idx].name = e.target.value;
-                              setPlayers(updated);
-                            }}
-                            className="w-full bg-surface border border-tactical-border px-3 py-1.5 text-xs font-mono text-white focus:outline-none focus:border-cyan"
-                          />
-                          {errors[`p_${idx}_name`] && <p className="text-[10px] text-rose-500 mt-0.5">{errors[`p_${idx}_name`]}</p>}
-                        </div>
-
-                        <div>
-                          <label className="block text-[10px] font-mono text-secondaryText uppercase mb-1">
-                            IN-GAME NAME (IGN) *
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="e.g. Phantom99"
-                            value={player.ign}
-                            onChange={(e) => {
-                              const updated = [...players];
-                              updated[idx].ign = e.target.value;
-                              setPlayers(updated);
-                            }}
-                            className="w-full bg-surface border border-tactical-border px-3 py-1.5 text-xs font-mono text-white focus:outline-none focus:border-cyan"
-                          />
-                          {errors[`p_${idx}_ign`] && <p className="text-[10px] text-rose-500 mt-0.5">{errors[`p_${idx}_ign`]}</p>}
-                        </div>
-
-                        <div>
-                          <label className="block text-[10px] font-mono text-secondaryText uppercase mb-1">
-                            STEAM ID / COMMUNITY URL *
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="STEAM_0:1:..."
-                            value={player.steamId}
-                            onChange={(e) => {
-                              const updated = [...players];
-                              updated[idx].steamId = e.target.value;
-                              setPlayers(updated);
-                            }}
-                            className="w-full bg-surface border border-tactical-border px-3 py-1.5 text-xs font-mono text-white focus:outline-none focus:border-cyan"
-                          />
-                          {errors[`p_${idx}_steamId`] && <p className="text-[10px] text-rose-500 mt-0.5">{errors[`p_${idx}_steamId`]}</p>}
-                        </div>
-
-                        <div>
-                          <label className="block text-[10px] font-mono text-secondaryText uppercase mb-1">
-                            STUDENT EMAIL *
-                          </label>
-                          <input
-                            type="email"
-                            placeholder="student@univ.ac.lk"
-                            value={player.email}
-                            onChange={(e) => {
-                              const updated = [...players];
-                              updated[idx].email = e.target.value;
-                              setPlayers(updated);
-                            }}
-                            className="w-full bg-surface border border-tactical-border px-3 py-1.5 text-xs font-mono text-white focus:outline-none focus:border-cyan"
-                          />
-                          {errors[`p_${idx}_email`] && <p className="text-[10px] text-rose-500 mt-0.5">{errors[`p_${idx}_email`]}</p>}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Optional Substitute */}
-                <div className="p-4 bg-surface/30 border border-dashed border-tactical-border">
-                  <div className="flex items-center justify-between mb-3 border-b border-tactical-border/60 pb-2">
-                    <span className="text-xs font-mono font-bold text-orange uppercase">
-                      DESIGNATED SUBSTITUTE (OPTIONAL 6TH PLAYER)
+                {/* Slot 01: Team Leader Card (Read-only, Auto-filled from Step 2) */}
+                <div className="p-4 bg-cyan/5 border border-cyan/40 relative">
+                  <div className="flex items-center justify-between mb-3 border-b border-cyan/20 pb-2">
+                    <span className="text-xs font-mono font-bold text-cyan uppercase flex items-center gap-2">
+                      <span className="w-5 h-5 bg-cyan/20 border border-cyan/60 flex items-center justify-center text-[10px] text-cyan font-bold">
+                        01
+                      </span>
+                      <span>PLAYER 01 // TEAM LEADER (CAPTAIN)</span>
                     </span>
-                    <span className="text-[10px] font-mono text-secondaryText uppercase">OPTIONAL</span>
+                    <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 uppercase">
+                      ✓ ENTERED IN STEP 02
+                    </span>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[10px] font-mono text-secondaryText uppercase mb-1">
-                        FULL NAME
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Substitute name"
-                        value={substitute.name}
-                        onChange={(e) => setSubstitute({ ...substitute, name: e.target.value })}
-                        className="w-full bg-surface border border-tactical-border px-3 py-1.5 text-xs font-mono text-white focus:outline-none focus:border-orange"
-                      />
+                      <span className="block text-[10px] font-mono text-secondaryText uppercase mb-1">
+                        LEADER FULL NAME
+                      </span>
+                      <div className="w-full bg-surface/90 border border-tactical-border px-3 py-2 text-xs font-mono text-white font-bold">
+                        {captainInfo.name || 'Team Leader'}
+                      </div>
                     </div>
-
                     <div>
-                      <label className="block text-[10px] font-mono text-secondaryText uppercase mb-1">
-                        IN-GAME NAME (IGN)
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Substitute IGN"
-                        value={substitute.ign}
-                        onChange={(e) => setSubstitute({ ...substitute, ign: e.target.value })}
-                        className="w-full bg-surface border border-tactical-border px-3 py-1.5 text-xs font-mono text-white focus:outline-none focus:border-orange"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-mono text-secondaryText uppercase mb-1">
-                        STEAM ID
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="STEAM_0:0:..."
-                        value={substitute.steamId}
-                        onChange={(e) => setSubstitute({ ...substitute, steamId: e.target.value })}
-                        className="w-full bg-surface border border-tactical-border px-3 py-1.5 text-xs font-mono text-white focus:outline-none focus:border-orange"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-mono text-secondaryText uppercase mb-1">
-                        STUDENT EMAIL
-                      </label>
-                      <input
-                        type="email"
-                        placeholder="email@univ.ac.lk"
-                        value={substitute.email}
-                        onChange={(e) => setSubstitute({ ...substitute, email: e.target.value })}
-                        className="w-full bg-surface border border-tactical-border px-3 py-1.5 text-xs font-mono text-white focus:outline-none focus:border-orange"
-                      />
+                      <span className="block text-[10px] font-mono text-secondaryText uppercase mb-1 flex items-center gap-1">
+                        <GraduationCap className="w-3.5 h-3.5 text-cyan" />
+                        <span>LEADER FACULTY</span>
+                      </span>
+                      <div className="w-full bg-surface/90 border border-tactical-border px-3 py-2 text-xs font-mono text-white">
+                        {captainInfo.faculty}
+                      </div>
                     </div>
                   </div>
+                </div>
+
+                {/* Slots 02 to 05: The 4 Squad Members */}
+                <div className="space-y-4">
+                  {players.slice(1, 5).map((player, sliceIdx) => {
+                    const idx = sliceIdx + 1; // 1, 2, 3, 4 -> Player 02, 03, 04, 05
+                    return (
+                      <div key={idx} className="p-4 bg-surface/50 border border-tactical-border relative">
+                        <div className="flex items-center justify-between mb-3 border-b border-tactical-border/60 pb-2">
+                          <span className="text-xs font-mono font-bold text-cyan uppercase flex items-center gap-2">
+                            <span className="w-5 h-5 rounded-none bg-cyan/10 border border-cyan/40 flex items-center justify-center text-[10px]">
+                              0{idx + 1}
+                            </span>
+                            <span>{`PLAYER 0${idx + 1}`}</span>
+                          </span>
+                          <span className="text-[10px] font-mono text-secondaryText uppercase">UWU STUDENT</span>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {/* 1. Full Name */}
+                          <div>
+                            <label className="block text-[10px] font-mono text-secondaryText uppercase mb-1">
+                              FULL NAME <span className="text-cyan">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="Student full name"
+                              value={player.name}
+                              onChange={(e) => {
+                                const updated = [...players];
+                                updated[idx].name = e.target.value;
+                                setPlayers(updated);
+                              }}
+                              className="w-full bg-surface border border-tactical-border px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-cyan"
+                            />
+                            {errors[`p_${idx}_name`] && (
+                              <p className="text-[10px] text-rose-500 mt-0.5">{errors[`p_${idx}_name`]}</p>
+                            )}
+                          </div>
+
+                          {/* 2. Faculty Dropdown */}
+                          <div>
+                            <label className="block text-[10px] font-mono text-secondaryText uppercase mb-1 flex items-center gap-1">
+                              <GraduationCap className="w-3.5 h-3.5 text-cyan" />
+                              <span>FACULTY <span className="text-cyan">*</span></span>
+                            </label>
+                            <select
+                              value={player.faculty}
+                              onChange={(e) => {
+                                const updated = [...players];
+                                updated[idx].faculty = e.target.value;
+                                setPlayers(updated);
+                              }}
+                              className="w-full bg-surface border border-tactical-border px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-cyan"
+                            >
+                              {UWU_FACULTIES.map((fac) => (
+                                <option key={fac} value={fac} className="bg-[#080B10] text-white">
+                                  {fac}
+                                </option>
+                              ))}
+                            </select>
+                            {errors[`p_${idx}_faculty`] && (
+                              <p className="text-[10px] text-rose-500 mt-0.5">{errors[`p_${idx}_faculty`]}</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
 
-            {/* STEP 4: REVIEW AND SUBMIT */}
+            {/* STEP 4: REVIEW AND CONFIRM */}
             {currentStep === 4 && (
               <div className="space-y-6">
                 <div className="border-b border-tactical-border pb-4 mb-6">
@@ -716,54 +792,59 @@ export default function RegisterPage() {
                     <div>
                       <span className="text-cyan font-bold">[{teamInfo.tag}]</span>
                       <h4 className="font-display font-black text-xl text-white uppercase">{teamInfo.name}</h4>
-                      <p className="text-secondaryText">{teamInfo.university}</p>
+                      <p className="text-secondaryText">Uva Wellassa University of Sri Lanka</p>
                     </div>
                   </div>
 
-                  {/* Captain */}
+                  {/* Captain Details */}
                   <div className="border-b border-tactical-border pb-4">
-                    <span className="text-cyan font-bold block mb-1 uppercase">CAPTAIN DETAILS:</span>
+                    <span className="text-cyan font-bold block mb-2 uppercase">TEAM LEADER:</span>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-secondaryText">
-                      <div>NAME: <span className="text-white">{captainInfo.name}</span></div>
-                      <div>EMAIL: <span className="text-white">{captainInfo.email}</span></div>
-                      <div>PHONE: <span className="text-white">{captainInfo.phone}</span></div>
+                      <div>NAME: <span className="text-white font-bold">{captainInfo.name}</span></div>
+                      <div>WHATSAPP: <span className="text-emerald-400 font-bold">{captainInfo.whatsappNumber}</span></div>
+                      <div>FACULTY: <span className="text-white">{captainInfo.faculty}</span></div>
                     </div>
                   </div>
 
-                  {/* 5 Players */}
+                  {/* 5 Players Lineup with Faculties */}
                   <div>
-                    <span className="text-cyan font-bold block mb-2 uppercase">STARTING FIVE ROSTER:</span>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {players.map((p, idx) => (
-                        <div key={idx} className="p-2.5 bg-card border border-tactical-border/70 flex justify-between items-center">
-                          <div>
-                            <span className="text-cyan font-bold mr-1.5">0{idx + 1}.</span>
-                            <span className="text-white font-bold">{p.ign}</span>{' '}
-                            <span className="text-secondaryText text-[11px]">({p.name})</span>
+                    <span className="text-cyan font-bold block mb-2 uppercase">5-PLAYER SQUAD ROSTER:</span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {/* Player 01 - Team Leader */}
+                      <div className="p-3 bg-card border border-cyan/40 flex flex-col gap-1.5">
+                        <div className="flex justify-between items-center">
+                          <span className="text-cyan font-bold text-xs">
+                            01. {captainInfo.name || 'Team Leader'}
+                          </span>
+                          <span className="text-[9px] font-mono text-cyan bg-cyan/10 border border-cyan/30 px-1.5 py-0.5 uppercase">
+                            CAPTAIN
+                          </span>
+                        </div>
+                        <div className="text-[10px] text-secondaryText flex items-center gap-1.5">
+                          <GraduationCap className="w-3.5 h-3.5 text-cyan shrink-0" />
+                          <span className="text-white">{captainInfo.faculty}</span>
+                        </div>
+                      </div>
+
+                      {/* Players 02-05 */}
+                      {players.slice(1, 5).map((p, sliceIdx) => (
+                        <div key={sliceIdx + 1} className="p-3 bg-card border border-tactical-border/70 flex flex-col gap-1.5">
+                          <div className="flex justify-between items-center">
+                            <span className="text-cyan font-bold text-xs">
+                              0{sliceIdx + 2}. {p.name || `Player 0${sliceIdx + 2}`}
+                            </span>
                           </div>
-                          <span className="text-[10px] text-secondaryText">{p.steamId}</span>
+                          <div className="text-[10px] text-secondaryText flex items-center gap-1.5">
+                            <GraduationCap className="w-3.5 h-3.5 text-cyan shrink-0" />
+                            <span className="text-white">{p.faculty}</span>
+                          </div>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  {/* Substitute if added */}
-                  {substitute.name.trim() && (
-                    <div className="pt-2 border-t border-tactical-border">
-                      <span className="text-orange font-bold block mb-1 uppercase">SUBSTITUTE:</span>
-                      <div className="p-2.5 bg-card border border-tactical-border/70 flex justify-between items-center">
-                        <div>
-                          <span className="text-orange font-bold mr-1.5">[SUB]</span>
-                          <span className="text-white font-bold">{substitute.ign}</span>{' '}
-                          <span className="text-secondaryText text-[11px]">({substitute.name})</span>
-                        </div>
-                        <span className="text-[10px] text-secondaryText">{substitute.steamId}</span>
-                      </div>
-                    </div>
-                  )}
-
                   <div className="p-3 bg-card border border-cyan/30 text-[11px] text-secondaryText leading-relaxed">
-                    By submitting, the captain certifies that all listed players are officially enrolled university students and agree to comply with Counter-Strike 2 competitive fair-play guidelines.
+                    By submitting, the team leader certifies that all listed players are officially enrolled students of Uva Wellassa University of Sri Lanka and agree to adhere to competitive CS2 rules.
                   </div>
                 </div>
               </div>
@@ -795,10 +876,11 @@ export default function RegisterPage() {
                   type="submit"
                   variant="cyan"
                   size="lg"
-                  icon={<Crosshair className="w-5 h-5" />}
+                  disabled={isSubmitting}
+                  icon={isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Crosshair className="w-5 h-5" />}
                   className="font-black"
                 >
-                  CONFIRM & TRANSMIT REGISTRATION
+                  {isSubmitting ? 'TRANSMITTING ENLISTMENT...' : 'CONFIRM & TRANSMIT REGISTRATION'}
                 </Button>
               )}
             </div>
@@ -810,4 +892,3 @@ export default function RegisterPage() {
     </div>
   );
 }
-

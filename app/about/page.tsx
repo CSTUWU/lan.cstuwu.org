@@ -161,7 +161,7 @@ export default function AboutPage() {
             READY TO WRITE YOUR UNIVERSITY&apos;S LEGEND?
           </h3>
           <p className="text-xs sm:text-sm text-secondaryText font-mono mb-8 max-w-xl mx-auto">
-            Assemble your five-man roster and designate your substitute. Registration is free for all verified university students.
+            Assemble your 5-man roster representing your faculty. Registration is open exclusively for verified students of Uva Wellassa University of Sri Lanka.
           </p>
           <div className="flex justify-center gap-4">
             <Button href="/register" variant="cyan" size="lg">

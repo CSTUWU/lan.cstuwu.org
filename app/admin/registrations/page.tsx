@@ -277,22 +277,35 @@ export default function AdminRegistrationsPage() {
               </div>
             </div>
 
-            {/* Captain details */}
+            {/* Team Leader details */}
             <div className="bg-surface/80 border border-tactical-border p-4 mb-6 text-xs font-mono">
-              <div className="text-cyan font-bold uppercase mb-2 flex items-center gap-2">
-                <Shield className="w-3.5 h-3.5" /> CAPTAIN LIAISON
+              <div className="text-cyan font-bold uppercase mb-2 flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Shield className="w-3.5 h-3.5" /> TEAM LEADER
+                </span>
+                {selectedTeam.captain.whatsappNumber && (
+                  <a
+                    href={`https://wa.me/${selectedTeam.captain.whatsappNumber.replace(/[^0-9]/g, '')}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-500 hover:text-black transition-colors"
+                  >
+                    <Phone className="w-3 h-3" />
+                    <span>CHAT ON WHATSAPP</span>
+                  </a>
+                )}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-secondaryText">
                 <div>NAME: <span className="text-white font-medium">{selectedTeam.captain.name}</span></div>
-                <div>EMAIL: <span className="text-white font-medium">{selectedTeam.captain.email}</span></div>
-                <div>PHONE: <span className="text-white font-medium">{selectedTeam.captain.phone}</span></div>
+                <div>WHATSAPP: <span className="text-emerald-400 font-bold">{selectedTeam.captain.whatsappNumber || selectedTeam.captain.phone}</span></div>
+                <div>FACULTY: <span className="text-white font-medium">{selectedTeam.captain.faculty || 'Applied Sciences'}</span></div>
               </div>
             </div>
 
             {/* 5 Main Players */}
             <div className="mb-6">
               <h3 className="font-display font-bold text-sm text-white uppercase tracking-wider mb-3">
-                STARTING 5 PLAYERS (REQUIRED)
+                STARTING 5 PLAYERS
               </h3>
               <div className="space-y-2">
                 {selectedTeam.players.map((p, idx) => (
@@ -302,34 +315,21 @@ export default function AdminRegistrationsPage() {
                   >
                     <div>
                       <span className="text-cyan font-bold mr-2">0{idx + 1}.</span>
-                      <span className="text-white font-bold">{p.ign}</span>{' '}
-                      <span className="text-secondaryText">({p.name})</span>
+                      <span className="text-white font-bold">{p.name || p.ign}</span>
+                      {p.ign && p.ign !== p.name && (
+                        <span className="text-secondaryText"> ({p.ign})</span>
+                      )}
                     </div>
-                    <div className="flex items-center gap-4 text-secondaryText text-[11px]">
-                      <span>STEAM: <strong className="text-white">{p.steamId}</strong></span>
-                      <span>EMAIL: {p.email}</span>
+                    <div className="flex flex-wrap items-center gap-3 text-secondaryText text-[11px]">
+                      <span className="text-cyan font-medium">{p.faculty}</span>
+                      {p.steamId && (
+                        <span>STEAM: <strong className="text-white">{p.steamId}</strong></span>
+                      )}
                     </div>
                   </div>
                 ))}
               </div>
             </div>
-
-            {/* Substitute */}
-            {selectedTeam.substitute && (
-              <div className="mb-6">
-                <h3 className="font-display font-bold text-sm text-secondaryText uppercase tracking-wider mb-2">
-                  DESIGNATED SUBSTITUTE
-                </h3>
-                <div className="p-3 bg-surface/30 border border-dashed border-tactical-border flex justify-between items-center text-xs font-mono">
-                  <div>
-                    <span className="text-orange font-bold mr-2">[SUB]</span>
-                    <span className="text-white font-bold">{selectedTeam.substitute.ign}</span>{' '}
-                    <span className="text-secondaryText">({selectedTeam.substitute.name})</span>
-                  </div>
-                  <span className="text-[11px] text-secondaryText">{selectedTeam.substitute.steamId}</span>
-                </div>
-              </div>
-            )}
 
             {/* Approval Controls */}
             <div className="pt-6 border-t border-tactical-border flex items-center justify-between">

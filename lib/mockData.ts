@@ -4,7 +4,7 @@ export const INITIAL_COUNTDOWN: CountdownSettings = {
   tournamentDate: '2026-11-20T09:00:00',
   registrationDeadline: '2026-11-12T23:59:59',
   eventStatus: 'REGISTRATIONS OPEN',
-  announcementText: 'LAN Finals at Uva Wellassa University Main Auditorium. 5v5 Competitive CS2 Ruleset.'
+  announcementText: 'UWU LAN Challenge 2026 live at Uva Wellassa University Main Auditorium. Inter-Faculty 5v5 MR12 Counter-Strike 2 championship.'
 };
 
 export const INITIAL_TEAMS: Team[] = [
@@ -18,24 +18,18 @@ export const INITIAL_TEAMS: Team[] = [
     createdAt: '2026-10-15T14:30:00Z',
     captain: {
       name: 'Kasun Bandara',
+      whatsappNumber: '0771234567',
+      faculty: 'Faculty of Applied Sciences',
       email: 'kasun.b@std.uwu.ac.lk',
-      phone: '+94 77 123 4567'
+      phone: '0771234567'
     },
     players: [
-      { id: 'p1-1', name: 'Kasun Bandara', ign: 'V3CT0R_99', steamId: 'STEAM_0:1:45829102', email: 'kasun.b@std.uwu.ac.lk', role: 'In-Game Leader' },
-      { id: 'p1-2', name: 'Ravindu Senarath', ign: 'PhantomAWP', steamId: 'STEAM_0:0:38291048', email: 'ravindu.s@std.uwu.ac.lk', role: 'Sniper' },
-      { id: 'p1-3', name: 'Dinuka Perera', ign: 'ApexStrike', steamId: 'STEAM_0:1:94827103', email: 'dinuka.p@std.uwu.ac.lk', role: 'Entry Fragger' },
-      { id: 'p1-4', name: 'Naveen Jayasuriya', ign: 'CryoN', steamId: 'STEAM_0:0:19283746', email: 'naveen.j@std.uwu.ac.lk', role: 'Support' },
-      { id: 'p1-5', name: 'Shehan Alwis', ign: 'V0rtex', steamId: 'STEAM_0:1:56473829', email: 'shehan.a@std.uwu.ac.lk', role: 'Lurker' }
+      { id: 'p1-1', name: 'Kasun Bandara', faculty: 'Faculty of Applied Sciences', ign: 'V3CT0R_99', steamId: 'STEAM_0:1:45829102', email: 'kasun.b@std.uwu.ac.lk', role: 'In-Game Leader' },
+      { id: 'p1-2', name: 'Ravindu Senarath', faculty: 'Faculty of Applied Sciences', ign: 'PhantomAWP', steamId: 'STEAM_0:0:38291048', email: 'ravindu.s@std.uwu.ac.lk', role: 'Sniper' },
+      { id: 'p1-3', name: 'Dinuka Perera', faculty: 'Faculty of Applied Sciences', ign: 'ApexStrike', steamId: 'STEAM_0:1:94827103', email: 'dinuka.p@std.uwu.ac.lk', role: 'Entry Fragger' },
+      { id: 'p1-4', name: 'Naveen Jayasuriya', faculty: 'Faculty of Applied Sciences', ign: 'CryoN', steamId: 'STEAM_0:0:19283746', email: 'naveen.j@std.uwu.ac.lk', role: 'Support' },
+      { id: 'p1-5', name: 'Shehan Alwis', faculty: 'Faculty of Applied Sciences', ign: 'V0rtex', steamId: 'STEAM_0:1:56473829', email: 'shehan.a@std.uwu.ac.lk', role: 'Lurker' }
     ],
-    substitute: {
-      id: 'sub-1',
-      name: 'Thilina Madusanka',
-      ign: 'GhostRider',
-      steamId: 'STEAM_0:0:73829104',
-      email: 'thilina.m@std.uwu.ac.lk',
-      role: 'Substitute'
-    },
     matchesPlayed: 4,
     wins: 4,
     losses: 0,
@@ -48,23 +42,25 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
     id: 'team-2',
-    name: 'Moratuwa Cyber Titans',
-    tag: 'MORA.CT',
-    university: 'University of Moratuwa',
+    name: 'UWU Cyber Titans',
+    tag: 'UWU.CT',
+    university: 'Uva Wellassa University of Sri Lanka',
     logo: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=200&auto=format&fit=crop&q=80',
     status: 'approved',
     createdAt: '2026-10-16T11:20:00Z',
     captain: {
       name: 'Isuru Wickramasinghe',
-      email: 'isuru.w@mora.ac.lk',
-      phone: '+94 71 987 6543'
+      whatsappNumber: '0719876543',
+      faculty: 'Faculty of Technological Studies',
+      email: 'isuru.w@std.uwu.ac.lk',
+      phone: '0719876543'
     },
     players: [
-      { id: 'p2-1', name: 'Isuru Wickramasinghe', ign: 'R34PER_X', steamId: 'STEAM_0:1:22334455', email: 'isuru.w@mora.ac.lk', role: 'In-Game Leader' },
-      { id: 'p2-2', name: 'Sahan Fernando', ign: 'BulletStorm', steamId: 'STEAM_0:0:88776655', email: 'sahan.f@mora.ac.lk', role: 'Entry Fragger' },
-      { id: 'p2-3', name: 'Minura Gunasekara', ign: 'Nighthawk', steamId: 'STEAM_0:1:99112233', email: 'minura.g@mora.ac.lk', role: 'Sniper' },
-      { id: 'p2-4', name: 'Sachith De Silva', ign: 'Overclock', steamId: 'STEAM_0:0:55443322', email: 'sachith.d@mora.ac.lk', role: 'Support' },
-      { id: 'p2-5', name: 'Kavindu Rathnayake', ign: 'Pulse', steamId: 'STEAM_0:1:77889900', email: 'kavindu.r@mora.ac.lk', role: 'Lurker' }
+      { id: 'p2-1', name: 'Isuru Wickramasinghe', faculty: 'Faculty of Technological Studies', ign: 'R34PER_X', steamId: 'STEAM_0:1:22334455', email: 'isuru.w@std.uwu.ac.lk', role: 'In-Game Leader' },
+      { id: 'p2-2', name: 'Sahan Fernando', faculty: 'Faculty of Technological Studies', ign: 'BulletStorm', steamId: 'STEAM_0:0:88776655', email: 'sahan.f@std.uwu.ac.lk', role: 'Entry Fragger' },
+      { id: 'p2-3', name: 'Minura Gunasekara', faculty: 'Faculty of Technological Studies', ign: 'Nighthawk', steamId: 'STEAM_0:1:99112233', email: 'minura.g@std.uwu.ac.lk', role: 'Sniper' },
+      { id: 'p2-4', name: 'Sachith De Silva', faculty: 'Faculty of Technological Studies', ign: 'Overclock', steamId: 'STEAM_0:0:55443322', email: 'sachith.d@std.uwu.ac.lk', role: 'Support' },
+      { id: 'p2-5', name: 'Kavindu Rathnayake', faculty: 'Faculty of Technological Studies', ign: 'Pulse', steamId: 'STEAM_0:1:77889900', email: 'kavindu.r@std.uwu.ac.lk', role: 'Lurker' }
     ],
     matchesPlayed: 4,
     wins: 3,
@@ -78,23 +74,25 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
     id: 'team-3',
-    name: 'Colombo Apex Esports',
-    tag: 'UOC.APX',
-    university: 'University of Colombo',
+    name: 'UWU Apex Predators',
+    tag: 'UWU.APX',
+    university: 'Uva Wellassa University of Sri Lanka',
     logo: 'https://images.unsplash.com/photo-1563089145-599997674d42?w=200&auto=format&fit=crop&q=80',
     status: 'approved',
     createdAt: '2026-10-18T09:15:00Z',
     captain: {
       name: 'Kavishka Ranasinghe',
-      email: 'kavishka.r@sci.cmb.ac.lk',
-      phone: '+94 76 543 2109'
+      whatsappNumber: '0765432109',
+      faculty: 'Faculty of Management',
+      email: 'kavishka.r@std.uwu.ac.lk',
+      phone: '0765432109'
     },
     players: [
-      { id: 'p3-1', name: 'Kavishka Ranasinghe', ign: 'BlitzKrieg', steamId: 'STEAM_0:1:34125678', email: 'kavishka.r@sci.cmb.ac.lk', role: 'In-Game Leader' },
-      { id: 'p3-2', name: 'Harsha Mendis', ign: 'SilentScope', steamId: 'STEAM_0:0:98761234', email: 'harsha.m@sci.cmb.ac.lk', role: 'Sniper' },
-      { id: 'p3-3', name: 'Oshan Liyanage', ign: 'ShadowFox', steamId: 'STEAM_0:1:87654321', email: 'oshan.l@sci.cmb.ac.lk', role: 'Entry Fragger' },
-      { id: 'p3-4', name: 'Roshan Dias', ign: 'Tactix', steamId: 'STEAM_0:0:43218765', email: 'roshan.d@sci.cmb.ac.lk', role: 'Support' },
-      { id: 'p3-5', name: 'Nuwan Jayawardena', ign: 'Spectre', steamId: 'STEAM_0:1:65432187', email: 'nuwan.j@sci.cmb.ac.lk', role: 'Lurker' }
+      { id: 'p3-1', name: 'Kavishka Ranasinghe', faculty: 'Faculty of Management', ign: 'BlitzKrieg', steamId: 'STEAM_0:1:34125678', email: 'kavishka.r@std.uwu.ac.lk', role: 'In-Game Leader' },
+      { id: 'p3-2', name: 'Harsha Mendis', faculty: 'Faculty of Management', ign: 'SilentScope', steamId: 'STEAM_0:0:98761234', email: 'harsha.m@std.uwu.ac.lk', role: 'Sniper' },
+      { id: 'p3-3', name: 'Oshan Liyanage', faculty: 'Faculty of Management', ign: 'ShadowFox', steamId: 'STEAM_0:1:87654321', email: 'oshan.l@std.uwu.ac.lk', role: 'Entry Fragger' },
+      { id: 'p3-4', name: 'Roshan Dias', faculty: 'Faculty of Management', ign: 'Tactix', steamId: 'STEAM_0:0:43218765', email: 'roshan.d@std.uwu.ac.lk', role: 'Support' },
+      { id: 'p3-5', name: 'Nuwan Jayawardena', faculty: 'Faculty of Management', ign: 'Spectre', steamId: 'STEAM_0:1:65432187', email: 'nuwan.j@std.uwu.ac.lk', role: 'Lurker' }
     ],
     matchesPlayed: 3,
     wins: 2,
@@ -108,23 +106,25 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
     id: 'team-4',
-    name: 'Peradeniya Iron Vipers',
-    tag: 'UOP.VIPER',
-    university: 'University of Peradeniya',
+    name: 'UWU Iron Vipers',
+    tag: 'UWU.VIP',
+    university: 'Uva Wellassa University of Sri Lanka',
     logo: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=200&auto=format&fit=crop&q=80',
     status: 'approved',
     createdAt: '2026-10-20T16:45:00Z',
     captain: {
       name: 'Janith Dissanayake',
-      email: 'janith.d@eng.pdn.ac.lk',
-      phone: '+94 70 876 5432'
+      whatsappNumber: '0708765432',
+      faculty: 'Faculty of Animal Science and Export Agriculture',
+      email: 'janith.d@std.uwu.ac.lk',
+      phone: '0708765432'
     },
     players: [
-      { id: 'p4-1', name: 'Janith Dissanayake', ign: 'ViperKing', steamId: 'STEAM_0:1:11229988', email: 'janith.d@eng.pdn.ac.lk', role: 'In-Game Leader' },
-      { id: 'p4-2', name: 'Chathura Kumara', ign: 'Striker9', steamId: 'STEAM_0:0:33448877', email: 'chathura.k@eng.pdn.ac.lk', role: 'Entry Fragger' },
-      { id: 'p4-3', name: 'Gayan Weerasinghe', ign: 'DeagleGod', steamId: 'STEAM_0:1:55667788', email: 'gayan.w@eng.pdn.ac.lk', role: 'Sniper' },
-      { id: 'p4-4', name: 'Dulith Perera', ign: 'Sentinel', steamId: 'STEAM_0:0:77881122', email: 'dulith.p@eng.pdn.ac.lk', role: 'Support' },
-      { id: 'p4-5', name: 'Akila Somarathna', ign: 'VenomX', steamId: 'STEAM_0:1:99003344', email: 'akila.s@eng.pdn.ac.lk', role: 'Lurker' }
+      { id: 'p4-1', name: 'Janith Dissanayake', faculty: 'Faculty of Animal Science and Export Agriculture', ign: 'ViperKing', steamId: 'STEAM_0:1:11229988', email: 'janith.d@std.uwu.ac.lk', role: 'In-Game Leader' },
+      { id: 'p4-2', name: 'Chathura Kumara', faculty: 'Faculty of Animal Science and Export Agriculture', ign: 'Striker9', steamId: 'STEAM_0:0:33448877', email: 'chathura.k@std.uwu.ac.lk', role: 'Entry Fragger' },
+      { id: 'p4-3', name: 'Gayan Weerasinghe', faculty: 'Faculty of Animal Science and Export Agriculture', ign: 'DeagleGod', steamId: 'STEAM_0:1:55667788', email: 'gayan.w@std.uwu.ac.lk', role: 'Sniper' },
+      { id: 'p4-4', name: 'Dulith Perera', faculty: 'Faculty of Animal Science and Export Agriculture', ign: 'Sentinel', steamId: 'STEAM_0:0:77881122', email: 'dulith.p@std.uwu.ac.lk', role: 'Support' },
+      { id: 'p4-5', name: 'Akila Somarathna', faculty: 'Faculty of Animal Science and Export Agriculture', ign: 'VenomX', steamId: 'STEAM_0:1:99003344', email: 'akila.s@std.uwu.ac.lk', role: 'Lurker' }
     ],
     matchesPlayed: 3,
     wins: 1,
@@ -138,23 +138,25 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
     id: 'team-5',
-    name: 'SLIIT Cyber Dragons',
-    tag: 'SLIIT.DRG',
-    university: 'Sri Lanka Institute of Information Technology',
+    name: 'UWU Medic Strikers',
+    tag: 'UWU.MED',
+    university: 'Uva Wellassa University of Sri Lanka',
     logo: 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=200&auto=format&fit=crop&q=80',
     status: 'approved',
     createdAt: '2026-10-22T13:00:00Z',
     captain: {
       name: 'Ashen Samarajeewa',
-      email: 'ashen.s@my.sliit.lk',
-      phone: '+94 75 111 2233'
+      whatsappNumber: '0751112233',
+      faculty: 'Faculty of Medicine',
+      email: 'ashen.s@std.uwu.ac.lk',
+      phone: '0751112233'
     },
     players: [
-      { id: 'p5-1', name: 'Ashen Samarajeewa', ign: 'Draco', steamId: 'STEAM_0:1:44556677', email: 'ashen.s@my.sliit.lk', role: 'In-Game Leader' },
-      { id: 'p5-2', name: 'Senura Abeykoon', ign: 'Firebrand', steamId: 'STEAM_0:0:66778899', email: 'senura.a@my.sliit.lk', role: 'Entry Fragger' },
-      { id: 'p5-3', name: 'Tharindu Fonseka', ign: 'Hydro', steamId: 'STEAM_0:1:88990011', email: 'tharindu.f@my.sliit.lk', role: 'Sniper' },
-      { id: 'p5-4', name: 'Bawantha Silva', ign: 'Flashbang', steamId: 'STEAM_0:0:22338899', email: 'bawantha.s@my.sliit.lk', role: 'Support' },
-      { id: 'p5-5', name: 'Chamod Karunaratne', ign: 'SmokeScreen', steamId: 'STEAM_0:1:44551122', email: 'chamod.k@my.sliit.lk', role: 'Lurker' }
+      { id: 'p5-1', name: 'Ashen Samarajeewa', faculty: 'Faculty of Medicine', ign: 'Draco', steamId: 'STEAM_0:1:44556677', email: 'ashen.s@std.uwu.ac.lk', role: 'In-Game Leader' },
+      { id: 'p5-2', name: 'Senura Abeykoon', faculty: 'Faculty of Medicine', ign: 'Firebrand', steamId: 'STEAM_0:0:66778899', email: 'senura.a@std.uwu.ac.lk', role: 'Entry Fragger' },
+      { id: 'p5-3', name: 'Tharindu Fonseka', faculty: 'Faculty of Medicine', ign: 'Hydro', steamId: 'STEAM_0:1:88990011', email: 'tharindu.f@std.uwu.ac.lk', role: 'Sniper' },
+      { id: 'p5-4', name: 'Bawantha Silva', faculty: 'Faculty of Medicine', ign: 'Flashbang', steamId: 'STEAM_0:0:22338899', email: 'bawantha.s@std.uwu.ac.lk', role: 'Support' },
+      { id: 'p5-5', name: 'Chamod Karunaratne', faculty: 'Faculty of Medicine', ign: 'SmokeScreen', steamId: 'STEAM_0:1:44551122', email: 'chamod.k@std.uwu.ac.lk', role: 'Lurker' }
     ],
     matchesPlayed: 4,
     wins: 1,
@@ -168,23 +170,25 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
     id: 'team-6',
-    name: 'Ruhuna Cyber Phoenix',
-    tag: 'RUH.PHX',
-    university: 'University of Ruhuna',
+    name: 'UWU Phoenix Legion',
+    tag: 'UWU.PHX',
+    university: 'Uva Wellassa University of Sri Lanka',
     logo: 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=200&auto=format&fit=crop&q=80',
     status: 'pending',
     createdAt: '2026-10-25T17:10:00Z',
     captain: {
       name: 'Malinda Edirisinghe',
-      email: 'malinda.e@eng.ruh.ac.lk',
-      phone: '+94 78 333 4455'
+      whatsappNumber: '0783334455',
+      faculty: 'Faculty of Applied Sciences',
+      email: 'malinda.e@std.uwu.ac.lk',
+      phone: '0783334455'
     },
     players: [
-      { id: 'p6-1', name: 'Malinda Edirisinghe', ign: 'PhoenixFlame', steamId: 'STEAM_0:1:12398745', email: 'malinda.e@eng.ruh.ac.lk', role: 'Captain' },
-      { id: 'p6-2', name: 'Lahiru Prabath', ign: 'BlazeAWP', steamId: 'STEAM_0:0:98712365', email: 'lahiru.p@eng.ruh.ac.lk', role: 'Sniper' },
-      { id: 'p6-3', name: 'Damith Cooray', ign: 'Havoc', steamId: 'STEAM_0:1:45612378', email: 'damith.c@eng.ruh.ac.lk', role: 'Rifler' },
-      { id: 'p6-4', name: 'Sandun Jayakody', ign: 'GripTape', steamId: 'STEAM_0:0:78945612', email: 'sandun.j@eng.ruh.ac.lk', role: 'Support' },
-      { id: 'p6-5', name: 'Heshan Gunawardena', ign: 'Nebula', steamId: 'STEAM_0:1:32165498', email: 'heshan.g@eng.ruh.ac.lk', role: 'Lurker' }
+      { id: 'p6-1', name: 'Malinda Edirisinghe', faculty: 'Faculty of Applied Sciences', ign: 'PhoenixFlame', steamId: 'STEAM_0:1:12398745', email: 'malinda.e@std.uwu.ac.lk', role: 'Captain' },
+      { id: 'p6-2', name: 'Lahiru Prabath', faculty: 'Faculty of Applied Sciences', ign: 'BlazeAWP', steamId: 'STEAM_0:0:98712365', email: 'lahiru.p@std.uwu.ac.lk', role: 'Sniper' },
+      { id: 'p6-3', name: 'Damith Cooray', faculty: 'Faculty of Applied Sciences', ign: 'Havoc', steamId: 'STEAM_0:1:45612378', email: 'damith.c@std.uwu.ac.lk', role: 'Rifler' },
+      { id: 'p6-4', name: 'Sandun Jayakody', faculty: 'Faculty of Applied Sciences', ign: 'GripTape', steamId: 'STEAM_0:0:78945612', email: 'sandun.j@std.uwu.ac.lk', role: 'Support' },
+      { id: 'p6-5', name: 'Heshan Gunawardena', faculty: 'Faculty of Applied Sciences', ign: 'Nebula', steamId: 'STEAM_0:1:32165498', email: 'heshan.g@std.uwu.ac.lk', role: 'Lurker' }
     ],
     matchesPlayed: 0,
     wins: 0,
@@ -193,23 +197,25 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
     id: 'team-7',
-    name: 'NSBM Cyber Wolves',
-    tag: 'NSBM.WLF',
-    university: 'NSBM Green University',
+    name: 'UWU Agro Wolves',
+    tag: 'UWU.AGR',
+    university: 'Uva Wellassa University of Sri Lanka',
     logo: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=200&auto=format&fit=crop&q=80',
     status: 'pending',
     createdAt: '2026-10-26T08:50:00Z',
     captain: {
       name: 'Supun Madushanka',
-      email: 'supun.m@nsbm.ac.lk',
-      phone: '+94 72 444 5566'
+      whatsappNumber: '0724445566',
+      faculty: 'Faculty of Animal Science and Export Agriculture',
+      email: 'supun.m@std.uwu.ac.lk',
+      phone: '0724445566'
     },
     players: [
-      { id: 'p7-1', name: 'Supun Madushanka', ign: 'AlphaWolf', steamId: 'STEAM_0:1:90123456', email: 'supun.m@nsbm.ac.lk', role: 'In-Game Leader' },
-      { id: 'p7-2', name: 'Praveen Jayalath', ign: 'SilverFang', steamId: 'STEAM_0:0:89012345', email: 'praveen.j@nsbm.ac.lk', role: 'Sniper' },
-      { id: 'p7-3', name: 'Kavindu Siriwardena', ign: 'Lunar', steamId: 'STEAM_0:1:78901234', email: 'kavindu.s@nsbm.ac.lk', role: 'Entry Fragger' },
-      { id: 'p7-4', name: 'Dulaj Rodrigo', ign: 'Howler', steamId: 'STEAM_0:0:67890123', email: 'dulaj.r@nsbm.ac.lk', role: 'Support' },
-      { id: 'p7-5', name: 'Yasith Perera', ign: 'Nightstalker', steamId: 'STEAM_0:1:56789012', email: 'yasith.p@nsbm.ac.lk', role: 'Lurker' }
+      { id: 'p7-1', name: 'Supun Madushanka', faculty: 'Faculty of Animal Science and Export Agriculture', ign: 'AlphaWolf', steamId: 'STEAM_0:1:90123456', email: 'supun.m@std.uwu.ac.lk', role: 'In-Game Leader' },
+      { id: 'p7-2', name: 'Praveen Jayalath', faculty: 'Faculty of Animal Science and Export Agriculture', ign: 'SilverFang', steamId: 'STEAM_0:0:89012345', email: 'praveen.j@std.uwu.ac.lk', role: 'Sniper' },
+      { id: 'p7-3', name: 'Kavindu Siriwardena', faculty: 'Faculty of Animal Science and Export Agriculture', ign: 'Lunar', steamId: 'STEAM_0:1:78901234', email: 'kavindu.s@std.uwu.ac.lk', role: 'Entry Fragger' },
+      { id: 'p7-4', name: 'Dulaj Rodrigo', faculty: 'Faculty of Animal Science and Export Agriculture', ign: 'Howler', steamId: 'STEAM_0:0:67890123', email: 'dulaj.r@std.uwu.ac.lk', role: 'Support' },
+      { id: 'p7-5', name: 'Yasith Perera', faculty: 'Faculty of Animal Science and Export Agriculture', ign: 'Nightstalker', steamId: 'STEAM_0:1:56789012', email: 'yasith.p@std.uwu.ac.lk', role: 'Lurker' }
     ],
     matchesPlayed: 0,
     wins: 0,
@@ -226,8 +232,8 @@ export const INITIAL_MATCHES: Match[] = [
     teamAName: 'UWU Tactical Vanguard',
     teamATag: 'UWU.V',
     teamALogo: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200&auto=format&fit=crop&q=80',
-    teamBName: 'Moratuwa Cyber Titans',
-    teamBTag: 'MORA.CT',
+    teamBName: 'UWU Cyber Titans',
+    teamBTag: 'UWU.CT',
     teamBLogo: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=200&auto=format&fit=crop&q=80',
     map: 'Mirage',
     dateTime: '2026-11-20T10:00:00',

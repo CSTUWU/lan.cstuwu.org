@@ -18,32 +18,23 @@ export function transformBackendTeam(raw: any): Team {
 
   const captain = {
     name: raw.captain?.name || raw.captain?.fullName || 'Team Captain',
+    whatsappNumber: raw.captain?.whatsappNumber || raw.captain?.phone || '',
+    phone: raw.captain?.whatsappNumber || raw.captain?.phone || '',
+    faculty: raw.captain?.faculty || '',
     email: raw.captain?.email || '',
-    phone: raw.captain?.phone || '',
   };
 
   const players: Player[] = Array.isArray(raw.players)
     ? raw.players.map((p: any, idx: number) => ({
         id: p._id || p.id || `p-${idx}`,
         name: p.fullName || p.name || `Player ${idx + 1}`,
-        ign: p.inGameName || p.ign || `IGN_${idx + 1}`,
-        steamId: p.steamId || `STEAM_0:0:${idx}`,
+        faculty: p.faculty || 'Faculty of Applied Sciences',
+        ign: p.inGameName || p.ign || '',
+        steamId: p.steamId || '',
         email: p.email || '',
-        role: p.role || 'Rifler',
+        role: p.role || 'Player',
       }))
     : [];
-
-  let substitute: Player | undefined = undefined;
-  if (raw.substitute && (raw.substitute.fullName || raw.substitute.name || raw.substitute.ign || raw.substitute.inGameName)) {
-    substitute = {
-      id: raw.substitute._id || raw.substitute.id || 'sub',
-      name: raw.substitute.fullName || raw.substitute.name || 'Substitute Player',
-      ign: raw.substitute.inGameName || raw.substitute.ign || 'SUB',
-      steamId: raw.substitute.steamId || 'STEAM_0:0:9999',
-      email: raw.substitute.email || '',
-      role: raw.substitute.role || 'Substitute',
-    };
-  }
 
   return {
     id,
@@ -55,7 +46,6 @@ export function transformBackendTeam(raw: any): Team {
     createdAt: raw.createdAt ? new Date(raw.createdAt).toISOString() : new Date().toISOString(),
     captain,
     players,
-    substitute,
     matchesPlayed: raw.matchesPlayed ?? 0,
     wins: raw.wins ?? 0,
     losses: raw.losses ?? 0,
