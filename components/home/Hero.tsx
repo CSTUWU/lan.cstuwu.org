@@ -100,8 +100,10 @@ export default function Hero() {
 
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
+    const width = rect.width || (typeof window !== 'undefined' ? window.innerWidth : 1920);
+    const height = rect.height || (typeof window !== 'undefined' ? window.innerHeight : 1080);
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
 
     drawFrame(currentFrameRef.current);
   }, [drawFrame]);
@@ -169,7 +171,7 @@ export default function Hero() {
         scrollTrigger: {
           trigger: containerRef.current,
           start: 'top top',
-          end: '+=2500',
+          end: '+=1800',
           pin: true,
           scrub: 0.35,
           anticipatePin: 1,
@@ -189,8 +191,8 @@ export default function Hero() {
               progressTextRef.current.innerText = `00:0${sec}s // ${(self.progress * 100).toFixed(0)}%`;
             }
 
-            // Notify Navbar when text appears (progress >= 0.55 when characters slide out)
-            const isTextVisible = self.progress >= 0.55;
+            // Notify Navbar when text appears (progress >= 0.40 when characters slide out)
+            const isTextVisible = self.progress >= 0.40;
             if (lastNotifiedVisible !== isTextVisible) {
               lastNotifiedVisible = isTextVisible;
               window.dispatchEvent(
@@ -201,7 +203,7 @@ export default function Hero() {
         },
       });
 
-      // Frame scrubbing virtual property across the full 10-second sequence
+      // Frame scrubbing virtual property across the full sequence
       scrubTimeline.to(
         frameObj,
         {
@@ -213,28 +215,23 @@ export default function Hero() {
       );
 
       // ===================================================================
-      // PHASE 1 (0.0 to 3.0s): INITIAL LOAD - CHARACTERS ARE FACING OFF
+      // PHASE 1 (0.0 to 2.0s): INITIAL LOAD - CHARACTERS ARE FACING OFF
       // The initial prominent "SCROLL DOWN" callout and top tag fade out
-      // as the user scrolls down!
+      // smoothly as the user begins scrolling!
       // ===================================================================
       scrubTimeline.to(
         [scrollHintRef.current, topStandoffBadgeRef.current],
         {
           opacity: 0,
           y: -20,
-          duration: 1.8,
+          duration: 1.4,
           ease: 'power2.in',
         },
-        0.8
+        0.4
       );
 
       // ===================================================================
-      // PHASE 2 (5.5s to 7.0s): CHARACTERS SLIDE OUT
-      // Video camera zooms through and characters slide off-screen.
-      // ===================================================================
-
-      // ===================================================================
-      // PHASE 3 (5.8s to 8.8s): CHARACTERS HAVE MOVED OUT -> LOAD TEXT WITH ANIMATIONS!
+      // PHASE 2 (3.8s to 7.0s): CHARACTERS HAVE MOVED OUT -> LOAD TEXT WITH ANIMATIONS!
       // Navbar also slides down in sync.
       // ===================================================================
       scrubTimeline.fromTo(
@@ -251,7 +248,7 @@ export default function Hero() {
           y: 0,
           filter: 'blur(0px)',
           ease: 'power3.out',
-          duration: 2.8,
+          duration: 2.4,
           onStart: () => {
             if (contentWrapperRef.current) {
               contentWrapperRef.current.style.pointerEvents = 'auto';
@@ -263,7 +260,7 @@ export default function Hero() {
             }
           },
         },
-        5.8
+        3.8
       );
 
       // Countdown Block drops into position with a glowing pulse
@@ -278,10 +275,10 @@ export default function Hero() {
           y: 0,
           opacity: 1,
           scale: 1,
-          duration: 2.2,
+          duration: 2.0,
           ease: 'back.out(1.4)',
         },
-        6.6
+        4.6
       );
 
       // CTA Buttons lock into high visibility
@@ -296,10 +293,10 @@ export default function Hero() {
           y: 0,
           opacity: 1,
           scale: 1,
-          duration: 1.8,
+          duration: 1.6,
           ease: 'power3.out',
         },
-        7.2
+        5.2
       );
 
       // Initial entrance timeline (plays once when page loads)
@@ -340,7 +337,7 @@ export default function Hero() {
   const handleScrollToContent = () => {
     if (typeof window !== 'undefined') {
       window.scrollTo({
-        top: 1550,
+        top: 900,
         behavior: 'smooth',
       });
     }
@@ -352,8 +349,15 @@ export default function Hero() {
       className="relative w-full h-screen bg-[#080B10] overflow-hidden select-none"
     >
       {/* =================================================================== */}
-      {/* 1. CINEMATIC VIDEO FRAME SCRUBBING CANVAS */}
+      {/* 1. CINEMATIC VIDEO FRAME SCRUBBING CANVAS & ZERO-LATENCY POSTER */}
       {/* =================================================================== */}
+      {/* Instant poster so user sees standoff with 0ms delay */}
+      <img
+        src="/frames/hero/frame_0001.webp"
+        alt="CS2 Standoff Preview"
+        className="absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
+        style={{ filter: 'contrast(1.08) brightness(0.92)' }}
+      />
       <canvas
         ref={canvasRef}
         className="absolute inset-0 w-full h-full object-cover pointer-events-none z-0"

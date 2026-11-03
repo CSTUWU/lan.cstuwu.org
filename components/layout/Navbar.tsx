@@ -25,8 +25,8 @@ export default function Navbar() {
     const checkScroll = () => {
       const scrollY = window.scrollY;
       setScrolled(scrollY > 30);
-      // Once scrolled past the hero pinned scrub distance (~1000px), guarantee navbar is visible
-      if (scrollY > 1000) {
+      // Once scrolled into content or past initial standoff, guarantee navbar is visible
+      if (scrollY > 350) {
         setShowNavbar(true);
       } else if (scrollY === 0) {
         setShowNavbar(false);
@@ -36,8 +36,7 @@ export default function Navbar() {
     const handleTextVisible = (e: Event) => {
       const customEvent = e as CustomEvent<{ visible: boolean }>;
       if (customEvent.detail && typeof customEvent.detail.visible === 'boolean') {
-        // If scrolled past hero or event signals text is visible
-        if (window.scrollY > 1000) {
+        if (window.scrollY > 350) {
           setShowNavbar(true);
         } else {
           setShowNavbar(customEvent.detail.visible);
