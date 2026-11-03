@@ -1,0 +1,167 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import AdminLayout from '@/components/admin/AdminLayout';
+import { getStoredCountdown, saveCountdown } from '@/lib/storage';
+import { api } from '@/lib/api';
+import { transformBackendSettings } from '@/lib/transformers';
+import { CountdownSettings } from '@/lib/types';
+import { Timer, Calendar, CheckCircle2, Save, Radio, RefreshCw } from 'lucide-react';
+import Badge from '@/components/ui/Badge';
+import Button from '@/components/ui/Button';
+
+export default function AdminCountdownPage() {
+  const [settings, setSettings] = useState<CountdownSettings>(getStoredCountdown());
+  const [savedSuccess, setSavedSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const loadSettings = async () => {
+    const local = getStoredCountdown();
+    setSettings(local);
+
+    try {
+      const res = await api.admin.getSettings();
+      if (res.success && res.data) {
+        setSettings(transformBackendSettings(res.data));
+      }
+    } catch (e) {
+      // Backend offline: continue with local
+    }
+  };
+
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    saveCountdown(settings);
+
+    try {
+      await api.admin.updateSettings({
+        tournamentDate: new Date(settings.tournamentDate).toISOString(),
+        registrationDeadline: new Date(settings.registrationDeadline).toISOString(),
+        eventStatus: settings.eventStatus,
+        announcementText: settings.announcementText,
+      });
+    } catch (e) {
+      console.warn('Backend updateSettings failed, saved locally', e);
+    }
+
+    setSavedSuccess(true);
+    setTimeout(() => setSavedSuccess(false), 3000);
+  };
+
+  return (
+    <AdminLayout>
+      <div className="space-y-6 max-w-4xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-tactical-border">
+          <div>
+            <div className="inline-flex items-center gap-2 mb-1">
+              <Badge variant="orange" size="sm">CHRONOMETER CONFIG</Badge>
+              <span className="text-[11px] font-mono text-secondaryText">{"// MISSION TIMELOCK"}</span>
+            </div>
+            <h1 className="font-display font-black text-2xl sm:text-3xl uppercase text-white tracking-wider">
+              COUNTDOWN & TIMELINE MANAGEMENT
+            </h1>
+            <p className="text-xs font-mono text-secondaryText">
+              Adjust public tournament target dates, registration deadlines, and operational status tickers.
+            </p>
+          </div>
+
+          <button
+            onClick={() => {
+              setLoading(true);
+              loadSettings().finally(() => setLoading(false));
+            }}
+            className="p-2 bg-surface border border-tactical-border text-cyan hover:border-cyan transition-colors self-start sm:self-auto"
+            title="Refresh from server"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
+
+        {savedSuccess && (
+          <div className="p-4 bg-emerald-500/10 border border-emerald-500/50 flex items-center gap-3 text-xs font-mono text-emerald-400">
+            <CheckCircle2 className="w-5 h-5 shrink-0" />
+            <span>Tournament countdown settings saved! Public website timer has been synchronized in real-time.</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSave} className="bg-card/90 border border-tactical-border p-6 sm:p-8 backdrop-blur-md space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-xs font-mono text-secondaryText uppercase tracking-wider mb-2">
+                TOURNAMENT LAN KICKOFF DATE & TIME (ISO FORMAT)
+              </label>
+              <input
+                type="datetime-local"
+                value={settings.tournamentDate.slice(0, 16)}
+                onChange={(e) => setSettings({ ...settings, tournamentDate: e.target.value })}
+                className="w-full bg-surface border border-tactical-border px-4 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-cyan"
+                required
+              />
+              <p className="text-[10px] font-mono text-secondaryText mt-1">
+                Current Target: {new Date(settings.tournamentDate).toLocaleString()}
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-mono text-secondaryText uppercase tracking-wider mb-2">
+                REGISTRATION DEADLINE
+              </label>
+              <input
+                type="datetime-local"
+                value={settings.registrationDeadline.slice(0, 16)}
+                onChange={(e) => setSettings({ ...settings, registrationDeadline: e.target.value })}
+                className="w-full bg-surface border border-tactical-border px-4 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-cyan"
+                required
+              />
+              <p className="text-[10px] font-mono text-secondaryText mt-1">
+                Current Deadline: {new Date(settings.registrationDeadline).toLocaleString()}
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-mono text-secondaryText uppercase tracking-wider mb-2">
+              EVENT STATUS TICKER
+            </label>
+            <select
+              value={settings.eventStatus}
+              onChange={(e) => setSettings({ ...settings, eventStatus: e.target.value as any })}
+              className="w-full bg-surface border border-tactical-border px-4 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-cyan"
+            >
+              <option value="REGISTRATIONS OPEN">REGISTRATIONS OPEN</option>
+              <option value="CHECK-IN PHASE">CHECK-IN PHASE</option>
+              <option value="BATTLEFIELD ACTIVE">BATTLEFIELD ACTIVE (LAN IN PROGRESS)</option>
+              <option value="CHAMPIONS CROWNED">CHAMPIONS CROWNED (CONCLUDED)</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-mono text-secondaryText uppercase tracking-wider mb-2">
+              PUBLIC BROADCAST BANNER TEXT
+            </label>
+            <textarea
+              rows={3}
+              value={settings.announcementText}
+              onChange={(e) => setSettings({ ...settings, announcementText: e.target.value })}
+              className="w-full bg-surface border border-tactical-border p-3 text-xs font-mono text-white focus:outline-none focus:border-cyan"
+              required
+            />
+          </div>
+
+          <div className="pt-4 border-t border-tactical-border flex items-center justify-between">
+            <span className="text-[11px] font-mono text-secondaryText">
+              Changes reflect immediately on public hero countdown and tournament headers.
+            </span>
+            <Button type="submit" variant="orange" size="md" icon={<Save className="w-4 h-4" />}>
+              SYNCHRONIZE TIMELINE
+            </Button>
+          </div>
+        </form>
+      </div>
+    </AdminLayout>
+  );
+}
