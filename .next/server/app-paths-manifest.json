@@ -1,7 +1,6 @@
 {
+  "/_not-found/page": "app/_not-found/page.js",
   "/page": "app/page.js",
-  "/register/page": "app/register/page.js",
-  "/teams/page": "app/teams/page.js",
-  "/schedule/page": "app/schedule/page.js",
-  "/scoreboard/page": "app/scoreboard/page.js"
+  "/about/page": "app/about/page.js",
+  "/register/page": "app/register/page.js"
 }

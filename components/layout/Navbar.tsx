@@ -22,7 +22,7 @@ export default function Navbar() {
   const navLinks = [
     { name: 'Home', href: '/' },
     { name: 'About', href: '/about' },
-    { name: 'Commanders', href: '/#commanders' },
+    { name: 'Prizes', href: '/#prizepool' },
     { name: 'Format', href: '/#format' },
     { name: 'Maps', href: '/#maps' },
     { name: 'Teams', href: '/teams' },
@@ -32,7 +32,7 @@ export default function Navbar() {
 
   const isActive = (href: string) => {
     if (href === '/') return pathname === '/';
-    return pathname.startsWith(href) && href !== '/#commanders' && href !== '/#format' && href !== '/#maps';
+    return pathname.startsWith(href) && href !== '/#format' && href !== '/#maps' && href !== '/#prizepool';
   };
 
   if (pathname?.startsWith('/admin') || pathname?.startsWith('/scoreboard/live')) {
