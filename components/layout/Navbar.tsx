@@ -10,14 +10,50 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const isHome = pathname === '/';
+
+  // On home page: start hidden until user scrolls to text reveal phase
+  // On other pages: always visible
+  const [showNavbar, setShowNavbar] = useState(!isHome);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 30);
+    if (!isHome) {
+      setShowNavbar(true);
+      return;
+    }
+
+    const checkScroll = () => {
+      const scrollY = window.scrollY;
+      setScrolled(scrollY > 30);
+      // Once scrolled past the hero pinned scrub distance (~1000px), guarantee navbar is visible
+      if (scrollY > 1000) {
+        setShowNavbar(true);
+      } else if (scrollY === 0) {
+        setShowNavbar(false);
+      }
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+
+    const handleTextVisible = (e: Event) => {
+      const customEvent = e as CustomEvent<{ visible: boolean }>;
+      if (customEvent.detail && typeof customEvent.detail.visible === 'boolean') {
+        // If scrolled past hero or event signals text is visible
+        if (window.scrollY > 1000) {
+          setShowNavbar(true);
+        } else {
+          setShowNavbar(customEvent.detail.visible);
+        }
+      }
+    };
+
+    window.addEventListener('scroll', checkScroll, { passive: true });
+    window.addEventListener('cst_hero_text_visible', handleTextVisible);
+    checkScroll();
+
+    return () => {
+      window.removeEventListener('scroll', checkScroll);
+      window.removeEventListener('cst_hero_text_visible', handleTextVisible);
+    };
+  }, [isHome]);
 
   const navLinks = [
     { name: 'Home', href: '/' },
@@ -42,10 +78,14 @@ export default function Navbar() {
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-in-out ${
+          showNavbar
+            ? 'translate-y-0 opacity-100 pointer-events-auto'
+            : '-translate-y-full opacity-0 pointer-events-none'
+        } ${
           scrolled
             ? 'bg-background/95 backdrop-blur-md border-b border-tactical-border py-2.5 shadow-2xl'
-            : 'bg-gradient-to-b from-background/90 via-background/40 to-transparent py-4'
+            : 'bg-gradient-to-b from-background/95 via-background/85 to-transparent py-3.5'
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
