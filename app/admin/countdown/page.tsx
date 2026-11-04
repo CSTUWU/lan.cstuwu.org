@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { getStoredCountdown, saveCountdown, generateAndStorePlayoffBracket } from '@/lib/storage';
+import { getStoredCountdown, saveCountdown, setRegistrationOpen, generateAndStorePlayoffBracket } from '@/lib/storage';
 import { api } from '@/lib/api';
 import { transformBackendSettings } from '@/lib/transformers';
 import { CountdownSettings } from '@/lib/types';
@@ -32,6 +32,29 @@ export default function AdminCountdownPage() {
     setTimeout(() => setPlayoffNotice(null), 5000);
   };
 
+  const handleSetRegistrationStatus = async (isOpen: boolean) => {
+    const updated: CountdownSettings = {
+      ...settings,
+      isRegistrationOpen: isOpen,
+      eventStatus: isOpen ? 'REGISTRATIONS OPEN' : 'CHECK-IN PHASE',
+    };
+    setSettings(updated);
+    setRegistrationOpen(isOpen);
+
+    try {
+      await api.admin.updateSettings({
+        registrationOpen: isOpen,
+        eventStatus: updated.eventStatus,
+      });
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 3000);
+    } catch (e) {
+      console.warn('Backend updateSettings failed, saved locally and broadcasted', e);
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 3000);
+    }
+  };
+
   const loadSettings = async () => {
     const local = getStoredCountdown();
     setSettings(local);
@@ -54,11 +77,13 @@ export default function AdminCountdownPage() {
     e.preventDefault();
     saveCountdown(settings);
 
+    const isRegOpen = settings.isRegistrationOpen ?? (settings.eventStatus === 'REGISTRATIONS OPEN');
     try {
       await api.admin.updateSettings({
         tournamentDate: new Date(settings.tournamentDate).toISOString(),
         registrationDeadline: new Date(settings.registrationDeadline).toISOString(),
         eventStatus: settings.eventStatus,
+        registrationOpen: isRegOpen,
         announcementText: settings.announcementText,
       });
     } catch (e) {
@@ -104,6 +129,53 @@ export default function AdminCountdownPage() {
             <span>Tournament countdown settings saved! Public website timer has been synchronized in real-time.</span>
           </div>
         )}
+
+        {/* Dedicated Registration Gate Control */}
+        <div className="bg-card/90 border border-tactical-border p-6 sm:p-8 backdrop-blur-md">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 pb-4 border-b border-tactical-border">
+            <div>
+              <div className="inline-flex items-center gap-2 mb-1">
+                <Badge variant={settings.isRegistrationOpen ?? (settings.eventStatus === 'REGISTRATIONS OPEN') ? 'cyan' : 'orange'} size="sm">
+                  GATEWAY: {settings.isRegistrationOpen ?? (settings.eventStatus === 'REGISTRATIONS OPEN') ? 'OPEN' : 'CLOSED'}
+                </Badge>
+              </div>
+              <h3 className="font-display font-black text-xl text-white uppercase tracking-wider">
+                SITE-WIDE REGISTRATION GATE CONTROL
+              </h3>
+              <p className="text-xs font-mono text-secondaryText mt-1">
+                When OPEN, all public registration buttons appear across Navbar, Hero, and pages. When CLOSED, all registration buttons disappear immediately.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleSetRegistrationStatus(true)}
+                className={`px-4 py-2.5 font-mono text-xs font-bold uppercase transition-all flex items-center gap-2 border cursor-pointer ${
+                  settings.isRegistrationOpen ?? (settings.eventStatus === 'REGISTRATIONS OPEN')
+                    ? 'bg-emerald-500 text-black border-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.5)]'
+                    : 'bg-surface text-secondaryText border-tactical-border hover:text-white'
+                }`}
+              >
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-300 animate-pulse" />
+                <span>OPEN REGISTRATIONS</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleSetRegistrationStatus(false)}
+                className={`px-4 py-2.5 font-mono text-xs font-bold uppercase transition-all flex items-center gap-2 border cursor-pointer ${
+                  !(settings.isRegistrationOpen ?? (settings.eventStatus === 'REGISTRATIONS OPEN'))
+                    ? 'bg-rose-600 text-white border-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.5)]'
+                    : 'bg-surface text-secondaryText border-tactical-border hover:text-white'
+                }`}
+              >
+                <span className="w-2.5 h-2.5 rounded-full bg-rose-400" />
+                <span>CLOSE REGISTRATIONS</span>
+              </button>
+            </div>
+          </div>
+        </div>
 
         <form onSubmit={handleSave} className="bg-card/90 border border-tactical-border p-6 sm:p-8 backdrop-blur-md space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">

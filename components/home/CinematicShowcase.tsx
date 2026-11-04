@@ -17,10 +17,12 @@ import {
   Sparkles,
 } from 'lucide-react';
 import Button from '../ui/Button';
+import { useRegistrationStatus } from '@/hooks/useRegistrationStatus';
 
 const TOTAL_FRAMES = 199;
 
 export default function CinematicShowcase() {
+  const { isOpen } = useRegistrationStatus();
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -95,6 +97,9 @@ export default function CinematicShowcase() {
       handleResize();
       drawFrame(0);
       setIsReady(true);
+      try {
+        ScrollTrigger.refresh();
+      } catch (e) {}
     };
 
     // Load remaining frames
@@ -134,7 +139,7 @@ export default function CinematicShowcase() {
         scrollTrigger: {
           trigger: containerRef.current,
           start: 'top top',
-          end: '+=2400',
+          end: '+=1600',
           pin: true,
           scrub: 0.4,
           anticipatePin: 1,
@@ -175,10 +180,6 @@ export default function CinematicShowcase() {
         0
       );
 
-      // ===================================================================
-      // PHASE 1: VECTOR IS ON THE RIGHT -> LEFT SIDE APPEARS!
-      // (Scroll 0.0 to 3.2s)
-      // ===================================================================
       scrubTimeline.fromTo(
         slideLeftRef.current,
         {
@@ -198,7 +199,6 @@ export default function CinematicShowcase() {
         0.3
       );
 
-      // Slide Left Exits as camera pans to Raptor
       scrubTimeline.to(
         slideLeftRef.current,
         {
@@ -212,10 +212,6 @@ export default function CinematicShowcase() {
         3.0
       );
 
-      // ===================================================================
-      // PHASE 2: RAPTOR IS ON THE LEFT -> RIGHT SIDE APPEARS!
-      // (Scroll 3.6 to 6.8s)
-      // ===================================================================
       scrubTimeline.fromTo(
         slideRightRef.current,
         {
@@ -235,7 +231,6 @@ export default function CinematicShowcase() {
         3.8
       );
 
-      // Slide Right Exits as both characters converge
       scrubTimeline.to(
         slideRightRef.current,
         {
@@ -249,10 +244,7 @@ export default function CinematicShowcase() {
         6.5
       );
 
-      // ===================================================================
-      // PHASE 3: BOTH COMMANDERS STAND FACE-TO-FACE -> CENTER ARENA APPEARS!
-      // (Scroll 7.0 to 10.0s)
-      // ===================================================================
+      
       scrubTimeline.fromTo(
         slideCenterRef.current,
         {
@@ -281,10 +273,6 @@ export default function CinematicShowcase() {
       ref={containerRef}
       className="relative w-full h-screen bg-[#080B10] overflow-hidden select-none border-b border-tactical-border"
     >
-      {/* =================================================================== */}
-      {/* 1. CINEMATIC VIDEO FRAME SCRUBBING CANVAS & ZERO-LATENCY POSTER */}
-      {/* =================================================================== */}
-      {/* Instant poster so user sees frame 1 with 0ms delay */}
       <img
         src="/frames/home/frame_0001.webp"
         alt="CS2 Cinematic Preview"
@@ -297,29 +285,20 @@ export default function CinematicShowcase() {
         style={{ filter: 'contrast(1.08) brightness(0.92)' }}
       />
 
-      {/* =================================================================== */}
-      {/* 2. ATMOSPHERIC GRADIENT SCATTER OVERLAYS */}
-      {/* =================================================================== */}
       <div className="absolute inset-0 pointer-events-none z-[1]">
-        {/* Subtle Edge Vignettes */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(8,11,16,0.1)_0%,rgba(8,11,16,0.85)_100%)]" />
         <div className="absolute top-0 left-0 right-0 h-28 bg-gradient-to-b from-[#080B10] via-[#080B10]/70 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#080B10] via-[#080B10]/80 to-transparent" />
 
-        {/* Tactical Grid Overlay */}
         <div className="absolute inset-0 tactical-grid-bg opacity-15" />
       </div>
 
-      {/* =================================================================== */}
-      {/* 3. TACTICAL CORNER BOUNDARY ACCENTS */}
-      {/* =================================================================== */}
       <div className="absolute inset-4 sm:inset-6 lg:inset-8 pointer-events-none border border-tactical-border/40 rounded-sm z-10">
         <span className="absolute -top-[2px] -left-[2px] w-5 h-5 border-t-2 border-l-2 border-cyan shadow-[0_0_12px_rgba(0,213,255,0.7)]" />
         <span className="absolute -top-[2px] -right-[2px] w-5 h-5 border-t-2 border-r-2 border-orange shadow-[0_0_12px_rgba(255,116,56,0.7)]" />
         <span className="absolute -bottom-[2px] -left-[2px] w-5 h-5 border-b-2 border-l-2 border-cyan shadow-[0_0_12px_rgba(0,213,255,0.7)]" />
         <span className="absolute -bottom-[2px] -right-[2px] w-5 h-5 border-b-2 border-r-2 border-orange shadow-[0_0_12px_rgba(255,116,56,0.7)]" />
 
-        {/* Bottom Real-time Telemetry Scrub Status */}
         <div className="absolute -bottom-[6px] left-1/2 -translate-x-1/2 px-4 py-0.5 bg-[#080B10]/95 border border-tactical-border text-[9px] sm:text-[10px] font-mono text-secondaryText tracking-widest flex items-center gap-3 backdrop-blur-md">
           <Activity className="w-3.5 h-3.5 text-cyan animate-pulse" />
           <div className="w-20 sm:w-32 h-1 bg-surface border border-tactical-border rounded-full overflow-hidden">
@@ -335,26 +314,18 @@ export default function CinematicShowcase() {
         </div>
       </div>
 
-      {/* =================================================================== */}
-      {/* 4. CHOREOGRAPHED CONTENT LAYERS */}
-      {/* =================================================================== */}
       <div className="relative z-20 h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center">
 
-        {/* ----------------------------------------------------------------- */}
-        {/* SLIDE 1: APPEARS ON LEFT (Vector is visible on the right!) */}
-        {/* ----------------------------------------------------------------- */}
         <div
           ref={slideLeftRef}
           className="absolute left-4 sm:left-8 lg:left-12 max-w-lg lg:max-w-xl w-full opacity-0 pointer-events-auto will-change-transform"
         >
           <div className="relative p-6 sm:p-8 bg-[#080B10]/90 border border-cyan/40 backdrop-blur-2xl rounded-md shadow-[0_0_45px_rgba(0,213,255,0.25)]">
-            {/* Tactical Corner Marks */}
             <span className="absolute top-2 left-2 w-3.5 h-3.5 border-t-2 border-l-2 border-cyan" />
             <span className="absolute top-2 right-2 w-3.5 h-3.5 border-t-2 border-r-2 border-cyan" />
             <span className="absolute bottom-2 left-2 w-3.5 h-3.5 border-b-2 border-l-2 border-cyan" />
             <span className="absolute bottom-2 right-2 w-3.5 h-3.5 border-b-2 border-r-2 border-cyan" />
 
-            {/* Header Badge */}
             <div className="flex items-center justify-between border-b border-tactical-border/60 pb-3 mb-4">
               <div className="inline-flex items-center gap-2">
                 <Shield className="w-4 h-4 text-cyan" />
@@ -367,7 +338,6 @@ export default function CinematicShowcase() {
               </span>
             </div>
 
-            {/* Main Title */}
             <h2 className="font-display font-black text-2xl sm:text-4xl text-white tracking-tight uppercase leading-tight mb-2">
               BATTLE FOR <span className="text-cyan">GLORY</span> &amp; TOURNAMENT <span className="text-tactical-gold">HONORS</span>
             </h2>
@@ -376,7 +346,6 @@ export default function CinematicShowcase() {
               Represent your university. The CST LAN Challenge 2026 brings elite student athletes together under Valve&apos;s Counter-Strike 2 sub-tick architecture.
             </p>
 
-            {/* Reward Pool Highlight Banner */}
             <div className="p-3.5 bg-surface/70 border border-cyan/30 rounded mb-5 flex items-center justify-between">
               <div>
                 <span className="text-[9px] font-mono text-secondaryText uppercase tracking-wider block">
@@ -391,7 +360,6 @@ export default function CinematicShowcase() {
               </div>
             </div>
 
-            {/* Bullet Highlights */}
             <div className="space-y-2 font-mono text-xs text-white/90 mb-6">
               <div className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-cyan shrink-0" />
@@ -403,7 +371,6 @@ export default function CinematicShowcase() {
               </div>
             </div>
 
-            {/* Action Link */}
             <div className="flex items-center gap-3">
               <Button
                 href="/#prizepool"
@@ -418,21 +385,16 @@ export default function CinematicShowcase() {
           </div>
         </div>
 
-        {/* ----------------------------------------------------------------- */}
-        {/* SLIDE 2: APPEARS ON RIGHT (Raptor is visible on the left!) */}
-        {/* ----------------------------------------------------------------- */}
         <div
           ref={slideRightRef}
           className="absolute right-4 sm:right-8 lg:right-12 max-w-lg lg:max-w-xl w-full ml-auto opacity-0 pointer-events-auto will-change-transform"
         >
           <div className="relative p-6 sm:p-8 bg-[#080B10]/90 border border-orange/40 backdrop-blur-2xl rounded-md shadow-[0_0_45px_rgba(255,116,56,0.25)]">
-            {/* Tactical Corner Marks */}
             <span className="absolute top-2 left-2 w-3.5 h-3.5 border-t-2 border-l-2 border-orange" />
             <span className="absolute top-2 right-2 w-3.5 h-3.5 border-t-2 border-r-2 border-orange" />
             <span className="absolute bottom-2 left-2 w-3.5 h-3.5 border-b-2 border-l-2 border-orange" />
             <span className="absolute bottom-2 right-2 w-3.5 h-3.5 border-b-2 border-r-2 border-orange" />
 
-            {/* Header Badge */}
             <div className="flex items-center justify-between border-b border-tactical-border/60 pb-3 mb-4">
               <div className="inline-flex items-center gap-2">
                 <Flame className="w-4 h-4 text-orange" />
@@ -445,7 +407,6 @@ export default function CinematicShowcase() {
               </span>
             </div>
 
-            {/* Main Title */}
             <h2 className="font-display font-black text-2xl sm:text-4xl text-white tracking-tight uppercase leading-tight mb-2">
               5v5 MR12 <span className="text-orange">COMPETITIVE</span> ESPORTS RULES
             </h2>
@@ -454,7 +415,6 @@ export default function CinematicShowcase() {
               Strict competitive Valve rules apply. Teams navigate a tactical double-elimination bracket with map vetoes, overtime MR3 deciders, and strict anti-cheat verification.
             </p>
 
-            {/* Feature Stats Grid */}
             <div className="grid grid-cols-2 gap-3 mb-5 font-mono">
               <div className="p-3 bg-surface/70 border border-orange/30 rounded">
                 <span className="text-[9px] text-secondaryText uppercase tracking-wider block">
@@ -474,7 +434,6 @@ export default function CinematicShowcase() {
               </div>
             </div>
 
-            {/* Bullet Highlights */}
             <div className="space-y-2 font-mono text-xs text-white/90 mb-6">
               <div className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-orange shrink-0" />
@@ -486,7 +445,6 @@ export default function CinematicShowcase() {
               </div>
             </div>
 
-            {/* Action Link */}
             <div className="flex items-center gap-3">
               <Button
                 href="/about"
@@ -501,27 +459,21 @@ export default function CinematicShowcase() {
           </div>
         </div>
 
-        {/* ----------------------------------------------------------------- */}
-        {/* SLIDE 3: APPEARS IN CENTER (Both Vector and Raptor face each other!) */}
-        {/* ----------------------------------------------------------------- */}
         <div
           ref={slideCenterRef}
           className="absolute left-1/2 -translate-x-1/2 max-w-xl sm:max-w-2xl w-full px-4 text-center opacity-0 pointer-events-auto will-change-transform"
         >
           <div className="relative p-6 sm:p-8 bg-[#080B10]/95 border border-tactical-gold/60 backdrop-blur-2xl rounded-md shadow-[0_0_60px_rgba(255,184,0,0.3)]">
-            {/* Top Center Ribbon */}
             <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-tactical-gold via-yellow-300 to-tactical-gold text-background font-mono text-[10px] font-black uppercase tracking-widest clip-tactical shadow-lg flex items-center gap-1.5">
               <Swords className="w-3.5 h-3.5 text-background" />
               <span>THE GRAND CONFRONTATION</span>
             </div>
 
-            {/* Corner Tactical Marks */}
             <span className="absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2 border-tactical-gold" />
             <span className="absolute top-2 right-2 w-4 h-4 border-t-2 border-r-2 border-tactical-gold" />
             <span className="absolute bottom-2 left-2 w-4 h-4 border-b-2 border-l-2 border-tactical-gold" />
             <span className="absolute bottom-2 right-2 w-4 h-4 border-b-2 border-r-2 border-tactical-gold" />
 
-            {/* Main Showdown Title */}
             <h2 className="font-display font-black text-2xl sm:text-4xl lg:text-5xl text-white tracking-tight uppercase leading-tight mb-2 mt-2">
               CHOOSE YOUR <span className="text-cyan">SIDE</span>. PROVE YOUR <span className="text-orange">DOMINANCE</span>.
             </h2>
@@ -530,7 +482,6 @@ export default function CinematicShowcase() {
               7 Active Duty Maps. Full Sub-Tick 128 Telemetry. Ready your squad to enter the collegiate Counter-Strike 2 championship arena.
             </p>
 
-            {/* Map Pool Lineup Strip */}
             <div className="p-3 bg-surface/80 border border-tactical-border rounded mb-6 flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-[10px] sm:text-xs font-mono text-white">
               <span className="px-2 py-0.5 bg-cyan/10 border border-cyan/40 text-cyan font-bold">DE_MIRAGE</span>
               <span className="px-2 py-0.5 bg-orange/10 border border-orange/40 text-orange font-bold">DE_INFERNO</span>
@@ -540,17 +491,18 @@ export default function CinematicShowcase() {
               <span className="px-2 py-0.5 bg-orange/10 border border-orange/40 text-orange font-bold">DE_ANCIENT</span>
             </div>
 
-            {/* 2 Centered CTA Buttons */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Button
-                href="/register"
-                variant="cyan"
-                size="lg"
-                icon={<Crosshair className="w-4 h-4" />}
-                className="w-full sm:w-auto font-black shadow-[0_0_25px_rgba(0,213,255,0.4)] text-xs sm:text-sm"
-              >
-                REGISTER YOUR TEAM
-              </Button>
+              {isOpen && (
+                <Button
+                  href="/register"
+                  variant="cyan"
+                  size="lg"
+                  icon={<Crosshair className="w-4 h-4" />}
+                  className="w-full sm:w-auto font-black shadow-[0_0_25px_rgba(0,213,255,0.4)] text-xs sm:text-sm"
+                >
+                  REGISTER YOUR TEAM
+                </Button>
+              )}
 
               <Button
                 href="/#prizepool"

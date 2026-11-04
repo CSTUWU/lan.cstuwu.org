@@ -27,8 +27,10 @@ import {
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import PlayoffBracketTree from '@/components/scoreboard/PlayoffBracketTree';
+import { useRegistrationStatus } from '@/hooks/useRegistrationStatus';
 
 export default function ScoreboardPage() {
+  const { isOpen } = useRegistrationStatus();
   const [teams, setTeams] = useState<Team[]>(INITIAL_TEAMS);
   const [matches, setMatches] = useState<Match[]>(INITIAL_MATCHES);
   const [activeTab, setActiveTab] = useState<'playoffs' | 'standings' | 'completed' | 'upcoming'>('playoffs');
@@ -79,7 +81,6 @@ export default function ScoreboardPage() {
     };
   }, []);
 
-  // Filter approved teams and sort by points, winRate, roundDiff, then name
   const sortedStandings = [...teams]
     .filter((t) => t.status === 'approved')
     .sort((a, b) => {
@@ -102,14 +103,12 @@ export default function ScoreboardPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
-        {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-xs font-mono text-secondaryText mb-8">
           <Link href="/" className="hover:text-cyan transition-colors">HOME</Link>
           <span>/</span>
           <span className="text-white">TOURNAMENT SCOREBOARD</span>
         </div>
 
-        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-tactical-border mb-8">
           <div>
             <div className="inline-flex items-center gap-2 mb-2">
@@ -135,18 +134,18 @@ export default function ScoreboardPage() {
               <ExternalLink className="w-3.5 h-3.5" />
             </Link>
 
-            <Button href="/register" variant="outline" size="sm">
-              REGISTER SQUAD
-            </Button>
+            {isOpen && (
+              <Button href="/register" variant="outline" size="sm">
+                REGISTER SQUAD
+              </Button>
+            )}
           </div>
         </div>
 
-        {/* LIVE ON STAGE SHOWCASE BANNER (IF MATCH IS LIVE) */}
         {liveMatch && (
           <div className="mb-10 bg-gradient-to-r from-[#0C1420] via-card to-[#0C1420] border-2 border-cyan/40 p-6 sm:p-8 backdrop-blur-md relative overflow-hidden shadow-[0_0_30px_rgba(0,213,255,0.15)]">
             <div className="absolute top-0 right-0 w-64 h-64 bg-cyan/10 rounded-full blur-3xl pointer-events-none" />
 
-            {/* Top Alert Bar */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
               <div className="inline-flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />
@@ -296,7 +295,6 @@ export default function ScoreboardPage() {
           </div>
         )}
 
-        {/* TAB 1: ADVANCED STANDINGS TABLE */}
         {activeTab === 'standings' && (
           <div className="bg-card/90 border border-tactical-border overflow-hidden backdrop-blur-md mb-12">
             <div className="overflow-x-auto">
@@ -318,17 +316,24 @@ export default function ScoreboardPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-tactical-border/60">
-                  {sortedStandings.map((team, idx) => {
-                    const rank = idx + 1;
-                    const rd = team.roundDiff || 0;
-                    const winRate = team.winRate ?? (team.matchesPlayed ? Math.round(((team.wins || 0) / team.matchesPlayed) * 100) : 0);
-                    const form = team.form || [];
+                  {sortedStandings.length === 0 ? (
+                    <tr>
+                      <td colSpan={11} className="py-12 text-center text-secondaryText font-mono text-xs">
+                        No team standings recorded yet. Approved squads will appear here upon tournament commencement.
+                      </td>
+                    </tr>
+                  ) : (
+                    sortedStandings.map((team, idx) => {
+                      const rank = idx + 1;
+                      const rd = team.roundDiff || 0;
+                      const winRate = team.winRate ?? (team.matchesPlayed ? Math.round(((team.wins || 0) / team.matchesPlayed) * 100) : 0);
+                      const form = team.form || [];
 
-                    return (
-                      <tr
-                        key={team.id}
-                        className="hover:bg-surface/40 transition-colors group"
-                      >
+                      return (
+                        <tr
+                          key={team.id}
+                          className="hover:bg-surface/40 transition-colors group"
+                        >
                         {/* Rank */}
                         <td className="py-4 px-4 text-center">
                           <span
@@ -346,7 +351,6 @@ export default function ScoreboardPage() {
                           </span>
                         </td>
 
-                        {/* Team Info */}
                         <td className="py-4 px-4">
                           <div className="flex items-center gap-3">
                             <div className="relative w-10 h-10 bg-surface border border-tactical-border overflow-hidden shrink-0">
@@ -361,49 +365,40 @@ export default function ScoreboardPage() {
                           </div>
                         </td>
 
-                        {/* University */}
                         <td className="py-4 px-4 text-secondaryText hidden md:table-cell truncate max-w-xs">
                           {team.university}
                         </td>
 
-                        {/* Matches Played */}
                         <td className="py-4 px-3 text-center text-white font-medium">
                           {team.matchesPlayed || 0}
                         </td>
 
-                        {/* Wins */}
                         <td className="py-4 px-3 text-center text-cyan font-bold">
                           {team.wins || 0}
                         </td>
 
-                        {/* Losses */}
                         <td className="py-4 px-3 text-center text-secondaryText">
                           {team.losses || 0}
                         </td>
 
-                        {/* Rounds Won */}
                         <td className="py-4 px-3 text-center text-secondaryText hidden sm:table-cell">
                           {team.roundsWon || 0}
                         </td>
 
-                        {/* Rounds Lost */}
                         <td className="py-4 px-3 text-center text-secondaryText hidden sm:table-cell">
                           {team.roundsLost || 0}
                         </td>
 
-                        {/* Round Difference */}
                         <td className="py-4 px-3 text-center font-bold">
                           <span className={rd > 0 ? 'text-emerald-400' : rd < 0 ? 'text-rose-400' : 'text-secondaryText'}>
                             {rd > 0 ? `+${rd}` : rd}
                           </span>
                         </td>
 
-                        {/* Win Rate */}
                         <td className="py-4 px-3 text-center hidden lg:table-cell text-white">
                           {winRate}%
                         </td>
 
-                        {/* Form Streaks */}
                         <td className="py-4 px-4 text-center hidden sm:table-cell">
                           <div className="flex items-center justify-center gap-1">
                             {form.length > 0 ? (
@@ -425,7 +420,6 @@ export default function ScoreboardPage() {
                           </div>
                         </td>
 
-                        {/* Points */}
                         <td className="py-4 px-4 text-center">
                           <span className="inline-block px-3 py-1 bg-surface border border-orange/40 text-orange font-display font-black text-base shadow-[0_0_8px_rgba(255,116,56,0.2)]">
                             {team.points || 0}
@@ -433,7 +427,7 @@ export default function ScoreboardPage() {
                         </td>
                       </tr>
                     );
-                  })}
+                  }))}
                 </tbody>
               </table>
             </div>
@@ -445,73 +439,90 @@ export default function ScoreboardPage() {
           </div>
         )}
 
-        {/* TAB 2: COMPLETED MATCH RESULTS */}
         {activeTab === 'completed' && (
           <div className="space-y-4 mb-12">
-            {completedMatches.map((m) => (
-              <div
-                key={m.id}
-                className="bg-card/90 border border-tactical-border p-6 backdrop-blur-md hover:border-cyan/40 transition-colors"
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-tactical-border/70 gap-2 mb-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono text-cyan font-bold">{m.stage}</span>
-                    <span className="text-xs font-mono text-secondaryText">• Map: {m.map}</span>
-                  </div>
-                  <div className="text-xs font-mono text-secondaryText flex items-center gap-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                    <span className="text-emerald-400 uppercase font-bold">VERIFIED FINAL RESULT</span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-12 items-center gap-4">
-                  {/* Team A */}
-                  <div className="md:col-span-5 flex items-center gap-3">
-                    <div className="relative w-12 h-12 bg-surface border border-tactical-border shrink-0 overflow-hidden">
-                      <Image src={m.teamALogo} alt={m.teamAName} fill className="object-cover" sizes="48px" />
-                    </div>
-                    <div>
-                      <span className="text-xs font-mono text-cyan font-bold">[{m.teamATag}]</span>
-                      <h4 className="font-display font-bold text-base text-white uppercase">{m.teamAName}</h4>
-                    </div>
-                  </div>
-
-                  {/* Center Score */}
-                  <div className="md:col-span-2 text-center py-2 bg-surface/50 border border-tactical-border/70">
-                    <div className="font-display font-black text-2xl text-white">
-                      <span className={m.scoreA > m.scoreB ? 'text-cyan' : 'text-secondaryText'}>{m.scoreA}</span>
-                      <span className="text-secondaryText/50 mx-2">:</span>
-                      <span className={m.scoreB > m.scoreA ? 'text-orange' : 'text-secondaryText'}>{m.scoreB}</span>
-                    </div>
-                  </div>
-
-                  {/* Team B */}
-                  <div className="md:col-span-5 flex items-center justify-end gap-3 text-right">
-                    <div>
-                      <span className="text-xs font-mono text-orange font-bold">[{m.teamBTag}]</span>
-                      <h4 className="font-display font-bold text-base text-white uppercase">{m.teamBName}</h4>
-                    </div>
-                    <div className="relative w-12 h-12 bg-surface border border-tactical-border shrink-0 overflow-hidden">
-                      <Image src={m.teamBLogo} alt={m.teamBName} fill className="object-cover" sizes="48px" />
-                    </div>
-                  </div>
-                </div>
-
-                {m.mvp && (
-                  <div className="mt-4 pt-3 border-t border-tactical-border/60 flex items-center gap-2 text-xs font-mono text-tactical-gold">
-                    <Award className="w-3.5 h-3.5" />
-                    <span>MATCH MVP: {m.mvp}</span>
-                  </div>
-                )}
+            {completedMatches.length === 0 ? (
+              <div className="text-center py-16 bg-surface/30 border border-dashed border-tactical-border p-8">
+                <CheckCircle2 className="w-12 h-12 text-secondaryText/40 mx-auto mb-3" />
+                <h3 className="font-display font-black text-lg text-white uppercase mb-1">No Completed Results</h3>
+                <p className="text-xs font-mono text-secondaryText max-w-md mx-auto">
+                  Match results will be published here upon official ratification by tournament referees.
+                </p>
               </div>
-            ))}
+            ) : (
+              completedMatches.map((m) => (
+                <div
+                  key={m.id}
+                  className="bg-card/90 border border-tactical-border p-6 backdrop-blur-md hover:border-cyan/40 transition-colors"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-tactical-border/70 gap-2 mb-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono text-cyan font-bold">{m.stage}</span>
+                      <span className="text-xs font-mono text-secondaryText">• Map: {m.map}</span>
+                    </div>
+                    <div className="text-xs font-mono text-secondaryText flex items-center gap-2">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                      <span className="text-emerald-400 uppercase font-bold">VERIFIED FINAL RESULT</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-12 items-center gap-4">
+                    {/* Team A */}
+                    <div className="md:col-span-5 flex items-center gap-3">
+                      <div className="relative w-12 h-12 bg-surface border border-tactical-border shrink-0 overflow-hidden">
+                        <Image src={m.teamALogo} alt={m.teamAName} fill className="object-cover" sizes="48px" />
+                      </div>
+                      <div>
+                        <span className="text-xs font-mono text-cyan font-bold">[{m.teamATag}]</span>
+                        <h4 className="font-display font-bold text-base text-white uppercase">{m.teamAName}</h4>
+                      </div>
+                    </div>
+
+                    {/* Center Score */}
+                    <div className="md:col-span-2 text-center py-2 bg-surface/50 border border-tactical-border/70">
+                      <div className="font-display font-black text-2xl text-white">
+                        <span className={m.scoreA > m.scoreB ? 'text-cyan' : 'text-secondaryText'}>{m.scoreA}</span>
+                        <span className="text-secondaryText/50 mx-2">:</span>
+                        <span className={m.scoreB > m.scoreA ? 'text-orange' : 'text-secondaryText'}>{m.scoreB}</span>
+                      </div>
+                    </div>
+
+                    {/* Team B */}
+                    <div className="md:col-span-5 flex items-center justify-end gap-3 text-right">
+                      <div>
+                        <span className="text-xs font-mono text-orange font-bold">[{m.teamBTag}]</span>
+                        <h4 className="font-display font-bold text-base text-white uppercase">{m.teamBName}</h4>
+                      </div>
+                      <div className="relative w-12 h-12 bg-surface border border-tactical-border shrink-0 overflow-hidden">
+                        <Image src={m.teamBLogo} alt={m.teamBName} fill className="object-cover" sizes="48px" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {m.mvp && (
+                    <div className="mt-4 pt-3 border-t border-tactical-border/60 flex items-center gap-2 text-xs font-mono text-tactical-gold">
+                      <Award className="w-3.5 h-3.5" />
+                      <span>MATCH MVP: {m.mvp}</span>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
           </div>
         )}
 
-        {/* TAB 3: UPCOMING FIXTURES */}
         {activeTab === 'upcoming' && (
           <div className="space-y-4 mb-12">
-            {upcomingMatches.map((m) => (
+            {upcomingMatches.length === 0 ? (
+              <div className="text-center py-16 bg-surface/30 border border-dashed border-tactical-border p-8">
+                <Clock className="w-12 h-12 text-secondaryText/40 mx-auto mb-3" />
+                <h3 className="font-display font-black text-lg text-white uppercase mb-1">No Upcoming Fixtures</h3>
+                <p className="text-xs font-mono text-secondaryText max-w-md mx-auto">
+                  Stage schedule will appear here when fixtures are seeded.
+                </p>
+              </div>
+            ) : (
+              upcomingMatches.map((m) => (
               <div
                 key={m.id}
                 className="bg-card/90 border border-tactical-border p-6 backdrop-blur-md hover:border-cyan/40 transition-colors"
@@ -556,9 +567,10 @@ export default function ScoreboardPage() {
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+            ))
+          )}
+        </div>
+      )}
 
       </div>
     </div>

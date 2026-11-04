@@ -4,25 +4,24 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Shield, Radio, Terminal, Cpu, Trophy, MessageSquare, Twitter, Youtube, Twitch } from 'lucide-react';
+import { useRegistrationStatus } from '@/hooks/useRegistrationStatus';
 
 export default function Footer() {
   const pathname = usePathname();
+  const { isOpen } = useRegistrationStatus();
 
   if (pathname?.startsWith('/admin') || pathname?.startsWith('/scoreboard/live')) {
     return null;
   }
   return (
     <footer className="relative bg-[#06090D] border-t border-tactical-border pt-16 pb-12 overflow-hidden text-secondaryText">
-      {/* Background ambient glows */}
       <div className="absolute top-0 left-1/4 w-96 h-48 bg-cyan/5 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute top-0 right-1/4 w-96 h-48 bg-orange/5 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Decorative top accent lines */}
       <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-cyan to-transparent opacity-60" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-12 border-b border-tactical-border/70">
-          {/* Col 1 & 2: Tournament & University Identity */}
           <div className="lg:col-span-2 flex flex-col gap-4">
             <Link href="/" className="flex items-center gap-3 group">
               <div className="flex items-center justify-center w-10 h-10 bg-surface border border-cyan/50 clip-tactical group-hover:border-cyan shadow-[0_0_15px_rgba(0,213,255,0.25)]">
@@ -49,7 +48,6 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Col 3: Navigation */}
           <div>
             <h4 className="text-xs font-mono font-bold tracking-widest uppercase text-white mb-4 flex items-center gap-2">
               <Terminal className="w-3.5 h-3.5 text-cyan" /> DIRECTORY
@@ -73,17 +71,18 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Col 4: Competition & Operations */}
           <div>
             <h4 className="text-xs font-mono font-bold tracking-widest uppercase text-white mb-4 flex items-center gap-2">
               <Cpu className="w-3.5 h-3.5 text-orange" /> OPERATIONS
             </h4>
             <ul className="space-y-2 text-xs font-mono">
-              <li>
-                <Link href="/register" className="text-cyan hover:underline transition-colors font-bold">
-                  {"// Team Registration"}
-                </Link>
-              </li>
+              {isOpen && (
+                <li>
+                  <Link href="/register" className="text-cyan hover:underline transition-colors font-bold">
+                    {"// Team Registration"}
+                  </Link>
+                </li>
+              )}
               <li>
                 <Link href="/teams" className="hover:text-white transition-colors">{"// Registered Squads"}</Link>
               </li>
@@ -96,7 +95,6 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Col 5: University & Contact */}
           <div>
             <h4 className="text-xs font-mono font-bold tracking-widest uppercase text-white mb-4">
               HEADQUARTERS
@@ -126,7 +124,6 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Bottom Bar */}
         <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-[11px] font-mono">
           <p>© 2026 CST LAN Challenge. Computer Science and Technology Degree Programme, Uva Wellassa University. All rights reserved.</p>
           <div className="flex items-center gap-4 text-secondaryText">

@@ -28,7 +28,6 @@ export default function AdminPlayersPage() {
     setTimeout(() => setCopiedSteamId(null), 2000);
   };
 
-  // Filter teams and their players
   const filteredTeams = teams.map((team) => {
     const query = searchQuery.toLowerCase();
     const teamMatches =
@@ -52,7 +51,6 @@ export default function AdminPlayersPage() {
     };
   }).filter((item) => (searchQuery ? item.isRelevant : true));
 
-  // Flat list for alternate view
   const allFlatPlayers: { player: Player; team: Team }[] = [];
   teams.forEach((t) => {
     t.players.forEach((p) => {
@@ -74,7 +72,6 @@ export default function AdminPlayersPage() {
     <AdminLayout>
       <div className="space-y-6 max-w-7xl">
         
-        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-tactical-border">
           <div>
             <div className="inline-flex items-center gap-2 mb-1">
@@ -135,7 +132,6 @@ export default function AdminPlayersPage() {
           </div>
         </div>
 
-        {/* VIEW MODE 1: TEAM-WISE (USER REQUIREMENT) */}
         {viewMode === 'team-wise' ? (
           <div className="space-y-6">
             {filteredTeams.map(({ team, matchingPlayers }) => (
@@ -143,7 +139,6 @@ export default function AdminPlayersPage() {
                 key={team.id}
                 className="bg-card/90 border border-tactical-border p-5 backdrop-blur-md"
               >
-                {/* Team Sub-Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-tactical-border/70 gap-3 mb-4">
                   <div className="flex items-center gap-3">
                     <div className="relative w-10 h-10 bg-surface border border-tactical-border shrink-0 overflow-hidden">
@@ -172,7 +167,6 @@ export default function AdminPlayersPage() {
                   </div>
                 </div>
 
-                {/* Team's Athletes Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
                   {matchingPlayers.map((player, idx) => (
                     <div
@@ -231,7 +225,6 @@ export default function AdminPlayersPage() {
             )}
           </div>
         ) : (
-          /* FLAT TABLE VIEW (ALTERNATIVE) */
           <div className="bg-card/90 border border-tactical-border overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left font-mono text-xs">

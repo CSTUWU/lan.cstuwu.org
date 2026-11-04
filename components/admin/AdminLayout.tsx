@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { checkAdminAuth, setAdminAuth } from '@/lib/storage';
+import { checkAdminAuth, setAdminAuth, isRegistrationOpen, setRegistrationOpen } from '@/lib/storage';
+import { api } from '@/lib/api';
 import {
   Shield,
   LayoutDashboard,
@@ -18,6 +19,8 @@ import {
   Menu,
   X,
   ExternalLink,
+  Lock,
+  Unlock,
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -28,6 +31,46 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isRegOpen, setIsRegOpen] = useState<boolean>(true);
+  const [regToggling, setRegToggling] = useState(false);
+
+  useEffect(() => {
+    setIsRegOpen(isRegistrationOpen());
+    const handleUpdate = () => setIsRegOpen(isRegistrationOpen());
+    window.addEventListener('cst_countdown_updated', handleUpdate);
+    window.addEventListener('cst_registration_status_changed', handleUpdate);
+
+    // Sync from server if available
+    api.public.getSettings().then((res) => {
+      if (res?.success && res.data && typeof res.data.registrationOpen === 'boolean') {
+        setIsRegOpen(res.data.registrationOpen);
+      }
+    }).catch(() => {});
+
+    return () => {
+      window.removeEventListener('cst_countdown_updated', handleUpdate);
+      window.removeEventListener('cst_registration_status_changed', handleUpdate);
+    };
+  }, []);
+
+  const handleToggleRegistration = async () => {
+    const nextState = !isRegOpen;
+    setRegToggling(true);
+    setRegistrationOpen(nextState);
+    setIsRegOpen(nextState);
+
+    // Sync with backend API
+    try {
+      await api.admin.updateSettings({
+        registrationOpen: nextState,
+        eventStatus: nextState ? 'REGISTRATIONS OPEN' : 'CHECK-IN PHASE',
+      });
+    } catch (e) {
+      console.warn('Backend updateSettings failed, saved locally', e);
+    } finally {
+      setRegToggling(false);
+    }
+  };
 
   useEffect(() => {
     // Check auth on mount: redirect to /admin if not authenticated
@@ -55,7 +98,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   return (
     <div className="min-h-screen bg-[#070A0F] text-primaryText flex flex-col font-sans">
       
-      {/* Top Admin Bar */}
       <header className="h-16 bg-[#0B1017] border-b border-tactical-border px-4 sm:px-6 flex items-center justify-between sticky top-0 z-40">
         <div className="flex items-center gap-4">
           <button
@@ -81,7 +123,23 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           </Link>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <button
+            type="button"
+            onClick={handleToggleRegistration}
+            disabled={regToggling}
+            className={`px-2.5 sm:px-3 py-1.5 text-xs font-mono font-bold flex items-center gap-1.5 sm:gap-2 border transition-all cursor-pointer ${
+              isRegOpen
+                ? 'bg-emerald-950/50 border-emerald-500/80 text-emerald-400 hover:bg-emerald-900/60 shadow-[0_0_12px_rgba(16,185,129,0.3)]'
+                : 'bg-rose-950/50 border-rose-500/80 text-rose-400 hover:bg-rose-900/60 shadow-[0_0_12px_rgba(244,63,94,0.3)]'
+            }`}
+            title={isRegOpen ? 'Click to CLOSE registration across entire site' : 'Click to OPEN registration across entire site'}
+          >
+            {isRegOpen ? <Unlock className="w-3.5 h-3.5 text-emerald-400" /> : <Lock className="w-3.5 h-3.5 text-rose-400" />}
+            <span className="hidden md:inline">REGISTRATION:</span>
+            <span>{isRegOpen ? 'OPEN' : 'CLOSED'}</span>
+          </button>
+
           <Link
             href="/"
             target="_blank"
@@ -103,7 +161,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
       <div className="flex-1 flex overflow-hidden">
         
-        {/* Sidebar Desktop */}
         <aside
           className={`fixed lg:static top-16 bottom-0 lg:top-0 left-0 z-30 w-64 bg-[#090D14] border-r border-tactical-border flex flex-col justify-between transition-transform duration-300 lg:translate-x-0 ${
             sidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
@@ -134,18 +191,16 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             })}
           </div>
 
-          {/* Sidebar Footer */}
           <div className="p-4 border-t border-tactical-border text-[10px] font-mono text-secondaryText space-y-1">
             <div className="flex items-center gap-1.5 text-white">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>SYSTEM: ONLINE (DEMO)</span>
+              <span>SYSTEM: ONLINE (LIVE)</span>
             </div>
             <div>VER: 2026.1.0-CS2</div>
             <div className="text-secondaryText/70">Uva Wellassa University</div>
           </div>
         </aside>
 
-        {/* Backdrop for mobile sidebar */}
         {sidebarOpen && (
           <div
             onClick={() => setSidebarOpen(false)}
@@ -153,7 +208,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           />
         )}
 
-        {/* Content Area */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#080B10]">
           {children}
         </main>

@@ -17,8 +17,10 @@ import {
 } from 'lucide-react';
 import Button from '../ui/Button';
 import Badge from '../ui/Badge';
+import { useRegistrationStatus } from '@/hooks/useRegistrationStatus';
 
 export default function PrizePoolSection() {
+  const { isOpen } = useRegistrationStatus();
   const prizeTiers = [
     {
       position: '2ND PLACE',
@@ -113,7 +115,6 @@ export default function PrizePoolSection() {
       id="prizepool"
       className="relative py-24 sm:py-32 bg-[#080B10] border-t border-b border-tactical-border overflow-hidden"
     >
-      {/* Background Ambience & Grid */}
       <div className="absolute inset-0 tactical-grid-bg opacity-20 pointer-events-none" />
       <div className="absolute top-1/3 -left-36 w-[550px] h-[550px] bg-cyan/10 rounded-full blur-[160px] pointer-events-none" />
       <div className="absolute top-1/3 -right-36 w-[550px] h-[550px] bg-orange/10 rounded-full blur-[160px] pointer-events-none" />
@@ -121,7 +122,6 @@ export default function PrizePoolSection() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
-        {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-16 sm:mb-20">
           <div className="inline-flex items-center gap-2 mb-3">
             <span className="w-8 h-[2px] bg-tactical-gold" />
@@ -138,14 +138,12 @@ export default function PrizePoolSection() {
           </p>
         </div>
 
-        {/* 3-Column Prize Tiers (Champion Elevated Center) */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 items-center mb-16">
           {prizeTiers.map((tier, idx) => (
             <div
               key={idx}
               className={`relative rounded-lg border p-6 sm:p-8 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 ${tier.bgColor} ${tier.borderColor} ${tier.glowColor} ${tier.orderClass}`}
             >
-              {/* Champion Crown Ribbon */}
               {tier.isChampion && (
                 <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-tactical-gold via-yellow-300 to-tactical-gold text-background font-mono text-[10px] font-black uppercase tracking-widest clip-tactical shadow-lg flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5 text-background" />
@@ -153,13 +151,11 @@ export default function PrizePoolSection() {
                 </div>
               )}
 
-              {/* Corner Tactical Accents */}
               <span className={`absolute top-2 left-2 w-3.5 h-3.5 border-t-2 border-l-2 ${tier.accentColor}`} />
               <span className={`absolute top-2 right-2 w-3.5 h-3.5 border-t-2 border-r-2 ${tier.accentColor}`} />
               <span className={`absolute bottom-2 left-2 w-3.5 h-3.5 border-b-2 border-l-2 ${tier.accentColor}`} />
               <span className={`absolute bottom-2 right-2 w-3.5 h-3.5 border-b-2 border-r-2 ${tier.accentColor}`} />
 
-              {/* Tier Header */}
               <div className="flex items-center justify-between border-b border-tactical-border/60 pb-4 mb-6">
                 <div>
                   <span className="text-[10px] font-mono text-secondaryText uppercase tracking-widest block font-bold">
@@ -175,7 +171,6 @@ export default function PrizePoolSection() {
                 </div>
               </div>
 
-              {/* Prize Amount */}
               <div className="mb-6 p-4 bg-surface/50 border border-tactical-border/80 text-center">
                 <span className="text-[10px] font-mono text-secondaryText uppercase tracking-wider block mb-0.5">
                   COMMITTED REWARD POOL
@@ -188,7 +183,6 @@ export default function PrizePoolSection() {
                 </span>
               </div>
 
-              {/* Perks & Rewards List */}
               <div className="space-y-2.5 text-xs font-mono mb-8">
                 <div className="text-[10px] text-secondaryText uppercase tracking-widest font-bold mb-2">
                   AWARD PACKAGE:
@@ -201,22 +195,22 @@ export default function PrizePoolSection() {
                 ))}
               </div>
 
-              {/* Action Button */}
-              <Button
-                href="/register"
-                variant={tier.isChampion ? 'cyan' : 'outline'}
-                size="md"
-                className={`w-full font-bold uppercase text-xs tracking-wider ${
-                  tier.isChampion ? 'shadow-[0_0_20px_rgba(0,213,255,0.4)]' : ''
-                }`}
-              >
-                ENLIST FOR {tier.position}
-              </Button>
+              {isOpen && (
+                <Button
+                  href="/register"
+                  variant={tier.isChampion ? 'cyan' : 'outline'}
+                  size="md"
+                  className={`w-full font-bold uppercase text-xs tracking-wider ${
+                    tier.isChampion ? 'shadow-[0_0_20px_rgba(0,213,255,0.4)]' : ''
+                  }`}
+                >
+                  ENLIST FOR {tier.position}
+                </Button>
+              )}
             </div>
           ))}
         </div>
 
-        {/* Individual Accolades Strip */}
         <div className="bg-card/80 border border-tactical-border p-6 sm:p-8 backdrop-blur-md">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-tactical-border pb-4 mb-6">
             <div>

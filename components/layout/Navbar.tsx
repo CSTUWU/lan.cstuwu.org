@@ -4,16 +4,16 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Shield, Menu, X, ChevronRight, Crosshair } from 'lucide-react';
+import { useRegistrationStatus } from '@/hooks/useRegistrationStatus';
 import Button from '../ui/Button';
 
 export default function Navbar() {
+  const { isOpen } = useRegistrationStatus();
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const isHome = pathname === '/';
 
-  // On home page: start hidden until user scrolls to text reveal phase
-  // On other pages: always visible
   const [showNavbar, setShowNavbar] = useState(!isHome);
 
   useEffect(() => {
@@ -89,7 +89,6 @@ export default function Navbar() {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
-            {/* CST Brand & University Affiliation */}
             <Link href="/" className="flex items-center gap-3 group">
               <div className="relative flex items-center justify-center w-10 h-10 bg-surface border border-cyan/40 clip-tactical group-hover:border-cyan transition-colors shadow-[0_0_15px_rgba(0,213,255,0.2)]">
                 <Shield className="w-5 h-5 text-cyan group-hover:scale-110 transition-transform" />
@@ -110,7 +109,6 @@ export default function Navbar() {
               </div>
             </Link>
 
-            {/* Desktop Navigation Links */}
             <nav className="hidden lg:flex items-center gap-1 xl:gap-2">
               {navLinks.map((link) => (
                 <Link
@@ -130,18 +128,18 @@ export default function Navbar() {
               ))}
             </nav>
 
-            {/* Action Buttons */}
             <div className="flex items-center gap-2 sm:gap-3">
-              <Button
-                href="/register"
-                variant="cyan"
-                size="sm"
-                icon={<Crosshair className="w-3.5 h-3.5" />}
-              >
-                REGISTER TEAM
-              </Button>
+              {isOpen && (
+                <Button
+                  href="/register"
+                  variant="cyan"
+                  size="sm"
+                  icon={<Crosshair className="w-3.5 h-3.5" />}
+                >
+                  REGISTER TEAM
+                </Button>
+              )}
 
-              {/* Mobile Menu Toggle */}
               <div className="flex items-center gap-2 lg:hidden">
                 <button
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -156,7 +154,6 @@ export default function Navbar() {
         </div>
       </header>
 
-      {/* Mobile Menu Drawer */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-40 lg:hidden bg-background/98 backdrop-blur-2xl pt-20 px-6 pb-8 flex flex-col justify-between border-b border-tactical-border overflow-y-auto">
           <div className="flex flex-col gap-2.5">
@@ -184,15 +181,17 @@ export default function Navbar() {
               <br />
               <span className="text-white">Uva Wellassa University of Sri Lanka</span>
             </div>
-            <Button
-              href="/register"
-              variant="cyan"
-              size="md"
-              className="w-full text-center"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              REGISTER YOUR TEAM
-            </Button>
+            {isOpen && (
+              <Button
+                href="/register"
+                variant="cyan"
+                size="md"
+                className="w-full text-center"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                REGISTER YOUR TEAM
+              </Button>
+            )}
           </div>
         </div>
       )}

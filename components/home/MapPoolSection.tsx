@@ -11,13 +11,11 @@ export default function MapPoolSection() {
 
   return (
     <section id="maps" className="relative py-28 bg-[#080B10] overflow-hidden">
-      {/* Background glow */}
       <div className="absolute top-1/2 right-1/4 w-[500px] h-[500px] bg-orange/5 rounded-full blur-[150px] pointer-events-none" />
       <div className="absolute inset-0 tactical-grid-bg opacity-15 pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
-        {/* Section Header */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-16 pb-6 border-b border-tactical-border">
           <div>
             <div className="inline-flex items-center gap-2 mb-3">
@@ -34,10 +32,8 @@ export default function MapPoolSection() {
           </div>
         </div>
 
-        {/* Selected Map Feature Showcase */}
         <div className="relative mb-12 bg-card border border-tactical-border overflow-hidden">
           <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[380px]">
-            {/* Visual Cover */}
             <div className="lg:col-span-7 relative min-h-[260px] lg:min-h-full">
               <Image
                 src={selectedMap.image}
@@ -55,7 +51,6 @@ export default function MapPoolSection() {
               </div>
             </div>
 
-            {/* Map Details */}
             <div className="lg:col-span-5 p-6 sm:p-8 flex flex-col justify-between bg-card/95 backdrop-blur-md">
               <div>
                 <div className="flex items-center justify-between text-xs font-mono text-secondaryText mb-2">
@@ -89,7 +84,6 @@ export default function MapPoolSection() {
           </div>
         </div>
 
-        {/* 7 Maps Selector Strip */}
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
           {CS2_MAP_POOL.map((m) => {
             const isSelected = selectedMap.name === m.name;

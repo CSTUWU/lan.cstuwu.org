@@ -27,11 +27,9 @@ export default function AdminMatchesPage() {
   const [status, setStatus] = useState<MatchStatus>('upcoming');
 
   const loadData = async () => {
-    // 1. Initial local render
     setTeams(getStoredTeams());
     setMatches(getStoredMatches());
 
-    // 2. Fetch from backend API
     try {
       const [resTeams, resMatches] = await Promise.all([
         api.admin.getTeams().catch(() => null),
@@ -165,7 +163,6 @@ export default function AdminMatchesPage() {
     <AdminLayout>
       <div className="space-y-6">
         
-        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-tactical-border">
           <div>
             <div className="inline-flex items-center gap-2 mb-1">
@@ -210,7 +207,6 @@ export default function AdminMatchesPage() {
           </div>
         </div>
 
-        {/* Notice */}
         {notice && (
           <div className="p-3 bg-cyan/10 border border-cyan/40 text-xs font-mono text-cyan flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-cyan" />
@@ -218,7 +214,6 @@ export default function AdminMatchesPage() {
           </div>
         )}
 
-        {/* Existing Matches List */}
         <div className="space-y-4">
           {matches.map((m) => (
             <div
@@ -238,7 +233,6 @@ export default function AdminMatchesPage() {
                 </div>
               </div>
 
-              {/* Matchup Center */}
               <div className="flex items-center gap-6">
                 <div className="flex items-center gap-2.5 text-right">
                   <div>
@@ -265,7 +259,6 @@ export default function AdminMatchesPage() {
                 </div>
               </div>
 
-              {/* Status & Quick link to score */}
               <div className="text-right flex items-center gap-3">
                 <span className={`text-[10px] font-mono uppercase font-bold px-2.5 py-1 border ${
                   m.status === 'completed'
@@ -287,7 +280,6 @@ export default function AdminMatchesPage() {
 
       </div>
 
-      {/* Create Match Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/85 backdrop-blur-md">
           <div className="relative bg-card border border-cyan/50 max-w-lg w-full p-6 sm:p-8 shadow-2xl">

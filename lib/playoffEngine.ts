@@ -2,22 +2,17 @@
 
 import { Match, Team, PlayoffBracket, CS2Map } from './types';
 
-// Map rotation for playoff stages
 const PLAYOFF_MAPS: CS2Map[] = ['Mirage', 'Inferno', 'Dust II', 'Ancient', 'Nuke', 'Anubis', 'Vertigo'];
 
-/**
- * Generate a complete 8-squad single-elimination Playoff Tree (Quarterfinals -> Semifinals -> Grand Final + 3rd Place)
- */
+
 export function generatePlayoffTreeFromTeams(teams: Team[]): Match[] {
   const approved = teams.filter((t) => t.status === 'approved');
-  // Seed teams by points, then round difference, then wins
   const sorted = [...approved].sort((a, b) => {
     if ((b.points || 0) !== (a.points || 0)) return (b.points || 0) - (a.points || 0);
     if ((b.roundDiff || 0) !== (a.roundDiff || 0)) return (b.roundDiff || 0) - (a.roundDiff || 0);
     return (b.wins || 0) - (a.wins || 0);
   });
 
-  // Ensure 8 team slots (using available squads or fallback placeholder UWU squads)
   const slotSquads: (Team | null)[] = [
     sorted[0] || null, // Seed 1
     sorted[7] || sorted[1] || null, // Seed 8
@@ -34,7 +29,6 @@ export function generatePlayoffTreeFromTeams(teams: Team[]): Match[] {
   baseTime.setHours(10, 0, 0, 0);
 
   const matches: Match[] = [
-    // 1. Quarterfinals
     {
       id: 'm-qf-1',
       matchNumber: 101,
@@ -43,24 +37,22 @@ export function generatePlayoffTreeFromTeams(teams: Team[]): Match[] {
       nextMatchId: 'm-sf-1',
       nextMatchSlot: 'teamA',
       stage: 'Quarterfinal 01 (MR12)',
-      teamAId: slotSquads[0]?.id || 't-qf1-a',
-      teamAName: slotSquads[0]?.name || 'UWU Tactical Vanguard',
-      teamATag: slotSquads[0]?.tag || 'UWU.V',
+      teamAId: slotSquads[0]?.id || 't-seed-1',
+      teamAName: slotSquads[0]?.name || 'Seed 01 (TBD)',
+      teamATag: slotSquads[0]?.tag || 'SEED.1',
       teamALogo: slotSquads[0]?.logo || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200&auto=format&fit=crop&q=80',
-      teamBId: slotSquads[1]?.id || 't-qf1-b',
-      teamBName: slotSquads[1]?.name || 'UWU Cyber Titans',
-      teamBTag: slotSquads[1]?.tag || 'UWU.CT',
+      teamBId: slotSquads[1]?.id || 't-seed-8',
+      teamBName: slotSquads[1]?.name || 'Seed 08 (TBD)',
+      teamBTag: slotSquads[1]?.tag || 'SEED.8',
       teamBLogo: slotSquads[1]?.logo || 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=200&auto=format&fit=crop&q=80',
       map: 'Mirage',
       dateTime: new Date(baseTime.getTime()).toISOString(),
-      status: 'completed',
-      scoreA: 13,
-      scoreB: 10,
-      winnerId: slotSquads[0]?.id || 't-qf1-a',
-      mvp: 'Kasun Bandara (1.42 Rating)',
-      currentRound: 23,
-      half: 2,
-      roundHistory: ['teamA', 'teamA', 'teamB', 'teamA', 'teamB', 'teamA', 'teamB', 'teamB', 'teamA', 'teamA', 'teamA', 'teamB', 'teamB', 'teamA', 'teamB', 'teamA', 'teamB', 'teamA', 'teamB', 'teamA', 'teamA', 'teamB', 'teamA'],
+      status: 'upcoming',
+      scoreA: 0,
+      scoreB: 0,
+      currentRound: 0,
+      half: 1,
+      roundHistory: [],
       teamASide: 'CT',
       teamBSide: 'T',
     },
@@ -72,24 +64,22 @@ export function generatePlayoffTreeFromTeams(teams: Team[]): Match[] {
       nextMatchId: 'm-sf-1',
       nextMatchSlot: 'teamB',
       stage: 'Quarterfinal 02 (MR12)',
-      teamAId: slotSquads[2]?.id || 't-qf2-a',
-      teamAName: slotSquads[2]?.name || 'UWU Management Titans',
-      teamATag: slotSquads[2]?.tag || 'UWU.MGT',
+      teamAId: slotSquads[2]?.id || 't-seed-4',
+      teamAName: slotSquads[2]?.name || 'Seed 04 (TBD)',
+      teamATag: slotSquads[2]?.tag || 'SEED.4',
       teamALogo: slotSquads[2]?.logo || 'https://images.unsplash.com/photo-1563089145-599997674d42?w=200&auto=format&fit=crop&q=80',
-      teamBId: slotSquads[3]?.id || 't-qf2-b',
-      teamBName: slotSquads[3]?.name || 'UWU Iron Vipers',
-      teamBTag: slotSquads[3]?.tag || 'UWU.VIP',
+      teamBId: slotSquads[3]?.id || 't-seed-5',
+      teamBName: slotSquads[3]?.name || 'Seed 05 (TBD)',
+      teamBTag: slotSquads[3]?.tag || 'SEED.5',
       teamBLogo: slotSquads[3]?.logo || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=200&auto=format&fit=crop&q=80',
       map: 'Inferno',
       dateTime: new Date(baseTime.getTime() + 7200000).toISOString(),
-      status: 'completed',
-      scoreA: 13,
-      scoreB: 7,
-      winnerId: slotSquads[2]?.id || 't-qf2-a',
-      mvp: 'Kavishka Ranasinghe (1.55 Rating)',
-      currentRound: 20,
-      half: 2,
-      roundHistory: ['teamA', 'teamA', 'teamA', 'teamB', 'teamA', 'teamA', 'teamB', 'teamB', 'teamA', 'teamA', 'teamA', 'teamB', 'teamA', 'teamB', 'teamA', 'teamA', 'teamB', 'teamA', 'teamB', 'teamA'],
+      status: 'upcoming',
+      scoreA: 0,
+      scoreB: 0,
+      currentRound: 0,
+      half: 1,
+      roundHistory: [],
       teamASide: 'CT',
       teamBSide: 'T',
     },
@@ -101,24 +91,22 @@ export function generatePlayoffTreeFromTeams(teams: Team[]): Match[] {
       nextMatchId: 'm-sf-2',
       nextMatchSlot: 'teamA',
       stage: 'Quarterfinal 03 (MR12)',
-      teamAId: slotSquads[4]?.id || 't-qf3-a',
-      teamAName: slotSquads[4]?.name || 'UWU Medic Strikers',
-      teamATag: slotSquads[4]?.tag || 'UWU.MED',
+      teamAId: slotSquads[4]?.id || 't-seed-2',
+      teamAName: slotSquads[4]?.name || 'Seed 02 (TBD)',
+      teamATag: slotSquads[4]?.tag || 'SEED.2',
       teamALogo: slotSquads[4]?.logo || 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=200&auto=format&fit=crop&q=80',
-      teamBId: slotSquads[5]?.id || 't-qf3-b',
-      teamBName: slotSquads[5]?.name || 'UWU Tech Overlords',
-      teamBTag: slotSquads[5]?.tag || 'UWU.TECH',
+      teamBId: slotSquads[5]?.id || 't-seed-7',
+      teamBName: slotSquads[5]?.name || 'Seed 07 (TBD)',
+      teamBTag: slotSquads[5]?.tag || 'SEED.7',
       teamBLogo: slotSquads[5]?.logo || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200&auto=format&fit=crop&q=80',
       map: 'Dust II',
       dateTime: new Date(baseTime.getTime() + 14400000).toISOString(),
-      status: 'completed',
-      scoreA: 13,
-      scoreB: 11,
-      winnerId: slotSquads[4]?.id || 't-qf3-a',
-      mvp: 'Ashen Samarajeewa (1.38 Rating)',
-      currentRound: 24,
-      half: 2,
-      roundHistory: ['teamA', 'teamB', 'teamA', 'teamB', 'teamA', 'teamB', 'teamB', 'teamA', 'teamB', 'teamA', 'teamA', 'teamB', 'teamA', 'teamB', 'teamA', 'teamB', 'teamA', 'teamA', 'teamB', 'teamB', 'teamA', 'teamA', 'teamB', 'teamA'],
+      status: 'upcoming',
+      scoreA: 0,
+      scoreB: 0,
+      currentRound: 0,
+      half: 1,
+      roundHistory: [],
       teamASide: 'CT',
       teamBSide: 'T',
     },
@@ -130,24 +118,22 @@ export function generatePlayoffTreeFromTeams(teams: Team[]): Match[] {
       nextMatchId: 'm-sf-2',
       nextMatchSlot: 'teamB',
       stage: 'Quarterfinal 04 (MR12)',
-      teamAId: slotSquads[6]?.id || 't-qf4-a',
-      teamAName: slotSquads[6]?.name || 'UWU Agro Wolves',
-      teamATag: slotSquads[6]?.tag || 'UWU.AGR',
+      teamAId: slotSquads[6]?.id || 't-seed-3',
+      teamAName: slotSquads[6]?.name || 'Seed 03 (TBD)',
+      teamATag: slotSquads[6]?.tag || 'SEED.3',
       teamALogo: slotSquads[6]?.logo || 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=200&auto=format&fit=crop&q=80',
-      teamBId: slotSquads[7]?.id || 't-qf4-b',
-      teamBName: slotSquads[7]?.name || 'UWU Bio Phantoms',
-      teamBTag: slotSquads[7]?.tag || 'UWU.BIO',
+      teamBId: slotSquads[7]?.id || 't-seed-6',
+      teamBName: slotSquads[7]?.name || 'Seed 06 (TBD)',
+      teamBTag: slotSquads[7]?.tag || 'SEED.6',
       teamBLogo: slotSquads[7]?.logo || 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=200&auto=format&fit=crop&q=80',
       map: 'Ancient',
       dateTime: new Date(baseTime.getTime() + 21600000).toISOString(),
-      status: 'completed',
-      scoreA: 8,
-      scoreB: 13,
-      winnerId: slotSquads[7]?.id || 't-qf4-b',
-      mvp: 'Sandun Jayakody (1.46 Rating)',
-      currentRound: 21,
-      half: 2,
-      roundHistory: ['teamB', 'teamA', 'teamB', 'teamB', 'teamA', 'teamB', 'teamA', 'teamB', 'teamB', 'teamA', 'teamB', 'teamA', 'teamB', 'teamB', 'teamA', 'teamB', 'teamA', 'teamB', 'teamA', 'teamB', 'teamB'],
+      status: 'upcoming',
+      scoreA: 0,
+      scoreB: 0,
+      currentRound: 0,
+      half: 1,
+      roundHistory: [],
       teamASide: 'CT',
       teamBSide: 'T',
     },
@@ -160,25 +146,25 @@ export function generatePlayoffTreeFromTeams(teams: Team[]): Match[] {
       bracketPosition: 1,
       nextMatchId: 'm-gf',
       nextMatchSlot: 'teamA',
-      stage: 'Semifinal 01 (MR12 Live)',
-      teamAId: slotSquads[0]?.id || 't-qf1-a',
-      teamAName: slotSquads[0]?.name || 'UWU Tactical Vanguard',
-      teamATag: slotSquads[0]?.tag || 'UWU.V',
-      teamALogo: slotSquads[0]?.logo || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200&auto=format&fit=crop&q=80',
-      teamBId: slotSquads[2]?.id || 't-qf2-a',
-      teamBName: slotSquads[2]?.name || 'UWU Management Titans',
-      teamBTag: slotSquads[2]?.tag || 'UWU.MGT',
-      teamBLogo: slotSquads[2]?.logo || 'https://images.unsplash.com/photo-1563089145-599997674d42?w=200&auto=format&fit=crop&q=80',
+      stage: 'Semifinal 01 (MR12)',
+      teamAId: 'tbd-sf1-a',
+      teamAName: 'Winner QF 01',
+      teamATag: 'W.QF1',
+      teamALogo: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200&auto=format&fit=crop&q=80',
+      teamBId: 'tbd-sf1-b',
+      teamBName: 'Winner QF 02',
+      teamBTag: 'W.QF2',
+      teamBLogo: 'https://images.unsplash.com/photo-1563089145-599997674d42?w=200&auto=format&fit=crop&q=80',
       map: 'Nuke',
       dateTime: new Date(baseTime.getTime() + 86400000 + 3600000).toISOString(),
-      status: 'live',
-      scoreA: 11,
-      scoreB: 9,
+      status: 'upcoming',
+      scoreA: 0,
+      scoreB: 0,
       streamUrl: 'https://twitch.tv/cst_lan_challenge',
-      currentRound: 20,
-      half: 2,
+      currentRound: 0,
+      half: 1,
       c4Planted: false,
-      roundHistory: ['teamA', 'teamA', 'teamB', 'teamA', 'teamB', 'teamB', 'teamA', 'teamA', 'teamB', 'teamA', 'teamA', 'teamB', 'teamB', 'teamA', 'teamB', 'teamB', 'teamA', 'teamB', 'teamA', 'teamA'],
+      roundHistory: [],
       teamASide: 'CT',
       teamBSide: 'T',
     },
@@ -189,15 +175,15 @@ export function generatePlayoffTreeFromTeams(teams: Team[]): Match[] {
       bracketPosition: 2,
       nextMatchId: 'm-gf',
       nextMatchSlot: 'teamB',
-      stage: 'Semifinal 02 (MR12 Upcoming)',
-      teamAId: slotSquads[4]?.id || 't-qf3-a',
-      teamAName: slotSquads[4]?.name || 'UWU Medic Strikers',
-      teamATag: slotSquads[4]?.tag || 'UWU.MED',
-      teamALogo: slotSquads[4]?.logo || 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=200&auto=format&fit=crop&q=80',
-      teamBId: slotSquads[7]?.id || 't-qf4-b',
-      teamBName: slotSquads[7]?.name || 'UWU Bio Phantoms',
-      teamBTag: slotSquads[7]?.tag || 'UWU.BIO',
-      teamBLogo: slotSquads[7]?.logo || 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=200&auto=format&fit=crop&q=80',
+      stage: 'Semifinal 02 (MR12)',
+      teamAId: 'tbd-sf2-a',
+      teamAName: 'Winner QF 03',
+      teamATag: 'W.QF3',
+      teamALogo: 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=200&auto=format&fit=crop&q=80',
+      teamBId: 'tbd-sf2-b',
+      teamBName: 'Winner QF 04',
+      teamBTag: 'W.QF4',
+      teamBLogo: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=200&auto=format&fit=crop&q=80',
       map: 'Anubis',
       dateTime: new Date(baseTime.getTime() + 86400000 + 10800000).toISOString(),
       status: 'upcoming',
@@ -381,6 +367,37 @@ export function analyzeAndAdvanceBracketWinners(
             changedInPass = true;
           }
         }
+      } else if (!match.winnerId && match.nextMatchId) {
+        // If match winner is cleared or not yet determined, revert downstream slot to clean placeholder
+        const nextMatch = matchMap.get(match.nextMatchId);
+        if (nextMatch) {
+          const placeholder = getDefaultSlotPlaceholder(match.nextMatchId, match.nextMatchSlot || 'teamA');
+          if (match.nextMatchSlot === 'teamA') {
+            if (
+              nextMatch.teamAId !== placeholder.id &&
+              (nextMatch.teamAId === match.teamAId || nextMatch.teamAId === match.teamBId)
+            ) {
+              nextMatch.teamAId = placeholder.id;
+              nextMatch.teamAName = placeholder.name;
+              nextMatch.teamATag = placeholder.tag;
+              nextMatch.teamALogo = placeholder.logo;
+              isUpdated = true;
+              changedInPass = true;
+            }
+          } else if (match.nextMatchSlot === 'teamB') {
+            if (
+              nextMatch.teamBId !== placeholder.id &&
+              (nextMatch.teamBId === match.teamAId || nextMatch.teamBId === match.teamBId)
+            ) {
+              nextMatch.teamBId = placeholder.id;
+              nextMatch.teamBName = placeholder.name;
+              nextMatch.teamBTag = placeholder.tag;
+              nextMatch.teamBLogo = placeholder.logo;
+              isUpdated = true;
+              changedInPass = true;
+            }
+          }
+        }
       }
 
       // 3. Grand Championship Final detection
@@ -401,40 +418,69 @@ export function analyzeAndAdvanceBracketWinners(
 }
 
 /**
- * 16 Squads for the Dual-Wing Tournament Bracket
+ * Helper to get clean placeholder for downstream bracket slots (QF, SF, Grand Final)
  */
-export const SIXTEEN_BRACKET_TEAMS: Team[] = [
-  // Top-Left (Neon Purple)
-  { id: 't-gr', name: 'Ghost Reapers', tag: 'GHOST', university: 'Uva Wellassa University', logo: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200&auto=format&fit=crop&q=80', status: 'approved', createdAt: new Date().toISOString(), captain: { name: 'Kasun Bandara', whatsappNumber: '0771112233' }, players: [] },
-  { id: 't-sv', name: 'Shadow Vipers', tag: 'VIPER', university: 'Uva Wellassa University', logo: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=200&auto=format&fit=crop&q=80', status: 'approved', createdAt: new Date().toISOString(), captain: { name: 'Janith D.', whatsappNumber: '0771112234' }, players: [] },
-  { id: 't-ns', name: 'Night Spectres', tag: 'SPECTRE', university: 'Uva Wellassa University', logo: 'https://images.unsplash.com/photo-1563089145-599997674d42?w=200&auto=format&fit=crop&q=80', status: 'approved', createdAt: new Date().toISOString(), captain: { name: 'Nuwan J.', whatsappNumber: '0771112235' }, players: [] },
-  { id: 't-vk', name: 'Valkyrie 5', tag: 'VALK', university: 'Uva Wellassa University', logo: 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=200&auto=format&fit=crop&q=80', status: 'approved', createdAt: new Date().toISOString(), captain: { name: 'Malinda E.', whatsappNumber: '0771112236' }, players: [] },
+export function getDefaultSlotPlaceholder(
+  matchId: string,
+  slot: 'teamA' | 'teamB'
+): { id: string; name: string; tag: string; logo: string } {
+  const map: Record<string, { teamA: { name: string; tag: string }; teamB: { name: string; tag: string } }> = {
+    'm-qf-1': { teamA: { name: 'Winner R16.1', tag: 'W.R16.1' }, teamB: { name: 'Winner R16.2', tag: 'W.R16.2' } },
+    'm-qf-2': { teamA: { name: 'Winner R16.3', tag: 'W.R16.3' }, teamB: { name: 'Winner R16.4', tag: 'W.R16.4' } },
+    'm-qf-3': { teamA: { name: 'Winner R16.5', tag: 'W.R16.5' }, teamB: { name: 'Winner R16.6', tag: 'W.R16.6' } },
+    'm-qf-4': { teamA: { name: 'Winner R16.7', tag: 'W.R16.7' }, teamB: { name: 'Winner R16.8', tag: 'W.R16.8' } },
+    'm-sf-1': { teamA: { name: 'Winner QF 1', tag: 'W.QF1' }, teamB: { name: 'Winner QF 2', tag: 'W.QF2' } },
+    'm-sf-2': { teamA: { name: 'Winner QF 3', tag: 'W.QF3' }, teamB: { name: 'Winner QF 4', tag: 'W.QF4' } },
+    'm-gf':   { teamA: { name: 'Winner Semifinal 1', tag: 'W.SF1' }, teamB: { name: 'Winner Semifinal 2', tag: 'W.SF2' } },
+  };
 
-  // Bottom-Left (Neon Orange)
-  { id: 't-ah', name: 'Apex Hunters', tag: 'HUNTER', university: 'Uva Wellassa University', logo: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=200&auto=format&fit=crop&q=80', status: 'approved', createdAt: new Date().toISOString(), captain: { name: 'Supun M.', whatsappNumber: '0771112237' }, players: [] },
-  { id: 't-df', name: 'Desert Foxes', tag: 'FOX', university: 'Uva Wellassa University', logo: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=200&auto=format&fit=crop&q=80', status: 'approved', createdAt: new Date().toISOString(), captain: { name: 'Sahan F.', whatsappNumber: '0771112238' }, players: [] },
-  { id: 't-ts', name: 'Titan Squad', tag: 'TITAN', university: 'Uva Wellassa University', logo: 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=200&auto=format&fit=crop&q=80', status: 'approved', createdAt: new Date().toISOString(), captain: { name: 'Ashen S.', whatsappNumber: '0771112239' }, players: [] },
-  { id: 't-cf', name: 'Cyber Force', tag: 'CYBER', university: 'Uva Wellassa University', logo: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=200&auto=format&fit=crop&q=80', status: 'approved', createdAt: new Date().toISOString(), captain: { name: 'Chamod K.', whatsappNumber: '0771112240' }, players: [] },
+  const entry = map[matchId]?.[slot] || {
+    name: slot === 'teamA' ? 'Winner Match A' : 'Winner Match B',
+    tag: 'TBD',
+  };
 
-  // Top-Right (Neon Cyan)
-  { id: 't-ap', name: 'Alpha Protocol', tag: 'ALPHA', university: 'Uva Wellassa University', logo: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=200&auto=format&fit=crop&q=80', status: 'approved', createdAt: new Date().toISOString(), captain: { name: 'Isuru W.', whatsappNumber: '0771112241' }, players: [] },
-  { id: 't-vc', name: 'Vortex Crew', tag: 'VORTEX', university: 'Uva Wellassa University', logo: 'https://images.unsplash.com/photo-1534423861386-85a16f5d13fd?w=200&auto=format&fit=crop&q=80', status: 'approved', createdAt: new Date().toISOString(), captain: { name: 'Kavindu R.', whatsappNumber: '0771112242' }, players: [] },
-  { id: 't-dlt', name: 'Delta Forces', tag: 'DELTA', university: 'Uva Wellassa University', logo: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200&auto=format&fit=crop&q=80', status: 'approved', createdAt: new Date().toISOString(), captain: { name: 'Sachith D.', whatsappNumber: '0771112243' }, players: [] },
-  { id: 't-ic', name: 'Iron Clad 5', tag: 'IRON', university: 'Uva Wellassa University', logo: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=200&auto=format&fit=crop&q=80', status: 'approved', createdAt: new Date().toISOString(), captain: { name: 'Akila S.', whatsappNumber: '0771112244' }, players: [] },
+  return {
+    id: `tbd-${matchId}-${slot}`,
+    name: entry.name,
+    tag: entry.tag,
+    logo: '/images/team-placeholder.svg',
+  };
+}
 
-  // Bottom-Right (Neon Red)
-  { id: 't-bs', name: 'Bravo Spectres', tag: 'BRAVO', university: 'Uva Wellassa University', logo: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=200&auto=format&fit=crop&q=80', status: 'approved', createdAt: new Date().toISOString(), captain: { name: 'Kavishka R.', whatsappNumber: '0771112245' }, players: [] },
-  { id: 't-pu', name: 'Phantom Unit', tag: 'PHANTOM', university: 'Uva Wellassa University', logo: 'https://images.unsplash.com/photo-1563089145-599997674d42?w=200&auto=format&fit=crop&q=80', status: 'approved', createdAt: new Date().toISOString(), captain: { name: 'Oshan L.', whatsappNumber: '0771112246' }, players: [] },
-  { id: 't-om', name: 'Omega Protocol', tag: 'OMEGA', university: 'Uva Wellassa University', logo: 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=200&auto=format&fit=crop&q=80', status: 'approved', createdAt: new Date().toISOString(), captain: { name: 'Harsha M.', whatsappNumber: '0771112247' }, players: [] },
-  { id: 't-rc', name: 'Raven Clan', tag: 'RAVEN', university: 'Uva Wellassa University', logo: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=200&auto=format&fit=crop&q=80', status: 'approved', createdAt: new Date().toISOString(), captain: { name: 'Roshan D.', whatsappNumber: '0771112248' }, players: [] },
-];
+/**
+ * 16 Clean Default TBD Slots for Dual-Wing Tournament Bracket
+ * Seeded dynamically with real approved registered teams.
+ */
+export const DEFAULT_TBD_TEAMS: Team[] = Array.from({ length: 16 }, (_, i) => {
+  const num = String(i + 1).padStart(2, '0');
+  return {
+    id: `tbd-slot-${i + 1}`,
+    name: `TBD (Slot ${num})`,
+    tag: `SLOT${num}`,
+    university: 'Awaiting Seeding',
+    logo: '/images/team-placeholder.svg',
+    status: 'approved' as const,
+    createdAt: new Date().toISOString(),
+    captain: { name: 'TBD', whatsappNumber: '' },
+    players: [],
+  };
+});
+
+// Alias for backwards compatibility
+export const SIXTEEN_BRACKET_TEAMS: Team[] = DEFAULT_TBD_TEAMS;
 
 /**
  * Generate a complete 16-squad single-elimination Playoff Tree
  * matching the exact structure from the reference tournament bracket
  */
-export function generate16TeamPlayoffTree(): Match[] {
-  const t = SIXTEEN_BRACKET_TEAMS;
+export function generate16TeamPlayoffTree(customTeams?: Team[]): Match[] {
+  const approvedCustom = customTeams ? customTeams.filter((team) => team.status === 'approved') : [];
+  const t = Array.from({ length: 16 }, (_, idx) => {
+    if (approvedCustom[idx]) {
+      return approvedCustom[idx];
+    }
+    return DEFAULT_TBD_TEAMS[idx];
+  });
   const now = new Date();
 
   return [
@@ -457,11 +503,10 @@ export function generate16TeamPlayoffTree(): Match[] {
       teamBTag: t[1].tag,
       teamBLogo: t[1].logo,
       map: 'Mirage',
-      dateTime: new Date(now.getTime() - 86400000).toISOString(),
-      status: 'completed',
-      scoreA: 13,
-      scoreB: 7,
-      winnerId: t[0].id,
+      dateTime: new Date(now.getTime() + 86400000).toISOString(),
+      status: 'upcoming',
+      scoreA: 0,
+      scoreB: 0,
       teamASide: 'CT',
       teamBSide: 'T',
     },
@@ -482,11 +527,10 @@ export function generate16TeamPlayoffTree(): Match[] {
       teamBTag: t[3].tag,
       teamBLogo: t[3].logo,
       map: 'Inferno',
-      dateTime: new Date(now.getTime() - 82800000).toISOString(),
-      status: 'completed',
-      scoreA: 13,
-      scoreB: 9,
-      winnerId: t[2].id,
+      dateTime: new Date(now.getTime() + 90000000).toISOString(),
+      status: 'upcoming',
+      scoreA: 0,
+      scoreB: 0,
       teamASide: 'CT',
       teamBSide: 'T',
     },
@@ -509,11 +553,10 @@ export function generate16TeamPlayoffTree(): Match[] {
       teamBTag: t[5].tag,
       teamBLogo: t[5].logo,
       map: 'Dust II',
-      dateTime: new Date(now.getTime() - 79200000).toISOString(),
-      status: 'completed',
-      scoreA: 13,
-      scoreB: 10,
-      winnerId: t[4].id,
+      dateTime: new Date(now.getTime() + 93600000).toISOString(),
+      status: 'upcoming',
+      scoreA: 0,
+      scoreB: 0,
       teamASide: 'CT',
       teamBSide: 'T',
     },
@@ -534,11 +577,10 @@ export function generate16TeamPlayoffTree(): Match[] {
       teamBTag: t[7].tag,
       teamBLogo: t[7].logo,
       map: 'Ancient',
-      dateTime: new Date(now.getTime() - 75600000).toISOString(),
-      status: 'completed',
-      scoreA: 13,
-      scoreB: 8,
-      winnerId: t[6].id,
+      dateTime: new Date(now.getTime() + 97200000).toISOString(),
+      status: 'upcoming',
+      scoreA: 0,
+      scoreB: 0,
       teamASide: 'CT',
       teamBSide: 'T',
     },
@@ -561,11 +603,10 @@ export function generate16TeamPlayoffTree(): Match[] {
       teamBTag: t[9].tag,
       teamBLogo: t[9].logo,
       map: 'Nuke',
-      dateTime: new Date(now.getTime() - 72000000).toISOString(),
-      status: 'completed',
-      scoreA: 13,
-      scoreB: 6,
-      winnerId: t[8].id,
+      dateTime: new Date(now.getTime() + 100800000).toISOString(),
+      status: 'upcoming',
+      scoreA: 0,
+      scoreB: 0,
       teamASide: 'CT',
       teamBSide: 'T',
     },
@@ -586,11 +627,10 @@ export function generate16TeamPlayoffTree(): Match[] {
       teamBTag: t[11].tag,
       teamBLogo: t[11].logo,
       map: 'Anubis',
-      dateTime: new Date(now.getTime() - 68400000).toISOString(),
-      status: 'completed',
-      scoreA: 13,
-      scoreB: 11,
-      winnerId: t[10].id,
+      dateTime: new Date(now.getTime() + 104400000).toISOString(),
+      status: 'upcoming',
+      scoreA: 0,
+      scoreB: 0,
       teamASide: 'CT',
       teamBSide: 'T',
     },
@@ -613,11 +653,10 @@ export function generate16TeamPlayoffTree(): Match[] {
       teamBTag: t[13].tag,
       teamBLogo: t[13].logo,
       map: 'Vertigo',
-      dateTime: new Date(now.getTime() - 64800000).toISOString(),
-      status: 'completed',
-      scoreA: 13,
-      scoreB: 5,
-      winnerId: t[12].id,
+      dateTime: new Date(now.getTime() + 108000000).toISOString(),
+      status: 'upcoming',
+      scoreA: 0,
+      scoreB: 0,
       teamASide: 'CT',
       teamBSide: 'T',
     },
@@ -638,11 +677,10 @@ export function generate16TeamPlayoffTree(): Match[] {
       teamBTag: t[15].tag,
       teamBLogo: t[15].logo,
       map: 'Inferno',
-      dateTime: new Date(now.getTime() - 61200000).toISOString(),
-      status: 'completed',
-      scoreA: 13,
-      scoreB: 9,
-      winnerId: t[14].id,
+      dateTime: new Date(now.getTime() + 111600000).toISOString(),
+      status: 'upcoming',
+      scoreA: 0,
+      scoreB: 0,
       teamASide: 'CT',
       teamBSide: 'T',
     },
@@ -657,20 +695,19 @@ export function generate16TeamPlayoffTree(): Match[] {
       nextMatchId: 'm-sf-1',
       nextMatchSlot: 'teamA',
       stage: 'Quarterfinal 01 (Purple)',
-      teamAId: t[0].id,
-      teamAName: t[0].name,
-      teamATag: t[0].tag,
-      teamALogo: t[0].logo,
-      teamBId: t[2].id,
-      teamBName: t[2].name,
-      teamBTag: t[2].tag,
-      teamBLogo: t[2].logo,
+      teamAId: 'tbd-qf1-a',
+      teamAName: 'Winner R16.1',
+      teamATag: 'W.R16.1',
+      teamALogo: '/images/team-placeholder.svg',
+      teamBId: 'tbd-qf1-b',
+      teamBName: 'Winner R16.2',
+      teamBTag: 'W.R16.2',
+      teamBLogo: '/images/team-placeholder.svg',
       map: 'Mirage',
-      dateTime: new Date(now.getTime() - 43200000).toISOString(),
-      status: 'completed',
-      scoreA: 13,
-      scoreB: 8,
-      winnerId: t[0].id,
+      dateTime: new Date(now.getTime() + 172800000).toISOString(),
+      status: 'upcoming',
+      scoreA: 0,
+      scoreB: 0,
       teamASide: 'CT',
       teamBSide: 'T',
     },
@@ -684,20 +721,19 @@ export function generate16TeamPlayoffTree(): Match[] {
       nextMatchId: 'm-sf-1',
       nextMatchSlot: 'teamB',
       stage: 'Quarterfinal 02 (Orange)',
-      teamAId: t[4].id,
-      teamAName: t[4].name,
-      teamATag: t[4].tag,
-      teamALogo: t[4].logo,
-      teamBId: t[6].id,
-      teamBName: t[6].name,
-      teamBTag: t[6].tag,
-      teamBLogo: t[6].logo,
+      teamAId: 'tbd-qf2-a',
+      teamAName: 'Winner R16.3',
+      teamATag: 'W.R16.3',
+      teamALogo: '/images/team-placeholder.svg',
+      teamBId: 'tbd-qf2-b',
+      teamBName: 'Winner R16.4',
+      teamBTag: 'W.R16.4',
+      teamBLogo: '/images/team-placeholder.svg',
       map: 'Inferno',
-      dateTime: new Date(now.getTime() - 36000000).toISOString(),
-      status: 'completed',
-      scoreA: 9,
-      scoreB: 13,
-      winnerId: t[6].id,
+      dateTime: new Date(now.getTime() + 180000000).toISOString(),
+      status: 'upcoming',
+      scoreA: 0,
+      scoreB: 0,
       teamASide: 'CT',
       teamBSide: 'T',
     },
@@ -711,20 +747,19 @@ export function generate16TeamPlayoffTree(): Match[] {
       nextMatchId: 'm-sf-2',
       nextMatchSlot: 'teamA',
       stage: 'Quarterfinal 03 (Cyan)',
-      teamAId: t[8].id,
-      teamAName: t[8].name,
-      teamATag: t[8].tag,
-      teamALogo: t[8].logo,
-      teamBId: t[10].id,
-      teamBName: t[10].name,
-      teamBTag: t[10].tag,
-      teamBLogo: t[10].logo,
+      teamAId: 'tbd-qf3-a',
+      teamAName: 'Winner R16.5',
+      teamATag: 'W.R16.5',
+      teamALogo: '/images/team-placeholder.svg',
+      teamBId: 'tbd-qf3-b',
+      teamBName: 'Winner R16.6',
+      teamBTag: 'W.R16.6',
+      teamBLogo: '/images/team-placeholder.svg',
       map: 'Dust II',
-      dateTime: new Date(now.getTime() - 28800000).toISOString(),
-      status: 'completed',
-      scoreA: 13,
-      scoreB: 10,
-      winnerId: t[8].id,
+      dateTime: new Date(now.getTime() + 187200000).toISOString(),
+      status: 'upcoming',
+      scoreA: 0,
+      scoreB: 0,
       teamASide: 'CT',
       teamBSide: 'T',
     },
@@ -738,26 +773,25 @@ export function generate16TeamPlayoffTree(): Match[] {
       nextMatchId: 'm-sf-2',
       nextMatchSlot: 'teamB',
       stage: 'Quarterfinal 04 (Red)',
-      teamAId: t[12].id,
-      teamAName: t[12].name,
-      teamATag: t[12].tag,
-      teamALogo: t[12].logo,
-      teamBId: t[14].id,
-      teamBName: t[14].name,
-      teamBTag: t[14].tag,
-      teamBLogo: t[14].logo,
+      teamAId: 'tbd-qf4-a',
+      teamAName: 'Winner R16.7',
+      teamATag: 'W.R16.7',
+      teamALogo: '/images/team-placeholder.svg',
+      teamBId: 'tbd-qf4-b',
+      teamBName: 'Winner R16.8',
+      teamBTag: 'W.R16.8',
+      teamBLogo: '/images/team-placeholder.svg',
       map: 'Ancient',
-      dateTime: new Date(now.getTime() - 21600000).toISOString(),
-      status: 'completed',
-      scoreA: 13,
-      scoreB: 11,
-      winnerId: t[12].id,
+      dateTime: new Date(now.getTime() + 194400000).toISOString(),
+      status: 'upcoming',
+      scoreA: 0,
+      scoreB: 0,
       teamASide: 'CT',
       teamBSide: 'T',
     },
 
     // ================= SEMIFINALS (2 MATCHES) =================
-    // Semifinal 1: Left Wing Clash (Ghost Reapers vs Titan Squad)
+    // Semifinal 1: Left Wing Clash
     {
       id: 'm-sf-1',
       matchNumber: 105,
@@ -766,25 +800,24 @@ export function generate16TeamPlayoffTree(): Match[] {
       nextMatchId: 'm-gf',
       nextMatchSlot: 'teamA',
       stage: 'Left Wing Semifinal',
-      teamAId: t[0].id,
-      teamAName: t[0].name,
-      teamATag: t[0].tag,
-      teamALogo: t[0].logo,
-      teamBId: t[6].id,
-      teamBName: t[6].name,
-      teamBTag: t[6].tag,
-      teamBLogo: t[6].logo,
+      teamAId: 'tbd-sf1-a',
+      teamAName: 'Winner QF 1',
+      teamATag: 'W.QF1',
+      teamALogo: '/images/team-placeholder.svg',
+      teamBId: 'tbd-sf1-b',
+      teamBName: 'Winner QF 2',
+      teamBTag: 'W.QF2',
+      teamBLogo: '/images/team-placeholder.svg',
       map: 'Nuke',
-      dateTime: new Date(now.getTime() - 10800000).toISOString(),
-      status: 'completed',
-      scoreA: 13,
-      scoreB: 9,
-      winnerId: t[0].id,
+      dateTime: new Date(now.getTime() + 259200000).toISOString(),
+      status: 'upcoming',
+      scoreA: 0,
+      scoreB: 0,
       teamASide: 'CT',
       teamBSide: 'T',
     },
 
-    // Semifinal 2: Right Wing Clash (Alpha Protocol vs Bravo Spectres)
+    // Semifinal 2: Right Wing Clash
     {
       id: 'm-sf-2',
       matchNumber: 106,
@@ -793,20 +826,19 @@ export function generate16TeamPlayoffTree(): Match[] {
       nextMatchId: 'm-gf',
       nextMatchSlot: 'teamB',
       stage: 'Right Wing Semifinal',
-      teamAId: t[8].id,
-      teamAName: t[8].name,
-      teamATag: t[8].tag,
-      teamALogo: t[8].logo,
-      teamBId: t[12].id,
-      teamBName: t[12].name,
-      teamBTag: t[12].tag,
-      teamBLogo: t[12].logo,
+      teamAId: 'tbd-sf2-a',
+      teamAName: 'Winner QF 3',
+      teamATag: 'W.QF3',
+      teamALogo: '/images/team-placeholder.svg',
+      teamBId: 'tbd-sf2-b',
+      teamBName: 'Winner QF 4',
+      teamBTag: 'W.QF4',
+      teamBLogo: '/images/team-placeholder.svg',
       map: 'Anubis',
-      dateTime: new Date(now.getTime() - 3600000).toISOString(),
-      status: 'completed',
-      scoreA: 13,
-      scoreB: 8,
-      winnerId: t[8].id,
+      dateTime: new Date(now.getTime() + 266400000).toISOString(),
+      status: 'upcoming',
+      scoreA: 0,
+      scoreB: 0,
       teamASide: 'CT',
       teamBSide: 'T',
     },
@@ -818,23 +850,23 @@ export function generate16TeamPlayoffTree(): Match[] {
       bracketRound: 'final',
       bracketPosition: 1,
       stage: 'Grand Championship Final',
-      teamAId: t[0].id,
-      teamAName: t[0].name,
-      teamATag: t[0].tag,
-      teamALogo: t[0].logo,
-      teamBId: t[8].id,
-      teamBName: t[8].name,
-      teamBTag: t[8].tag,
-      teamBLogo: t[8].logo,
+      teamAId: 'tbd-gf-a',
+      teamAName: 'Winner Semifinal 1',
+      teamATag: 'W.SF1',
+      teamALogo: '/images/team-placeholder.svg',
+      teamBId: 'tbd-gf-b',
+      teamBName: 'Winner Semifinal 2',
+      teamBTag: 'W.SF2',
+      teamBLogo: '/images/team-placeholder.svg',
       map: 'Mirage',
-      dateTime: new Date(now.getTime()).toISOString(),
-      status: 'live',
-      scoreA: 11,
-      scoreB: 9,
+      dateTime: new Date(now.getTime() + 345600000).toISOString(),
+      status: 'upcoming',
+      scoreA: 0,
+      scoreB: 0,
       teamASide: 'CT',
       teamBSide: 'T',
-      currentRound: 20,
-      half: 2,
+      currentRound: 0,
+      half: 1,
     },
   ];
 }

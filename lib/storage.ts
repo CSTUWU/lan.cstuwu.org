@@ -73,14 +73,31 @@ export const getStored16Matches = (): Match[] => {
     const raw = localStorage.getItem(MATCHES_16_KEY);
     let list: Match[] = [];
     if (!raw) {
-      list = generate16TeamPlayoffTree();
+      list = generate16TeamPlayoffTree(getStoredTeams());
       localStorage.setItem(MATCHES_16_KEY, JSON.stringify(list));
     } else {
       list = JSON.parse(raw);
+      // Clean legacy completed mock state or legacy mock squads if present from previous sessions
+      const hasLegacyMockTeams =
+        Array.isArray(list) &&
+        list.some(
+          (m) =>
+            m.teamAId === 't-gr' ||
+            m.teamBId === 't-sv' ||
+            m.teamAName === 'Ghost Reapers' ||
+            m.teamBName === 'Shadow Vipers' ||
+            m.teamAName === 'Apex Hunters' ||
+            m.teamAName === 'Alpha Protocol' ||
+            (m.id === 'm-r16-1' && m.status === 'completed' && m.scoreA === 13)
+        );
+      if (hasLegacyMockTeams) {
+        list = generate16TeamPlayoffTree(getStoredTeams());
+        localStorage.setItem(MATCHES_16_KEY, JSON.stringify(list));
+      }
     }
 
     // Auto-advance winners in 16-squad playoff bracket tree
-    const { updatedMatches, isUpdated } = analyzeAndAdvanceBracketWinners(list, SIXTEEN_BRACKET_TEAMS);
+    const { updatedMatches, isUpdated } = analyzeAndAdvanceBracketWinners(list, getStoredTeams());
     if (isUpdated) {
       localStorage.setItem(MATCHES_16_KEY, JSON.stringify(updatedMatches));
       return updatedMatches;
@@ -88,7 +105,7 @@ export const getStored16Matches = (): Match[] => {
     return list;
   } catch (e) {
     console.error('Failed reading 16-squad matches from localStorage', e);
-    return generate16TeamPlayoffTree();
+    return generate16TeamPlayoffTree(getStoredTeams());
   }
 };
 
@@ -116,7 +133,7 @@ export const update16MatchScore = (
     ...(mvp !== undefined ? { mvp } : {}),
   };
 
-  const { updatedMatches } = analyzeAndAdvanceBracketWinners(matches, SIXTEEN_BRACKET_TEAMS);
+  const { updatedMatches } = analyzeAndAdvanceBracketWinners(matches, getStoredTeams());
   notify16MatchesUpdated(updatedMatches, matchId);
   return true;
 };
@@ -154,7 +171,7 @@ export const increment16MatchScore = (
   }
 
   matches[index] = match;
-  const { updatedMatches } = analyzeAndAdvanceBracketWinners(matches, SIXTEEN_BRACKET_TEAMS);
+  const { updatedMatches } = analyzeAndAdvanceBracketWinners(matches, getStoredTeams());
   notify16MatchesUpdated(updatedMatches, matchId);
   return updatedMatches[index] || match;
 };
@@ -180,15 +197,78 @@ export const set16MatchWinner = (
   match.status = 'completed';
   matches[index] = match;
 
-  const { updatedMatches } = analyzeAndAdvanceBracketWinners(matches, SIXTEEN_BRACKET_TEAMS);
+  const { updatedMatches } = analyzeAndAdvanceBracketWinners(matches, getStoredTeams());
   notify16MatchesUpdated(updatedMatches, matchId);
   return updatedMatches[index] || match;
 };
 
 export const reset16Matches = (): Match[] => {
-  const fresh = generate16TeamPlayoffTree();
+  const fresh = generate16TeamPlayoffTree(getStoredTeams());
   notify16MatchesUpdated(fresh);
   return fresh;
+};
+
+/**
+ * Regenerate / synchronize the 1st layer of the 16-Squad Playoff Tree
+ * from registered and approved teams. Unfilled slots display clean TBD (Slot XX).
+ * Subsequent layers (Quarterfinals, Semifinals, Grand Final, Trophy)
+ * derive strictly from winning details.
+ */
+export const refresh16PlayoffTreeFromApprovedTeams = (providedTeams?: Team[]): Match[] => {
+  const currentTeams = providedTeams || getStoredTeams();
+  const approvedTeams = currentTeams.filter((t) => t.status === 'approved');
+  let currentMatches = getStored16Matches();
+
+  if (!Array.isArray(currentMatches) || currentMatches.length === 0) {
+    const fresh = generate16TeamPlayoffTree(approvedTeams);
+    notify16MatchesUpdated(fresh);
+    return fresh;
+  }
+
+  // Update Round of 16 (1st Layer: 8 matches, 16 slots)
+  for (let matchIdx = 0; matchIdx < 8; matchIdx++) {
+    const matchId = `m-r16-${matchIdx + 1}`;
+    const m = currentMatches.find((x) => x.id === matchId);
+    if (!m) continue;
+
+    const teamASlotIdx = matchIdx * 2;
+    const teamBSlotIdx = matchIdx * 2 + 1;
+
+    const slotANum = String(teamASlotIdx + 1).padStart(2, '0');
+    const slotBNum = String(teamBSlotIdx + 1).padStart(2, '0');
+
+    const teamA = approvedTeams[teamASlotIdx] || {
+      id: `tbd-slot-${teamASlotIdx + 1}`,
+      name: `TBD (Slot ${slotANum})`,
+      tag: `SLOT${slotANum}`,
+      logo: '/images/team-placeholder.svg',
+    };
+
+    const teamB = approvedTeams[teamBSlotIdx] || {
+      id: `tbd-slot-${teamBSlotIdx + 1}`,
+      name: `TBD (Slot ${slotBNum})`,
+      tag: `SLOT${slotBNum}`,
+      logo: '/images/team-placeholder.svg',
+    };
+
+    // If match hasn't finished, update with real approved squad
+    if (m.status !== 'completed') {
+      m.teamAId = teamA.id;
+      m.teamAName = teamA.name;
+      m.teamATag = teamA.tag;
+      m.teamALogo = teamA.logo || '/images/team-placeholder.svg';
+
+      m.teamBId = teamB.id;
+      m.teamBName = teamB.name;
+      m.teamBTag = teamB.tag;
+      m.teamBLogo = teamB.logo || '/images/team-placeholder.svg';
+    }
+  }
+
+  // Auto-advance winners through outer layers (Quarterfinals -> Semifinals -> Grand Final -> Champion)
+  const { updatedMatches } = analyzeAndAdvanceBracketWinners(currentMatches, currentTeams);
+  notify16MatchesUpdated(updatedMatches);
+  return updatedMatches;
 };
 
 export const getStoredTeams = (): Team[] => {
@@ -199,7 +279,13 @@ export const getStoredTeams = (): Team[] => {
       localStorage.setItem(TEAMS_KEY, JSON.stringify(INITIAL_TEAMS));
       return INITIAL_TEAMS;
     }
-    return JSON.parse(raw);
+    const parsed: Team[] = JSON.parse(raw);
+    // Purge legacy mock data if detected
+    if (Array.isArray(parsed) && parsed.some((t) => t.id === 'team-1' && t.name === 'UWU Tactical Vanguard')) {
+      localStorage.setItem(TEAMS_KEY, JSON.stringify([]));
+      return [];
+    }
+    return parsed;
   } catch (e) {
     console.error('Failed reading teams from localStorage', e);
     return INITIAL_TEAMS;
@@ -244,7 +330,11 @@ export const updateTeam = (teamId: string, partial: Partial<Team>): boolean => {
 };
 
 export const updateTeamStatus = (teamId: string, status: ApprovalStatus): boolean => {
-  return updateTeam(teamId, { status });
+  const success = updateTeam(teamId, { status });
+  if (success) {
+    refresh16PlayoffTreeFromApprovedTeams();
+  }
+  return success;
 };
 
 export const getStoredMatches = (): Match[] => {
@@ -257,6 +347,11 @@ export const getStoredMatches = (): Match[] => {
       localStorage.setItem(MATCHES_KEY, JSON.stringify(INITIAL_MATCHES));
     } else {
       list = JSON.parse(raw);
+      // Purge legacy mock matches if detected
+      if (Array.isArray(list) && list.some((m) => (m.id === 'm-qf-1' && m.mvp?.includes('Kasun')) || m.id === 'match-1')) {
+        list = [];
+        localStorage.setItem(MATCHES_KEY, JSON.stringify([]));
+      }
     }
 
     // Auto-advance winners in playoff bracket tree
@@ -583,7 +678,48 @@ export const saveCountdown = (settings: CountdownSettings) => {
   if (typeof window !== 'undefined') {
     localStorage.setItem(COUNTDOWN_KEY, JSON.stringify(settings));
     window.dispatchEvent(new Event('cst_countdown_updated'));
+    window.dispatchEvent(new CustomEvent('cst_registration_status_changed', { detail: { settings } }));
+    
+    // If registration is closed, lock in real approved teams to the 1st layer of playoff tree
+    if (!settings.isRegistrationOpen) {
+      refresh16PlayoffTreeFromApprovedTeams();
+    }
   }
+};
+
+export const isRegistrationOpen = (): boolean => {
+  const settings = getStoredCountdown();
+  if (typeof settings.isRegistrationOpen === 'boolean') {
+    return settings.isRegistrationOpen;
+  }
+  return settings.eventStatus === 'REGISTRATIONS OPEN';
+};
+
+export const setRegistrationOpen = (isOpen: boolean): CountdownSettings => {
+  const current = getStoredCountdown();
+  const updated: CountdownSettings = {
+    ...current,
+    isRegistrationOpen: isOpen,
+    eventStatus: isOpen ? 'REGISTRATIONS OPEN' : (current.eventStatus === 'REGISTRATIONS OPEN' ? 'CHECK-IN PHASE' : current.eventStatus),
+  };
+  saveCountdown(updated);
+
+  // Automatically refresh and lock 1st layer of playoff tree
+  refresh16PlayoffTreeFromApprovedTeams();
+
+  try {
+    const channel = getLiveBroadcastChannel();
+    channel?.postMessage({
+      type: 'CST_REGISTRATION_STATUS_UPDATE',
+      isOpen,
+      settings: updated,
+      timestamp: Date.now(),
+    });
+  } catch (e) {
+    // Channel not supported
+  }
+
+  return updated;
 };
 
 export const checkAdminAuth = (): boolean => {
@@ -618,9 +754,12 @@ export const resetAllData = () => {
   if (typeof window !== 'undefined') {
     localStorage.setItem(TEAMS_KEY, JSON.stringify(INITIAL_TEAMS));
     localStorage.setItem(MATCHES_KEY, JSON.stringify(INITIAL_MATCHES));
+    const fresh16 = generate16TeamPlayoffTree([]);
+    localStorage.setItem(MATCHES_16_KEY, JSON.stringify(fresh16));
     localStorage.setItem(COUNTDOWN_KEY, JSON.stringify(INITIAL_COUNTDOWN));
     window.dispatchEvent(new Event('cst_teams_updated'));
     window.dispatchEvent(new Event('cst_matches_updated'));
+    window.dispatchEvent(new Event('cst_16_matches_updated'));
     window.dispatchEvent(new Event('cst_countdown_updated'));
   }
 };

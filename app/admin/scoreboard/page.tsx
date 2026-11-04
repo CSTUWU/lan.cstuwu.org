@@ -140,7 +140,6 @@ export default function AdminScoreboardPage() {
         `Round ${delta > 0 ? '+1' : '-1'} awarded to ${team === 'teamA' ? updated.teamATag : updated.teamBTag}! Projected instantly to auditorium screen.`
       );
 
-      // Async backend sync
       try {
         await api.admin.updateMatchScore(selectedMatchId, {
           scoreA: updated.scoreA,
@@ -154,7 +153,6 @@ export default function AdminScoreboardPage() {
     }
   };
 
-  // Halftime side switch
   const handleSideSwitch = async () => {
     if (!selectedMatchId) return;
     const updated = switchMatchSides(selectedMatchId);
@@ -170,7 +168,6 @@ export default function AdminScoreboardPage() {
     }
   };
 
-  // C4 Planted Emergency Strobe
   const handleToggleC4 = async () => {
     if (!selectedMatchId) return;
     const state = toggleMatchC4(selectedMatchId);
@@ -182,7 +179,6 @@ export default function AdminScoreboardPage() {
     } catch (e) {}
   };
 
-  // Set match status
   const handleSetStatus = async (newStatus: MatchStatus) => {
     if (!selectedMatchId) return;
     setMatchLiveStatus(selectedMatchId, newStatus);
@@ -195,18 +191,15 @@ export default function AdminScoreboardPage() {
     } catch (e) {}
   };
 
-  // Ratify and save final score
   const handlePublishScore = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedMatchId) return;
 
-    // Local save & broadcast
     updateMatchScore(selectedMatchId, Number(scoreA), Number(scoreB), status, mvp);
     setSaveSuccess(true);
     showNotice('Official score ratified! Public scoreboard and university standings updated.');
     setTimeout(() => setSaveSuccess(false), 3000);
 
-    // Backend publish
     try {
       await api.admin.publishMatchScore(selectedMatchId, {
         scoreA: Number(scoreA),
@@ -230,7 +223,6 @@ export default function AdminScoreboardPage() {
     <AdminLayout>
       <div className="space-y-6 max-w-5xl">
         
-        {/* Header Bar */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-tactical-border">
           <div>
             <div className="inline-flex items-center gap-2 mb-1">
@@ -245,7 +237,6 @@ export default function AdminScoreboardPage() {
             </p>
           </div>
 
-          {/* Launch Stage Projector Button */}
           <button
             onClick={openProjectorWindow}
             className="px-4 py-2.5 bg-gradient-to-r from-cyan to-blue-600 hover:from-cyan hover:to-cyan text-background font-display font-black text-xs uppercase tracking-wider flex items-center gap-2 border border-cyan shadow-[0_0_20px_rgba(0,213,255,0.4)] transition-all shrink-0"
@@ -255,7 +246,6 @@ export default function AdminScoreboardPage() {
           </button>
         </div>
 
-        {/* Action Notice Strobe */}
         {actionNotice && (
           <div className="p-4 bg-cyan/10 border border-cyan/50 flex items-center gap-3 text-xs font-mono text-cyan animate-pulse">
             <Radio className="w-4 h-4 shrink-0 text-cyan animate-ping" />
@@ -263,7 +253,6 @@ export default function AdminScoreboardPage() {
           </div>
         )}
 
-        {/* Tournament Bracket Filter */}
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs font-mono text-secondaryText uppercase font-bold mr-1">BRACKET POOL:</span>
           <button
@@ -301,7 +290,6 @@ export default function AdminScoreboardPage() {
           </button>
         </div>
 
-        {/* Fixture Selector */}
         <div className="bg-card/90 border border-tactical-border p-4">
           <label className="block text-xs font-mono text-secondaryText uppercase tracking-wider mb-2">
             SELECT FIXTURE ON STAGE:
@@ -319,14 +307,12 @@ export default function AdminScoreboardPage() {
           </select>
         </div>
 
-        {/* LIVE REFEREE CONTROL PAD */}
         {currentMatch && (
           <div className="bg-card/90 border-2 border-cyan/40 p-6 sm:p-8 backdrop-blur-md relative overflow-hidden">
             <div className="absolute top-0 right-0 bg-cyan text-background font-mono text-[10px] font-bold px-3 py-1 uppercase tracking-widest">
               ACTIVE REFEREE DESK
             </div>
 
-            {/* Match Header Info */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-tactical-border gap-4">
               <div>
                 <span className="text-xs font-mono text-cyan uppercase font-bold tracking-wider">
@@ -337,7 +323,6 @@ export default function AdminScoreboardPage() {
                 </div>
               </div>
 
-              {/* Status Selector Pills */}
               <div className="flex items-center gap-2">
                 <span className="text-[11px] font-mono text-secondaryText mr-1">STATE:</span>
                 {(['upcoming', 'live', 'completed'] as const).map((s) => (
@@ -360,10 +345,8 @@ export default function AdminScoreboardPage() {
               </div>
             </div>
 
-            {/* Tactical 1-Click Referee Controls */}
             <div className="my-8 grid grid-cols-1 md:grid-cols-11 gap-6 items-center">
               
-              {/* TEAM ALPHA (CT or T) */}
               <div className="md:col-span-5 bg-surface/80 border border-tactical-border p-5 relative overflow-hidden">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="relative w-12 h-12 bg-surface border border-tactical-border shrink-0 overflow-hidden">
@@ -382,7 +365,6 @@ export default function AdminScoreboardPage() {
                   </div>
                 </div>
 
-                {/* Score Number Display */}
                 <div className="text-center py-4 bg-background/60 border border-tactical-border my-3">
                   <div className="font-display font-black text-6xl text-white">
                     {scoreA}
@@ -392,7 +374,6 @@ export default function AdminScoreboardPage() {
                   </div>
                 </div>
 
-                {/* 1-Click Score Adjustments */}
                 <div className="grid grid-cols-2 gap-2 mt-4">
                   <button
                     onClick={() => handleQuickScore('teamA', 1)}
@@ -411,11 +392,9 @@ export default function AdminScoreboardPage() {
                 </div>
               </div>
 
-              {/* CENTER HUD: VERSUS & ACTIONS */}
               <div className="md:col-span-1 flex flex-col items-center justify-center gap-4 py-2">
                 <span className="font-display font-black text-xl text-secondaryText">VS</span>
                 
-                {/* Switch Sides Button */}
                 <button
                   onClick={handleSideSwitch}
                   title="Switch Halftime Sides (CT <-> T)"
@@ -424,7 +403,6 @@ export default function AdminScoreboardPage() {
                   <RefreshCw className="w-5 h-5" />
                 </button>
 
-                {/* C4 Plant Strobe Button */}
                 <button
                   onClick={handleToggleC4}
                   title="Toggle C4 Planted Emergency Strobe on Stage Projector"
@@ -438,7 +416,6 @@ export default function AdminScoreboardPage() {
                 </button>
               </div>
 
-              {/* TEAM BRAVO (CT or T) */}
               <div className="md:col-span-5 bg-surface/80 border border-tactical-border p-5 relative overflow-hidden">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="relative w-12 h-12 bg-surface border border-tactical-border shrink-0 overflow-hidden">
@@ -457,7 +434,6 @@ export default function AdminScoreboardPage() {
                   </div>
                 </div>
 
-                {/* Score Number Display */}
                 <div className="text-center py-4 bg-background/60 border border-tactical-border my-3">
                   <div className="font-display font-black text-6xl text-white">
                     {scoreB}
@@ -467,7 +443,6 @@ export default function AdminScoreboardPage() {
                   </div>
                 </div>
 
-                {/* 1-Click Score Adjustments */}
                 <div className="grid grid-cols-2 gap-2 mt-4">
                   <button
                     onClick={() => handleQuickScore('teamB', 1)}
@@ -488,7 +463,6 @@ export default function AdminScoreboardPage() {
 
             </div>
 
-            {/* RATIFY & PUBLISH FINAL SCORE FORM */}
             <form onSubmit={handlePublishScore} className="border-t border-tactical-border pt-6 mt-6 space-y-4 font-mono text-xs">
               <div className="flex items-center justify-between">
                 <span className="font-display font-bold text-sm text-white uppercase tracking-wider flex items-center gap-2">

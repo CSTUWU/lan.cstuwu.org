@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
-import { saveTeam } from '@/lib/storage';
+import { saveTeam, getStoredTeams } from '@/lib/storage';
 import { Team, Player, Captain, UWU_FACULTIES } from '@/lib/types';
 import {
   Shield,
@@ -20,12 +20,16 @@ import {
   Loader2,
   Phone,
   GraduationCap,
+  Lock,
+  Calendar,
 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
+import { useRegistrationStatus } from '@/hooks/useRegistrationStatus';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { isOpen } = useRegistrationStatus();
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -79,7 +83,6 @@ export default function RegisterPage() {
     }
   };
 
-  // Validation per step
   const validateStep = (step: number): boolean => {
     const newErrors: Record<string, string> = {};
 
@@ -98,8 +101,6 @@ export default function RegisterPage() {
     }
 
     if (step === 3) {
-      // Slot 01 is automatically the Team Leader entered in Step 2.
-      // Validate the 4 other squad members (players 2 to 5).
       for (let idx = 1; idx < 5; idx++) {
         const p = players[idx];
         if (!p || !p.name.trim()) newErrors[`p_${idx}_name`] = `Player 0${idx + 1} name required`;
@@ -114,7 +115,6 @@ export default function RegisterPage() {
   const handleNext = () => {
     if (validateStep(currentStep)) {
       if (currentStep === 2) {
-        // Automatically sync Leader into players[0]
         setPlayers((prev) => {
           const updated = [...prev];
           updated[0] = {
@@ -150,7 +150,6 @@ export default function RegisterPage() {
 
     setIsSubmitting(true);
 
-    // Ensure slot 1 is strictly synced with Team Leader details from Step 2
     const rosterPlayers = [
       {
         fullName: captainInfo.name.trim(),
@@ -197,7 +196,7 @@ export default function RegisterPage() {
       }
 
       if (res.success && res.data) {
-        setCreatedTeam({
+        const teamObj: Team = {
           id: res.data.registrationNumber,
           name: res.data.teamName,
           tag: res.data.teamTag,
@@ -221,7 +220,15 @@ export default function RegisterPage() {
             },
             ...players.slice(1, 5),
           ],
-        });
+        };
+
+        const existing = getStoredTeams();
+        if (!existing.some((t) => t.id === teamObj.id || t.name.toLowerCase() === teamObj.name.toLowerCase())) {
+          localStorage.setItem('cst_lan_teams_2026', JSON.stringify([teamObj, ...existing]));
+          window.dispatchEvent(new Event('cst_teams_updated'));
+        }
+
+        setCreatedTeam(teamObj);
         setIsSubmitted(true);
         window.scrollTo({ top: 80, behavior: 'smooth' });
         return;
@@ -239,7 +246,6 @@ export default function RegisterPage() {
         return;
       }
 
-      // Local fallback for offline mode
       const created = saveTeam({
         name: teamInfo.name,
         tag: teamInfo.tag.toUpperCase(),
@@ -260,31 +266,6 @@ export default function RegisterPage() {
     }
   };
 
-  const handleQuickFillDemo = () => {
-    setTeamInfo({
-      name: 'UWU Tactical Vanguard',
-      tag: 'UWU.V',
-      university: 'Uva Wellassa University of Sri Lanka',
-      logo: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200&auto=format&fit=crop&q=80',
-      logoPreview: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200&auto=format&fit=crop&q=80',
-      logoFile: null,
-    });
-    setCaptainInfo({
-      name: 'Kasun Bandara',
-      whatsappNumber: '0771234567',
-      faculty: 'Faculty of Applied Sciences',
-      email: 'kasun.b@std.uwu.ac.lk',
-      phone: '0771234567',
-    });
-    setPlayers([
-      { id: '1', name: 'Kasun Bandara', faculty: 'Faculty of Applied Sciences', ign: '', steamId: '', email: 'kasun.b@std.uwu.ac.lk', role: 'Player 1' },
-      { id: '2', name: 'Ravindu Senarath', faculty: 'Faculty of Applied Sciences', ign: '', steamId: '', email: 'ravindu.s@std.uwu.ac.lk', role: 'Player 2' },
-      { id: '3', name: 'Dinuka Perera', faculty: 'Faculty of Technological Studies', ign: '', steamId: '', email: 'dinuka.p@std.uwu.ac.lk', role: 'Player 3' },
-      { id: '4', name: 'Naveen Jayasuriya', faculty: 'Faculty of Management', ign: '', steamId: '', email: 'naveen.j@std.uwu.ac.lk', role: 'Player 4' },
-      { id: '5', name: 'Shehan Alwis', faculty: 'Faculty of Applied Sciences', ign: '', steamId: '', email: 'shehan.a@std.uwu.ac.lk', role: 'Player 5' },
-    ]);
-  };
-
   const steps = [
     { num: 1, label: 'TEAM IDENTITY' },
     { num: 2, label: 'LEADER CONTACT' },
@@ -292,20 +273,66 @@ export default function RegisterPage() {
     { num: 4, label: 'CONFIRM' },
   ];
 
+  if (!isOpen) {
+    return (
+      <div className="pt-28 pb-24 bg-[#080B10] min-h-screen">
+        <div className="absolute inset-0 tactical-grid-bg opacity-15 pointer-events-none" />
+
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="flex items-center gap-2 text-xs font-mono text-secondaryText mb-8">
+            <Link href="/" className="hover:text-cyan transition-colors">HOME</Link>
+            <span>/</span>
+            <span className="text-white">ENLISTMENT PORTAL</span>
+          </div>
+
+          <div className="relative bg-[#080B10]/95 border-2 border-rose-500/50 p-8 sm:p-12 text-center backdrop-blur-2xl shadow-[0_0_60px_rgba(244,63,94,0.2)]">
+            <span className="absolute -top-1.5 -left-1.5 w-3 h-3 border-t-2 border-l-2 border-rose-500" />
+            <span className="absolute -top-1.5 -right-1.5 w-3 h-3 border-t-2 border-r-2 border-rose-500" />
+            <span className="absolute -bottom-1.5 -left-1.5 w-3 h-3 border-b-2 border-l-2 border-rose-500" />
+            <span className="absolute -bottom-1.5 -right-1.5 w-3 h-3 border-b-2 border-r-2 border-rose-500" />
+
+            <div className="w-16 h-16 rounded-full bg-rose-500/10 border border-rose-500/40 flex items-center justify-center mx-auto mb-6 text-rose-400">
+              <Lock className="w-8 h-8 animate-pulse" />
+            </div>
+
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-mono uppercase tracking-widest font-bold mb-4">
+              <span>ADMINISTRATIVE GATE // CLOSED</span>
+            </div>
+
+            <h1 className="font-display font-black text-3xl sm:text-4xl uppercase text-white tracking-tight mb-3">
+              REGISTRATIONS ARE CURRENTLY <span className="text-rose-500">CLOSED</span>
+            </h1>
+
+            <p className="text-xs sm:text-sm font-mono text-secondaryText leading-relaxed max-w-lg mx-auto mb-8">
+              Official team submissions for CST LAN Challenge 2026 have been closed by the tournament administrators. Existing verified rosters and brackets are now entering the competition phase.
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Button href="/teams" variant="cyan" size="md" icon={<Users className="w-4 h-4" />}>
+                VIEW REGISTERED SQUADS
+              </Button>
+              <Button href="/schedule" variant="outline" size="md" icon={<Calendar className="w-4 h-4" />}>
+                VIEW MATCH SCHEDULE
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="pt-28 pb-24 bg-[#080B10] min-h-screen">
       <div className="absolute inset-0 tactical-grid-bg opacity-15 pointer-events-none" />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
-        {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-xs font-mono text-secondaryText mb-8">
           <Link href="/" className="hover:text-cyan transition-colors">HOME</Link>
           <span>/</span>
           <span className="text-white">ENLISTMENT PORTAL</span>
         </div>
 
-        {/* University Notice Banner */}
         <div className="bg-surface/90 border border-cyan/40 p-4 mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-cyan/10 border border-cyan/50 flex items-center justify-center shrink-0 text-cyan">
@@ -325,7 +352,6 @@ export default function RegisterPage() {
           </span>
         </div>
 
-        {/* Header */}
         <div className="border-b border-tactical-border pb-8 mb-10">
           <Badge variant="cyan" size="sm" className="mb-2">
             SQUAD REGISTRATION // 2026
@@ -338,7 +364,6 @@ export default function RegisterPage() {
           </p>
         </div>
 
-        {/* STEP PROGRESS BAR */}
         {!isSubmitted && (
           <div className="grid grid-cols-4 gap-2 sm:gap-4 mb-12">
             {steps.map((s) => {
@@ -365,7 +390,6 @@ export default function RegisterPage() {
           </div>
         )}
 
-        {/* API Error Notification */}
         {apiError && (
           <div className="p-4 bg-rose-500/10 border border-rose-500/40 text-rose-400 text-xs font-mono mb-8 flex items-center gap-3">
             <AlertCircle className="w-5 h-5 shrink-0" />
@@ -373,7 +397,6 @@ export default function RegisterPage() {
           </div>
         )}
 
-        {/* SUCCESS CONFIRMATION SCREEN */}
         {isSubmitted && createdTeam ? (
           <div className="bg-card border border-emerald-500/50 p-8 sm:p-12 text-center shadow-2xl">
             <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 text-emerald-400">
@@ -392,7 +415,6 @@ export default function RegisterPage() {
               Your registration for <strong className="text-white">{createdTeam.name} [{createdTeam.tag}]</strong> has been registered under reference: <span className="text-cyan font-bold">{createdTeam.id}</span>. Status: <span className="text-tactical-gold font-bold">PENDING ADMINISTRATIVE APPROVAL</span>.
             </p>
 
-            {/* Squad Summary Preview */}
             <div className="bg-surface/80 border border-tactical-border p-6 max-w-xl mx-auto text-left font-mono text-xs mb-8">
               <div className="flex items-center gap-4 border-b border-tactical-border pb-4 mb-4">
                 <div className="relative w-12 h-12 bg-card border border-tactical-border overflow-hidden shrink-0">
@@ -455,10 +477,8 @@ export default function RegisterPage() {
             </div>
           </div>
         ) : (
-          /* MULTI-STEP FORM BODY */
           <form onSubmit={handleSubmit} className="bg-card/90 border border-tactical-border p-6 sm:p-10 backdrop-blur-md">
             
-            {/* STEP 1: TEAM INFORMATION */}
             {currentStep === 1 && (
               <div className="space-y-6">
                 <div className="border-b border-tactical-border pb-4 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -470,13 +490,6 @@ export default function RegisterPage() {
                       Provide your squad designation and official team emblem.
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleQuickFillDemo}
-                    className="self-start sm:self-center px-3 py-1.5 text-xs font-mono text-cyan hover:text-white bg-surface border border-cyan/40 hover:border-cyan transition-colors"
-                  >
-                    ⚡ AUTO-FILL SAMPLE SQUAD
-                  </button>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -486,7 +499,7 @@ export default function RegisterPage() {
                     </label>
                     <input
                       type="text"
-                      placeholder="e.g. UWU Tactical Vanguard"
+                      placeholder="e.g. Cyber Strikers"
                       value={teamInfo.name}
                       onChange={(e) => setTeamInfo({ ...teamInfo, name: e.target.value })}
                       className="w-full bg-surface border border-tactical-border px-4 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-cyan"
@@ -510,7 +523,6 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
-                {/* Locked University Display */}
                 <div>
                   <label className="block text-xs font-mono text-secondaryText uppercase tracking-wider mb-2">
                     UNIVERSITY AFFILIATION
@@ -526,7 +538,6 @@ export default function RegisterPage() {
                   </p>
                 </div>
 
-                {/* Logo Upload & Preview */}
                 <div className="pt-2">
                   <label className="block text-xs font-mono text-secondaryText uppercase tracking-wider mb-2">
                     TEAM LOGO (FILE UPLOAD OR PREVIEW)
@@ -565,7 +576,6 @@ export default function RegisterPage() {
               </div>
             )}
 
-            {/* STEP 2: TEAM LEADER (WHATSAPP REQUIRED) */}
             {currentStep === 2 && (
               <div className="space-y-6">
                 <div className="border-b border-tactical-border pb-4 mb-6">
@@ -611,7 +621,6 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  {/* Faculty Dropdown */}
                   <div>
                     <label className="block text-xs font-mono text-secondaryText uppercase tracking-wider mb-2 flex items-center gap-1.5">
                       <GraduationCap className="w-3.5 h-3.5 text-cyan" />
@@ -647,7 +656,6 @@ export default function RegisterPage() {
               </div>
             )}
 
-            {/* STEP 3: 4 ACTIVE TEAM MEMBERS (SLOT 01 IS AUTO-ASSIGNED TO LEADER) */}
             {currentStep === 3 && (
               <div className="space-y-6">
                 <div className="border-b border-tactical-border pb-4">
@@ -664,7 +672,6 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
-                {/* Slot 01: Team Leader Card (Read-only, Auto-filled from Step 2) */}
                 <div className="p-4 bg-cyan/5 border border-cyan/40 relative">
                   <div className="flex items-center justify-between mb-3 border-b border-cyan/20 pb-2">
                     <span className="text-xs font-mono font-bold text-cyan uppercase flex items-center gap-2">
@@ -699,7 +706,6 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
-                {/* Slots 02 to 05: The 4 Squad Members */}
                 <div className="space-y-4">
                   {players.slice(1, 5).map((player, sliceIdx) => {
                     const idx = sliceIdx + 1; // 1, 2, 3, 4 -> Player 02, 03, 04, 05
@@ -716,7 +722,6 @@ export default function RegisterPage() {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {/* 1. Full Name */}
                           <div>
                             <label className="block text-[10px] font-mono text-secondaryText uppercase mb-1">
                               FULL NAME <span className="text-cyan">*</span>
@@ -737,7 +742,6 @@ export default function RegisterPage() {
                             )}
                           </div>
 
-                          {/* 2. Faculty Dropdown */}
                           <div>
                             <label className="block text-[10px] font-mono text-secondaryText uppercase mb-1 flex items-center gap-1">
                               <GraduationCap className="w-3.5 h-3.5 text-cyan" />
@@ -770,7 +774,6 @@ export default function RegisterPage() {
               </div>
             )}
 
-            {/* STEP 4: REVIEW AND CONFIRM */}
             {currentStep === 4 && (
               <div className="space-y-6">
                 <div className="border-b border-tactical-border pb-4 mb-6">
@@ -782,9 +785,7 @@ export default function RegisterPage() {
                   </p>
                 </div>
 
-                {/* Summary Card */}
                 <div className="bg-surface/70 border border-tactical-border p-6 font-mono text-xs space-y-6">
-                  {/* Team */}
                   <div className="flex items-center gap-4 border-b border-tactical-border pb-4">
                     <div className="relative w-16 h-16 bg-card border border-cyan/40 shrink-0 overflow-hidden">
                       <Image src={teamInfo.logo} alt="Team Logo" fill className="object-cover" sizes="64px" />
@@ -796,7 +797,6 @@ export default function RegisterPage() {
                     </div>
                   </div>
 
-                  {/* Captain Details */}
                   <div className="border-b border-tactical-border pb-4">
                     <span className="text-cyan font-bold block mb-2 uppercase">TEAM LEADER:</span>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-secondaryText">
@@ -806,11 +806,9 @@ export default function RegisterPage() {
                     </div>
                   </div>
 
-                  {/* 5 Players Lineup with Faculties */}
                   <div>
                     <span className="text-cyan font-bold block mb-2 uppercase">5-PLAYER SQUAD ROSTER:</span>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                      {/* Player 01 - Team Leader */}
                       <div className="p-3 bg-card border border-cyan/40 flex flex-col gap-1.5">
                         <div className="flex justify-between items-center">
                           <span className="text-cyan font-bold text-xs">
@@ -826,7 +824,6 @@ export default function RegisterPage() {
                         </div>
                       </div>
 
-                      {/* Players 02-05 */}
                       {players.slice(1, 5).map((p, sliceIdx) => (
                         <div key={sliceIdx + 1} className="p-3 bg-card border border-tactical-border/70 flex flex-col gap-1.5">
                           <div className="flex justify-between items-center">
@@ -850,7 +847,6 @@ export default function RegisterPage() {
               </div>
             )}
 
-            {/* NAVIGATION BUTTONS */}
             <div className="mt-8 pt-6 border-t border-tactical-border flex items-center justify-between">
               {currentStep > 1 ? (
                 <Button type="button" onClick={handleBack} variant="ghost" size="md" icon={<ChevronLeft className="w-4 h-4" />}>

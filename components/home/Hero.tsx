@@ -7,10 +7,12 @@ import { Shield, Crosshair, Trophy, Clock, ChevronDown, Activity, Mouse, Sparkle
 import Button from '../ui/Button';
 import { getStoredCountdown } from '@/lib/storage';
 import { api } from '@/lib/api';
+import { useRegistrationStatus } from '@/hooks/useRegistrationStatus';
 
 const TOTAL_FRAMES = 199;
 
 export default function Hero() {
+  const { isOpen } = useRegistrationStatus();
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const contentWrapperRef = useRef<HTMLDivElement>(null);
@@ -123,6 +125,9 @@ export default function Hero() {
       handleResize();
       drawFrame(0);
       setIsReady(true);
+      try {
+        ScrollTrigger.refresh();
+      } catch (e) {}
     };
 
     // Load remaining frames progressively
@@ -166,7 +171,6 @@ export default function Hero() {
       const frameObj = { frame: 0 };
       let lastNotifiedVisible: boolean | null = null;
 
-      // Master Scroll Scrubbing Timeline
       const scrubTimeline = gsap.timeline({
         scrollTrigger: {
           trigger: containerRef.current,
@@ -214,11 +218,6 @@ export default function Hero() {
         0
       );
 
-      // ===================================================================
-      // PHASE 1 (0.0 to 2.0s): INITIAL LOAD - CHARACTERS ARE FACING OFF
-      // The initial prominent "SCROLL DOWN" callout and top tag fade out
-      // smoothly as the user begins scrolling!
-      // ===================================================================
       scrubTimeline.to(
         [scrollHintRef.current, topStandoffBadgeRef.current],
         {
@@ -230,10 +229,6 @@ export default function Hero() {
         0.4
       );
 
-      // ===================================================================
-      // PHASE 2 (3.8s to 7.0s): CHARACTERS HAVE MOVED OUT -> LOAD TEXT WITH ANIMATIONS!
-      // Navbar also slides down in sync.
-      // ===================================================================
       scrubTimeline.fromTo(
         contentWrapperRef.current,
         {
@@ -263,7 +258,6 @@ export default function Hero() {
         3.8
       );
 
-      // Countdown Block drops into position with a glowing pulse
       scrubTimeline.fromTo(
         countdownBlockRef.current,
         {
@@ -281,7 +275,6 @@ export default function Hero() {
         4.6
       );
 
-      // CTA Buttons lock into high visibility
       scrubTimeline.fromTo(
         ctaBlockRef.current,
         {
@@ -299,7 +292,6 @@ export default function Hero() {
         5.2
       );
 
-      // Initial entrance timeline (plays once when page loads)
       const enterTl = gsap.timeline({ defaults: { ease: 'power3.out' } });
 
       enterTl.fromTo(
@@ -337,7 +329,7 @@ export default function Hero() {
   const handleScrollToContent = () => {
     if (typeof window !== 'undefined') {
       window.scrollTo({
-        top: 900,
+        top: 1550,
         behavior: 'smooth',
       });
     }
@@ -348,10 +340,6 @@ export default function Hero() {
       ref={containerRef}
       className="relative w-full h-screen bg-[#080B10] overflow-hidden select-none"
     >
-      {/* =================================================================== */}
-      {/* 1. CINEMATIC VIDEO FRAME SCRUBBING CANVAS & ZERO-LATENCY POSTER */}
-      {/* =================================================================== */}
-      {/* Instant poster so user sees standoff with 0ms delay */}
       <img
         src="/frames/hero/frame_0001.webp"
         alt="CS2 Standoff Preview"
@@ -364,35 +352,24 @@ export default function Hero() {
         style={{ filter: 'contrast(1.08) brightness(0.92)' }}
       />
 
-      {/* =================================================================== */}
-      {/* 2. ATMOSPHERIC TACTICAL GRADIENT OVERLAYS */}
-      {/* =================================================================== */}
       <div className="absolute inset-0 pointer-events-none z-[1]">
-        {/* Cinematic Vignette */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(8,11,16,0.15)_0%,rgba(8,11,16,0.85)_100%)]" />
 
-        {/* Top & Bottom Depth Scrims */}
         <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-[#080B10] via-[#080B10]/60 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 h-36 bg-gradient-to-t from-[#080B10] via-[#080B10]/80 to-transparent" />
 
-        {/* Tactical Subtle Grid */}
         <div className="absolute inset-0 tactical-grid-bg opacity-15" />
       </div>
 
-      {/* =================================================================== */}
-      {/* 3. TACTICAL BOUNDARY FRAME WITH CORNER ACCENTS (USER LOVED BOUNDARY) */}
-      {/* =================================================================== */}
       <div
         ref={frameRef}
         className="absolute inset-3 sm:inset-5 lg:inset-8 pointer-events-none border border-tactical-border/60 rounded-sm z-10"
       >
-        {/* 4 Outer Glowing Corner Brackets */}
         <span className="absolute -top-[2px] -left-[2px] w-5 sm:w-7 h-5 sm:h-7 border-t-2 border-l-2 border-cyan shadow-[0_0_15px_rgba(0,213,255,0.8)]" />
         <span className="absolute -top-[2px] -right-[2px] w-5 sm:w-7 h-5 sm:h-7 border-t-2 border-r-2 border-orange shadow-[0_0_15px_rgba(255,116,56,0.8)]" />
         <span className="absolute -bottom-[2px] -left-[2px] w-5 sm:w-7 h-5 sm:h-7 border-b-2 border-l-2 border-cyan shadow-[0_0_15px_rgba(0,213,255,0.8)]" />
         <span className="absolute -bottom-[2px] -right-[2px] w-5 sm:w-7 h-5 sm:h-7 border-b-2 border-r-2 border-orange shadow-[0_0_15px_rgba(255,116,56,0.8)]" />
 
-        {/* Bottom Interactive Video Scrub Telemetry */}
         <div className="absolute -bottom-[5px] left-1/2 -translate-x-1/2 px-3 py-0.5 bg-[#080B10]/95 border border-tactical-border text-[9px] font-mono text-secondaryText tracking-widest flex items-center gap-2.5 backdrop-blur-md">
           <Activity className="w-3 h-3 text-cyan" />
           <div className="w-16 sm:w-28 h-1 bg-surface border border-tactical-border rounded-full overflow-hidden">
@@ -408,14 +385,10 @@ export default function Hero() {
         </div>
       </div>
 
-      {/* =================================================================== */}
-      {/* 4. MILITARY HUD CORNER BOUNDARIES (DESKTOP) */}
-      {/* =================================================================== */}
       <div
         ref={hudRef}
         className="absolute inset-0 pointer-events-none max-w-7xl mx-auto px-6 lg:px-12 pt-24 pb-16 hidden lg:flex flex-col justify-between z-20"
       >
-        {/* Top Corners */}
         <div className="flex justify-between items-start text-[11px] font-mono tracking-widest">
           <div className="flex items-center gap-2 border-l-2 border-cyan pl-3 py-1 bg-surface/60 backdrop-blur-md border-t border-cyan/20">
             <span className="w-2 h-2 rounded-full bg-cyan animate-pulse" />
@@ -427,7 +400,6 @@ export default function Hero() {
           </div>
         </div>
 
-        {/* Bottom Corners */}
         <div className="flex justify-between items-end text-[10px] font-mono">
           <div className="bg-surface/60 backdrop-blur-md px-3 py-1.5 border-l-2 border-b border-cyan/40 border-l-cyan">
             <p className="text-secondaryText">LAT: 6.9934° N, LON: 81.0550° E</p>
@@ -440,10 +412,6 @@ export default function Hero() {
         </div>
       </div>
 
-      {/* =================================================================== */}
-      {/* TOP STANDOFF BADGE (VISIBLE ON FIRST LOAD) */}
-      {/* Immediately identifies the tournament to any visitor */}
-      {/* =================================================================== */}
       <div
         ref={topStandoffBadgeRef}
         className="absolute top-8 sm:top-10 left-1/2 -translate-x-1/2 z-20 pointer-events-none"
@@ -460,24 +428,17 @@ export default function Hero() {
         </div>
       </div>
 
-      {/* =================================================================== */}
-      {/* PROMINENT INITIAL "SCROLL DOWN" CALLOUT (VISIBLE ON FIRST LOAD) */}
-      {/* Clearly tells the visitor to scroll down (or click) to reveal all details! */}
-      {/* =================================================================== */}
       <div
         ref={scrollHintRef}
         onClick={handleScrollToContent}
         className="absolute bottom-10 sm:bottom-14 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-3 text-center cursor-pointer group"
       >
-        {/* Animated Tactical Scroll Down Card */}
         <div className="relative px-5 sm:px-7 py-3 bg-[#080B10]/95 border border-cyan/50 backdrop-blur-xl rounded-md shadow-[0_0_35px_rgba(0,213,255,0.35)] transition-all duration-300 group-hover:border-cyan group-hover:shadow-[0_0_50px_rgba(0,213,255,0.6)] group-hover:scale-105 flex items-center gap-3.5">
-          {/* Outer corner micro accents */}
           <span className="absolute -top-1 -left-1 w-2.5 h-2.5 border-t-2 border-l-2 border-cyan" />
           <span className="absolute -top-1 -right-1 w-2.5 h-2.5 border-t-2 border-r-2 border-orange" />
           <span className="absolute -bottom-1 -left-1 w-2.5 h-2.5 border-b-2 border-l-2 border-cyan" />
           <span className="absolute -bottom-1 -right-1 w-2.5 h-2.5 border-b-2 border-r-2 border-orange" />
 
-          {/* Mouse Scroll Wheel Icon Animation */}
           <div className="w-5 h-8 rounded-full border-2 border-cyan/80 flex items-start justify-center p-1 bg-surface/80 shrink-0">
             <div className="w-1.5 h-2.5 rounded-full bg-cyan animate-bounce" />
           </div>
@@ -493,28 +454,21 @@ export default function Hero() {
           </div>
         </div>
 
-        {/* Small Subtitle Cue */}
         <span className="text-[10px] font-mono text-cyan/80 tracking-widest uppercase flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-cyan animate-ping" />
           SCROLL WHEEL • SWIPE • OR CLICK TO ENTER
         </span>
       </div>
 
-      {/* =================================================================== */}
-      {/* 5. HERO TEXT & CONTENT (REVEALED WHEN CHARACTERS MOVE OUT!) */}
-      {/* Features ample top clearance (pt-24 lg:pt-32) to eliminate any navbar overlap! */}
-      {/* =================================================================== */}
       <div
         ref={contentWrapperRef}
         className="relative z-20 h-full max-w-4xl w-full mx-auto px-4 sm:px-6 flex flex-col items-center justify-center text-center pt-24 sm:pt-28 lg:pt-32 pb-8 opacity-0 pointer-events-none will-change-transform"
       >
-        {/* Event Tag */}
         <div className="inline-flex items-center gap-2 px-3 py-1 bg-surface/90 border border-tactical-border text-[11px] sm:text-xs font-mono text-cyan uppercase tracking-wider mb-3 backdrop-blur-md shadow-xl">
           <Shield className="w-3.5 h-3.5 text-cyan shrink-0" />
           <span>UVA WELLASSA UNIVERSITY // COUNTER-STRIKE 2</span>
         </div>
 
-        {/* Title Block */}
         <div ref={titleRef} className="mb-2 sm:mb-3 select-none">
           <h1 className="font-display font-black text-3xl sm:text-5xl md:text-6xl lg:text-7xl tracking-tight uppercase leading-[0.92] text-white drop-shadow-[0_4px_35px_rgba(0,0,0,0.95)]">
             <span className="inline-block">CST</span>{' '}
@@ -538,7 +492,6 @@ export default function Hero() {
           </div>
         </div>
 
-        {/* Compact Live Countdown */}
         <div
           ref={countdownBlockRef}
           className="mb-4 sm:mb-5 w-full max-w-sm sm:max-w-md bg-card/95 border border-tactical-border backdrop-blur-xl p-2.5 sm:p-3.5 clip-tactical shadow-[0_0_35px_rgba(0,213,255,0.2)]"
@@ -582,20 +535,21 @@ export default function Hero() {
           </div>
         </div>
 
-        {/* 2 Clean Action Buttons */}
         <div
           ref={ctaBlockRef}
           className="flex flex-col sm:flex-row items-center justify-center gap-2.5 sm:gap-3 w-full sm:w-auto"
         >
-          <Button
-            href="/register"
-            variant="cyan"
-            size="md"
-            icon={<Crosshair className="w-4 h-4" />}
-            className="w-full sm:w-auto font-black shadow-[0_0_25px_rgba(0,213,255,0.45)] hover:scale-105 transition-transform text-xs sm:text-sm"
-          >
-            REGISTER YOUR TEAM
-          </Button>
+          {isOpen && (
+            <Button
+              href="/register"
+              variant="cyan"
+              size="md"
+              icon={<Crosshair className="w-4 h-4" />}
+              className="w-full sm:w-auto font-black shadow-[0_0_25px_rgba(0,213,255,0.45)] hover:scale-105 transition-transform text-xs sm:text-sm"
+            >
+              REGISTER YOUR TEAM
+            </Button>
+          )}
 
           <Button
             href="/#prizepool"
@@ -608,8 +562,19 @@ export default function Hero() {
           </Button>
         </div>
 
-        {/* Next Section Indicator */}
-        <div className="mt-4 sm:mt-5 flex flex-col items-center gap-1 text-[9px] sm:text-[10px] font-mono tracking-widest text-secondaryText/80 pointer-events-none">
+        <div
+          onClick={() => {
+            if (typeof window !== 'undefined') {
+              const el = document.getElementById('prizepool');
+              if (el) {
+                el.scrollIntoView({ behavior: 'smooth' });
+              } else {
+                window.scrollTo({ top: 3500, behavior: 'smooth' });
+              }
+            }
+          }}
+          className="mt-4 sm:mt-5 flex flex-col items-center gap-1 text-[9px] sm:text-[10px] font-mono tracking-widest text-secondaryText/80 cursor-pointer hover:text-cyan transition-colors"
+        >
           <span className="flex items-center gap-1.5 text-cyan">
             <span>SCROLL DOWN FOR PRIZE POOL</span>
             <ChevronDown className="w-3 h-3 text-cyan animate-bounce" />

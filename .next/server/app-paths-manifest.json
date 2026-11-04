@@ -1,9 +1,5 @@
 {
-  "/page": "app/page.js",
-  "/admin/matches/page": "app/admin/matches/page.js",
-  "/admin/scoreboard/page": "app/admin/scoreboard/page.js",
-  "/scoreboard/page": "app/scoreboard/page.js",
-  "/teams/page": "app/teams/page.js",
   "/scoreboard/live/page": "app/scoreboard/live/page.js",
-  "/schedule/page": "app/schedule/page.js"
+  "/page": "app/page.js",
+  "/scoreboard/page": "app/scoreboard/page.js"
 }

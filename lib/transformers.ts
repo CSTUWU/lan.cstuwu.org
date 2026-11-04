@@ -126,14 +126,20 @@ export function transformBackendSettings(raw: any): CountdownSettings {
       tournamentDate: '2026-11-20T09:00:00',
       registrationDeadline: '2026-11-10T23:59:59',
       eventStatus: 'REGISTRATIONS OPEN',
+      isRegistrationOpen: true,
       announcementText: 'CST LAN CHALLENGE 2026 - Official Counter-Strike 2 Championship hosted by Uva Wellassa University',
     };
   }
+
+  const isOpen = typeof raw.registrationOpen === 'boolean'
+    ? raw.registrationOpen
+    : (raw.eventStatus === 'REGISTRATIONS OPEN');
 
   return {
     tournamentDate: raw.tournamentDate ? new Date(raw.tournamentDate).toISOString() : '2026-11-20T09:00:00',
     registrationDeadline: raw.registrationDeadline ? new Date(raw.registrationDeadline).toISOString() : '2026-11-10T23:59:59',
     eventStatus: raw.eventStatus || 'REGISTRATIONS OPEN',
+    isRegistrationOpen: isOpen,
     announcementText: raw.announcementText || 'CST LAN CHALLENGE 2026',
   };
 }

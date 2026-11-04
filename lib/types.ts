@@ -101,4 +101,5 @@ export interface CountdownSettings {
   registrationDeadline: string; // ISO string
   eventStatus: 'REGISTRATIONS OPEN' | 'CHECK-IN PHASE' | 'BATTLEFIELD ACTIVE' | 'CHAMPIONS CROWNED';
   announcementText: string;
+  isRegistrationOpen?: boolean;
 }

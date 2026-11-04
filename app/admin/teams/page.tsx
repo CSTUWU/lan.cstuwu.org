@@ -47,7 +47,6 @@ export default function AdminTeamsPage() {
         const transformed = res.data.map(transformBackendTeam);
         setTeams(transformed);
         
-        // Expand all squads by default so admins can immediately inspect rosters
         const expandedMap: Record<string, boolean> = {};
         transformed.forEach((t) => {
           expandedMap[t.id] = true;
@@ -136,7 +135,6 @@ export default function AdminTeamsPage() {
     <AdminLayout>
       <div className="space-y-6 max-w-7xl">
         
-        {/* Page Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-tactical-border">
           <div>
             <div className="inline-flex items-center gap-2 mb-1">
@@ -177,7 +175,6 @@ export default function AdminTeamsPage() {
           </div>
         </div>
 
-        {/* Notice Alert */}
         {notice && (
           <div className="p-3 bg-cyan/10 border border-cyan/40 text-xs font-mono text-cyan flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-cyan" />
@@ -185,7 +182,6 @@ export default function AdminTeamsPage() {
           </div>
         )}
 
-        {/* Key Metrics Strip */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-card/90 border border-tactical-border p-4">
             <div className="text-[10px] font-mono text-secondaryText uppercase tracking-wider">TOTAL TEAMS</div>
@@ -207,7 +203,6 @@ export default function AdminTeamsPage() {
           </div>
         </div>
 
-        {/* Search & Filter Bar */}
         <div className="bg-card/90 border border-tactical-border p-4 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="relative w-full md:w-96">
             <Search className="w-4 h-4 text-secondaryText absolute left-3 top-1/2 -translate-y-1/2" />
@@ -240,7 +235,6 @@ export default function AdminTeamsPage() {
           </div>
         </div>
 
-        {/* Team-Wise Squad Accordion List */}
         <div className="space-y-4">
           {filteredTeams.length === 0 ? (
             <div className="bg-card/80 border border-tactical-border p-12 text-center">
@@ -264,7 +258,6 @@ export default function AdminTeamsPage() {
                     className="p-4 sm:p-5 bg-surface/40 hover:bg-surface/70 cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors select-none"
                   >
                     <div className="flex items-center gap-4">
-                      {/* Team Logo */}
                       <div className="relative w-12 h-12 bg-surface border border-tactical-border shrink-0 overflow-hidden">
                         <Image src={team.logo} alt={team.name} fill className="object-cover" sizes="48px" />
                       </div>
@@ -283,7 +276,6 @@ export default function AdminTeamsPage() {
                     </div>
 
                     <div className="flex items-center gap-3 self-end md:self-auto" onClick={(e) => e.stopPropagation()}>
-                      {/* Status Badge */}
                       <span
                         className={`text-[10px] font-mono font-bold px-2.5 py-1 uppercase tracking-wider border ${
                           isApproved
@@ -294,7 +286,6 @@ export default function AdminTeamsPage() {
                         {team.status.toUpperCase()}
                       </span>
 
-                      {/* Quick Status Toggle Button */}
                       <button
                         onClick={() => handleStatusToggle(team.id, team.status)}
                         className={`px-3 py-1 text-xs font-mono uppercase font-bold border transition-colors ${
@@ -306,7 +297,6 @@ export default function AdminTeamsPage() {
                         {isApproved ? 'DEACTIVATE' : 'ACTIVATE SQUAD'}
                       </button>
 
-                      {/* Expand / Collapse Icon */}
                       <button
                         onClick={() => toggleExpand(team.id)}
                         className="p-1.5 text-secondaryText hover:text-white border border-tactical-border bg-surface"
@@ -317,11 +307,9 @@ export default function AdminTeamsPage() {
                     </div>
                   </div>
 
-                  {/* Expanded Squad Members Dossier */}
                   {isExpanded && (
                     <div className="p-5 sm:p-6 border-t border-tactical-border bg-card/60 space-y-6">
                       
-                      {/* Team Captain & Liaison Dossier */}
                       <div className="p-4 bg-cyan/5 border border-cyan/30 flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-cyan/20 border border-cyan/60 flex items-center justify-center shrink-0">
@@ -355,7 +343,6 @@ export default function AdminTeamsPage() {
                         </div>
                       </div>
 
-                      {/* 5-Man Active Starting Lineup */}
                       <div>
                         <div className="flex items-center justify-between mb-3">
                           <h4 className="font-display font-bold text-xs uppercase tracking-wider text-white flex items-center gap-2">
@@ -379,18 +366,15 @@ export default function AdminTeamsPage() {
                                   </span>
                                 </div>
                                 
-                                {/* In-Game Name / Full Real Name */}
                                 <div className="font-display font-black text-base text-white truncate" title={player.name || player.ign}>
                                   {player.name || player.ign}
                                 </div>
 
-                                {/* Faculty / IGN */}
                                 <div className="text-xs font-mono text-cyan truncate mt-0.5" title={player.faculty || player.name}>
                                   {player.faculty || (player.ign ? `(${player.ign})` : '')}
                                 </div>
                               </div>
 
-                              {/* Steam ID & Copy or Faculty */}
                               <div className="mt-3 pt-2.5 border-t border-tactical-border/60 flex items-center justify-between text-[11px] font-mono">
                                 <span className="text-secondaryText truncate max-w-[120px]" title={player.steamId || player.faculty}>
                                   {player.steamId || player.faculty}

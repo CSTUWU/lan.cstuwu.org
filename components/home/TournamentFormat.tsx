@@ -42,13 +42,11 @@ export default function TournamentFormat() {
 
   return (
     <section id="format" className="relative py-28 bg-[#090D14] border-t border-b border-tactical-border overflow-hidden">
-      {/* Background accents */}
       <div className="absolute inset-0 tactical-grid-bg opacity-20 pointer-events-none" />
       <div className="absolute top-1/3 right-10 w-96 h-96 bg-cyan/5 rounded-full blur-[140px] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
-        {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
           <Badge variant="cyan" size="sm" className="mb-3">
             COMPETITION PROTOCOLS // 2026
@@ -61,14 +59,12 @@ export default function TournamentFormat() {
           </p>
         </div>
 
-        {/* 4 Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
           {formatSteps.map((step) => (
             <div
               key={step.num}
               className={`relative bg-card/80 border p-6 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 ${step.color} group`}
             >
-              {/* Corner tick */}
               <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-current opacity-40" />
 
               <div className="flex items-center justify-between mb-4">
@@ -94,7 +90,6 @@ export default function TournamentFormat() {
           ))}
         </div>
 
-        {/* Detailed Spec Panel */}
         <div className="bg-surface/70 border border-tactical-border p-6 sm:p-8">
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 border-b border-tactical-border/70 pb-6 mb-6">
             <div>

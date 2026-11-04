@@ -41,6 +41,7 @@ import {
   analyzeAndAdvanceBracketWinners,
   generatePlayoffTreeFromTeams,
   generate16TeamPlayoffTree,
+  DEFAULT_TBD_TEAMS,
   SIXTEEN_BRACKET_TEAMS,
 } from '@/lib/playoffEngine';
 import {
@@ -53,6 +54,7 @@ import {
   set16MatchWinner,
   reset16Matches,
   getLiveBroadcastChannel,
+  refresh16PlayoffTreeFromApprovedTeams,
 } from '@/lib/storage';
 
 interface PlayoffBracketTreeProps {
@@ -64,7 +66,6 @@ interface PlayoffBracketTreeProps {
 
 type BracketLayoutMode = '16-squad' | '8-squad' | 'linear';
 
-// Quadrant theme styling configuration
 const QUADRANT_THEMES = {
   purple: {
     name: 'PURPLE BRACKET',
@@ -158,17 +159,21 @@ export default function PlayoffBracketTree({
   const [isAuditoriumFullscreen, setIsAuditoriumFullscreen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // 16-squad match state (synchronized with persistent storage and cross-window events)
   const [sixteenMatches, setSixteenMatches] = useState<Match[]>(() => getStored16Matches());
   const [isSimulatingAll, setIsSimulatingAll] = useState(false);
 
-  // 8-squad bracket parsed from stored matches
   const eightBracket = useMemo(() => getPlayoffBracket(matches, teams), [matches, teams]);
 
-  // 16-squad bracket parsed from sixteenMatches state
-  const sixteenBracket = useMemo(() => getPlayoffBracket(sixteenMatches, SIXTEEN_BRACKET_TEAMS), [sixteenMatches]);
+  const sixteenBracket = useMemo(() => getPlayoffBracket(sixteenMatches, teams), [sixteenMatches, teams]);
 
-  // Cross-tab and event synchronization
+  useEffect(() => {
+    // Synchronize 1st layer of 16-squad playoff tree with approved teams
+    if (teams && teams.length > 0) {
+      const refreshed = refresh16PlayoffTreeFromApprovedTeams(teams);
+      setSixteenMatches(refreshed);
+    }
+  }, [teams]);
+
   useEffect(() => {
     const sync16 = () => {
       setSixteenMatches(getStored16Matches());
@@ -199,12 +204,10 @@ export default function PlayoffBracketTree({
     setTimeout(() => setActionNotice(null), 3500);
   };
 
-  // Zoom handlers
   const handleZoomIn = () => setScale((prev) => Math.min(prev + 0.15, 1.6));
   const handleZoomOut = () => setScale((prev) => Math.max(prev - 0.15, 0.6));
   const handleResetZoom = () => setScale(1);
 
-  // Fullscreen handler
   const toggleFullscreen = () => {
     if (!containerRef.current) return;
     if (!document.fullscreenElement) {
@@ -222,7 +225,6 @@ export default function PlayoffBracketTree({
     return () => document.removeEventListener('fullscreenchange', handleFsChange);
   }, []);
 
-  // 1-Click Winner Progression for 16-Squad Tree (Advances downstream automatically)
   const handleSimulate16Win = (matchId: string, winningSide: 'teamA' | 'teamB') => {
     const updated = set16MatchWinner(matchId, winningSide);
     if (updated) {
@@ -233,7 +235,6 @@ export default function PlayoffBracketTree({
     }
   };
 
-  // 1-Click Round Increment for 16-Squad Tree
   const handleSimulate16Round = (matchId: string, side: 'teamA' | 'teamB') => {
     const updated = increment16MatchScore(matchId, side, 1);
     if (updated) {
@@ -243,7 +244,6 @@ export default function PlayoffBracketTree({
     }
   };
 
-  // 1-Click Win for 8-Squad Tree
   const handleSimulate8Win = (matchId: string, winningSide: 'teamA' | 'teamB') => {
     const targetMatch = matches.find((m) => m.id === matchId);
     if (!targetMatch) return;
@@ -271,18 +271,15 @@ export default function PlayoffBracketTree({
     triggerNotice('✓ 16-Squad Playoff Tree restored to initial major tournament state!');
   };
 
-  // Automated Full Tournament Simulation (plays R16 -> QF -> SF -> Final step-by-step)
   const handleAutoSimulateChampionship = async () => {
     if (isSimulatingAll) return;
     setIsSimulatingAll(true);
     triggerNotice('⚡ Running Automatic Tournament Simulation (Round of 16 to Final)...');
 
-    // 1. Reset bracket
     reset16Matches();
     setSixteenMatches(getStored16Matches());
     await new Promise((r) => setTimeout(r, 400));
 
-    // 2. Simulate Round of 16 (8 matches)
     const r16Ids = ['m-r16-1', 'm-r16-2', 'm-r16-3', 'm-r16-4', 'm-r16-5', 'm-r16-6', 'm-r16-7', 'm-r16-8'];
     const r16Wins: ('teamA' | 'teamB')[] = ['teamA', 'teamA', 'teamB', 'teamA', 'teamA', 'teamB', 'teamA', 'teamB'];
     for (let i = 0; i < r16Ids.length; i++) {
@@ -294,7 +291,6 @@ export default function PlayoffBracketTree({
     triggerNotice('✓ Quarterfinals determined! Simulating Quarterfinals...');
     await new Promise((r) => setTimeout(r, 350));
 
-    // 3. Simulate Quarterfinals (4 matches)
     const qfIds = ['m-qf-1', 'm-qf-2', 'm-qf-3', 'm-qf-4'];
     const qfWins: ('teamA' | 'teamB')[] = ['teamA', 'teamB', 'teamA', 'teamA'];
     for (let i = 0; i < qfIds.length; i++) {
@@ -306,7 +302,6 @@ export default function PlayoffBracketTree({
     triggerNotice('✓ Semifinalists locked in! Simulating Semifinals...');
     await new Promise((r) => setTimeout(r, 350));
 
-    // 4. Simulate Semifinals (2 matches)
     set16MatchWinner('m-sf-1', 'teamA');
     setSixteenMatches(getStored16Matches());
     await new Promise((r) => setTimeout(r, 320));
@@ -318,7 +313,6 @@ export default function PlayoffBracketTree({
     triggerNotice('🏆 GRAND FINAL CLASH! Simulating Final match...');
     await new Promise((r) => setTimeout(r, 450));
 
-    // 5. Crown Grand Champion
     set16MatchWinner('m-gf', 'teamA');
     setSixteenMatches(getStored16Matches());
     setIsSimulatingAll(false);
@@ -328,7 +322,6 @@ export default function PlayoffBracketTree({
   return (
     <div className="space-y-6 select-none font-sans" ref={containerRef}>
       
-      {/* ================= HEADER CONTROL BAR ================= */}
       <div className="bg-gradient-to-r from-[#0C1420] via-card to-[#0C1420] border-2 border-cyan/40 p-5 sm:p-6 backdrop-blur-md relative overflow-hidden shadow-[0_0_35px_rgba(0,213,255,0.15)] clip-tactical">
         <div className="absolute top-0 right-0 w-96 h-52 bg-gradient-to-b from-cyan/15 to-transparent rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-1/4 w-80 h-32 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
@@ -352,10 +345,8 @@ export default function PlayoffBracketTree({
             </p>
           </div>
 
-          {/* Mode Switchers & Actions */}
           <div className="flex flex-wrap items-center gap-3">
             
-            {/* Layout Mode Selector */}
             <div className="bg-surface/90 border border-tactical-border p-1 flex items-center gap-1">
               <button
                 onClick={() => setLayoutMode('16-squad')}
@@ -397,7 +388,6 @@ export default function PlayoffBracketTree({
               </button>
             </div>
 
-            {/* Zoom & Fullscreen Controls */}
             <div className="bg-surface/90 border border-tactical-border p-1 flex items-center gap-1">
               <button
                 onClick={handleZoomIn}
@@ -429,7 +419,6 @@ export default function PlayoffBracketTree({
               </button>
             </div>
 
-            {/* Auto-Simulation & Reset Controls */}
             {layoutMode === '16-squad' ? (
               <div className="flex items-center gap-2">
                 <button
@@ -448,7 +437,7 @@ export default function PlayoffBracketTree({
                   title="Reset 16 squads to initial tournament bracket state"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
-                  <span>RESET DEMO</span>
+                  <span>RESET BRACKET</span>
                 </button>
               </div>
             ) : (
@@ -478,7 +467,6 @@ export default function PlayoffBracketTree({
           </div>
         </div>
 
-        {/* Live Action Strobe */}
         {actionNotice && (
           <div className="mt-4 p-3 bg-cyan/15 border border-cyan text-cyan font-mono text-xs flex items-center gap-2 animate-pulse shadow-[0_0_20px_rgba(0,213,255,0.2)]">
             <Radio className="w-4 h-4 shrink-0 animate-ping text-cyan" />
@@ -487,9 +475,7 @@ export default function PlayoffBracketTree({
         )}
       </div>
 
-      {/* ================= BRACKET DISPLAY CANVAS ================= */}
       <div className="bg-[#05070B] border-2 border-tactical-border p-4 sm:p-8 relative overflow-x-auto overflow-y-hidden shadow-2xl min-h-[720px]">
-        {/* Tactical Ambient Glow Backgrounds */}
         <div className="absolute inset-0 tactical-grid-bg opacity-15 pointer-events-none" />
         <div className="absolute top-10 left-10 w-96 h-96 bg-purple-700/10 rounded-full blur-[120px] pointer-events-none" />
         <div className="absolute bottom-10 left-10 w-96 h-96 bg-orange-600/10 rounded-full blur-[120px] pointer-events-none" />
@@ -497,7 +483,6 @@ export default function PlayoffBracketTree({
         <div className="absolute bottom-10 right-10 w-96 h-96 bg-rose-600/10 rounded-full blur-[120px] pointer-events-none" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[480px] h-[480px] bg-amber-500/10 rounded-full blur-[140px] pointer-events-none" />
 
-        {/* Scaled Zoom Canvas Container */}
         <div
           className="transition-transform duration-200 origin-top-center flex items-center justify-center min-w-[1260px] py-4"
           style={{ transform: `scale(${scale})` }}
@@ -537,7 +522,6 @@ export default function PlayoffBracketTree({
         </div>
       </div>
 
-      {/* ================= MATCH DOSSIER MODAL POPUP ================= */}
       {selectedMatch && (
         <MatchDossierModal
           match={selectedMatch}
@@ -1066,12 +1050,19 @@ function DualWingBracket16View({
           </div>
         </div>
 
-        {/* Crowned Champion Badge */}
-        {bracket.champion && (
+        {/* Crowned Champion Badge or Awaiting Champion Status */}
+        {bracket.champion ? (
           <div className="mt-4 pt-3 border-t border-tactical-gold/40 text-center animate-in zoom-in-95 duration-500 w-full">
             <div className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold text-tactical-gold uppercase tracking-widest px-2.5 py-1 bg-amber-500/20 border border-amber-500/60 shadow-[0_0_20px_rgba(255,184,0,0.5)]">
               <Crown className="w-3.5 h-3.5 text-tactical-gold animate-bounce" />
               <span className="truncate max-w-[170px]">{bracket.champion.name}</span>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-4 pt-3 border-t border-tactical-gold/20 text-center w-full">
+            <div className="inline-flex items-center gap-1.5 text-[9px] font-mono font-bold text-tactical-gold/80 uppercase tracking-widest px-2.5 py-1 bg-amber-500/10 border border-amber-500/30">
+              <Trophy className="w-3 h-3 text-tactical-gold/70" />
+              <span>AWAITING CHAMPION</span>
             </div>
           </div>
         )}
@@ -1196,19 +1187,14 @@ function DualWingBracket16View({
         </div>
       </div>
 
-      {/* ============================================================================ */}
-      {/* COLUMN 7 (RIGHT OUTER): ROUND OF 16 (8 SQUADS)                                */}
-      {/* ============================================================================ */}
       <div className="w-[175px] h-full flex flex-col justify-between py-6 z-10">
         
-        {/* TOP-RIGHT (CYAN QUADRANT) */}
         <div className="space-y-6">
           <div className="text-[10px] font-mono font-black text-cyan-400 uppercase tracking-widest flex items-center justify-end gap-1.5 pb-1 border-b border-cyan-500/40">
             <span>CYAN QUADRANT</span>
             <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_#00D5FF]" />
           </div>
 
-          {/* Match 5 */}
           <div className="space-y-3">
             <TacticalTeamPill
               name={r16_5.teamAName}
@@ -1240,7 +1226,6 @@ function DualWingBracket16View({
             />
           </div>
 
-          {/* Match 6 */}
           <div className="space-y-3">
             <TacticalTeamPill
               name={r16_6.teamAName}
@@ -1273,7 +1258,6 @@ function DualWingBracket16View({
           </div>
         </div>
 
-        {/* BOTTOM-RIGHT (RED QUADRANT) */}
         <div className="space-y-6 pt-4">
           <div className="text-[10px] font-mono font-black text-rose-400 uppercase tracking-widest flex items-center justify-end gap-1.5 pb-1 border-b border-rose-500/40">
             <span>RED QUADRANT</span>
@@ -1312,7 +1296,6 @@ function DualWingBracket16View({
             />
           </div>
 
-          {/* Match 8 */}
           <div className="space-y-3">
             <TacticalTeamPill
               name={r16_8.teamAName}
@@ -1349,9 +1332,6 @@ function DualWingBracket16View({
   );
 }
 
-// ========================================================================================
-// 8-SQUAD DUAL-WING BRACKET (UWU INTER-FACULTY TOURNAMENT DRAW)
-// ========================================================================================
 interface DualWingBracket8Props {
   bracket: PlayoffBracket;
   matches: Match[];
@@ -1387,9 +1367,7 @@ function DualWingBracket8View({
   return (
     <div className="relative w-[1180px] h-[540px] flex items-center justify-between mx-auto select-none">
       
-      {/* SVG CONNECTOR WIRES FOR 8-SQUAD BRACKET */}
       <svg className="absolute inset-0 w-full h-full pointer-events-none z-0" xmlns="http://www.w3.org/2000/svg">
-        {/* Left Wing Wires: QF1 (y=110) & QF2 (y=430) -> Left Semifinal (y=270) */}
         <g className="text-purple-500">
           <path d="M 230,110 H 290 V 270 H 330" fill="none" className={getWireClasses(qf1?.teamAId, qf1?.teamBId)} strokeWidth="2.5" />
         </g>
@@ -1397,12 +1375,10 @@ function DualWingBracket8View({
           <path d="M 230,430 H 290 V 270 H 330" fill="none" className={getWireClasses(qf2?.teamAId, qf2?.teamBId)} strokeWidth="2.5" />
         </g>
 
-        {/* Left Semifinal to Center Final */}
         <g className="text-cyan-400">
           <path d="M 520,270 H 550" fill="none" strokeWidth="3" className="stroke-cyan-400" />
         </g>
 
-        {/* Right Wing Wires: QF3 (y=110) & QF4 (y=430) -> Right Semifinal (y=270) */}
         <g className="text-cyan-400">
           <path d="M 950,110 H 890 V 270 H 850" fill="none" className={getWireClasses(qf3?.teamAId, qf3?.teamBId)} strokeWidth="2.5" />
         </g>
@@ -1410,15 +1386,12 @@ function DualWingBracket8View({
           <path d="M 950,430 H 890 V 270 H 850" fill="none" className={getWireClasses(qf4?.teamAId, qf4?.teamBId)} strokeWidth="2.5" />
         </g>
 
-        {/* Right Semifinal to Center Final */}
         <g className="text-rose-400">
           <path d="M 660,270 H 630" fill="none" strokeWidth="3" className="stroke-rose-400" />
         </g>
       </svg>
 
-      {/* LEFT WING: QUARTERFINALS 1 & 2 */}
       <div className="w-[230px] h-full flex flex-col justify-between py-6 z-10">
-        {/* QF 1 (Purple) */}
         {qf1 && (
           <div className="space-y-2.5">
             <div className="text-[10px] font-mono font-bold text-purple-400 uppercase tracking-wider flex items-center gap-1.5 pb-1 border-b border-purple-500/30">
@@ -1454,7 +1427,6 @@ function DualWingBracket8View({
           </div>
         )}
 
-        {/* QF 2 (Orange) */}
         {qf2 && (
           <div className="space-y-2.5">
             <div className="text-[10px] font-mono font-bold text-orange-400 uppercase tracking-wider flex items-center gap-1.5 pb-1 border-b border-orange-500/30">
@@ -1491,7 +1463,6 @@ function DualWingBracket8View({
         )}
       </div>
 
-      {/* LEFT SEMIFINAL 1 */}
       {sf1 && (
         <div className="w-[190px] z-10 ml-10">
           <div className="p-3 bg-card/90 border-2 border-purple-500/70 shadow-[0_0_25px_rgba(168,85,247,0.3)] clip-tactical space-y-3">
@@ -1529,7 +1500,6 @@ function DualWingBracket8View({
         </div>
       )}
 
-      {/* CENTER GRAND CHAMPIONSHIP HUB */}
       <div className="w-[200px] flex flex-col items-center justify-center z-20 px-2">
         <div className="relative mb-5 flex flex-col items-center">
           <div className="relative w-16 h-16 rounded-full bg-gradient-to-b from-[#1E293B] via-[#0F172A] to-[#070A0F] border-2 border-tactical-gold flex items-center justify-center shadow-[0_0_35px_rgba(255,184,0,0.6)] animate-pulse">
@@ -1573,7 +1543,6 @@ function DualWingBracket8View({
         )}
       </div>
 
-      {/* RIGHT SEMIFINAL 2 */}
       {sf2 && (
         <div className="w-[190px] z-10 mr-10">
           <div className="p-3 bg-card/90 border-2 border-cyan-500/70 shadow-[0_0_25px_rgba(0,213,255,0.3)] clip-tactical space-y-3">
@@ -1611,9 +1580,7 @@ function DualWingBracket8View({
         </div>
       )}
 
-      {/* RIGHT WING: QUARTERFINALS 3 & 4 */}
       <div className="w-[230px] h-full flex flex-col justify-between py-6 z-10">
-        {/* QF 3 (Cyan) */}
         {qf3 && (
           <div className="space-y-2.5">
             <div className="text-[10px] font-mono font-bold text-cyan-400 uppercase tracking-wider flex items-center justify-end gap-1.5 pb-1 border-b border-cyan-500/30">
@@ -1649,7 +1616,6 @@ function DualWingBracket8View({
           </div>
         )}
 
-        {/* QF 4 (Red) */}
         {qf4 && (
           <div className="space-y-2.5">
             <div className="text-[10px] font-mono font-bold text-rose-400 uppercase tracking-wider flex items-center justify-end gap-1.5 pb-1 border-b border-rose-500/30">
@@ -1689,9 +1655,6 @@ function DualWingBracket8View({
   );
 }
 
-// ========================================================================================
-// LINEAR STAGE PROGRESSION VIEW (ALTERNATIVE VIEW)
-// ========================================================================================
 interface LinearStageBracketProps {
   bracket: PlayoffBracket;
   onSelectMatch: (m: Match) => void;
@@ -1708,7 +1671,6 @@ function LinearStageBracketView({
   return (
     <div className="w-[1180px] grid grid-cols-4 gap-8 items-center py-6">
       
-      {/* 1. QUARTERFINALS */}
       <div className="space-y-6">
         <div className="pb-2 border-b border-tactical-border">
           <span className="text-[10px] font-mono text-secondaryText uppercase tracking-widest block">ROUND 01</span>
@@ -1746,7 +1708,6 @@ function LinearStageBracketView({
         ))}
       </div>
 
-      {/* 2. SEMIFINALS */}
       <div className="space-y-16">
         <div className="pb-2 border-b border-tactical-border">
           <span className="text-[10px] font-mono text-secondaryText uppercase tracking-widest block">ROUND 02</span>
@@ -1784,7 +1745,6 @@ function LinearStageBracketView({
         ))}
       </div>
 
-      {/* 3. GRAND FINAL */}
       <div className="space-y-8">
         <div className="pb-2 border-b border-tactical-border">
           <span className="text-[10px] font-mono text-tactical-gold uppercase tracking-widest block">CHAMPIONSHIP</span>
@@ -1823,7 +1783,6 @@ function LinearStageBracketView({
         )}
       </div>
 
-      {/* 4. CHAMPION TROPHY PODIUM */}
       <div className="flex flex-col items-center justify-center p-6 bg-surface border-2 border-tactical-gold/40 text-center shadow-[0_0_35px_rgba(255,184,0,0.2)] clip-tactical">
         <div className="relative w-20 h-20 rounded-full bg-surface border-2 border-tactical-gold flex items-center justify-center mb-4 shadow-[0_0_25px_rgba(255,184,0,0.4)]">
           <Trophy className="w-10 h-10 text-tactical-gold drop-shadow-[0_0_12px_#FFB800]" />
@@ -1839,9 +1798,6 @@ function LinearStageBracketView({
   );
 }
 
-// ========================================================================================
-// TACTICAL CAPSULE PILL (AUTHENTIC CS2 ESPORTS MATCH NODE)
-// ========================================================================================
 interface TacticalTeamPillProps {
   name: string;
   tag: string;
@@ -1872,6 +1828,7 @@ function TacticalTeamPill({
   onSimWin,
 }: TacticalTeamPillProps) {
   const theme = QUADRANT_THEMES[themeKey] || QUADRANT_THEMES.cyan;
+  const isPlaceholder = name.startsWith('TBD') || name.startsWith('Winner') || tag === 'TBD' || tag.startsWith('SLOT');
 
   return (
     <div
@@ -1879,7 +1836,9 @@ function TacticalTeamPill({
       onMouseLeave={onMouseLeave}
       onClick={onClick}
       className={`group relative flex items-center justify-between px-3 py-1.5 rounded-full border-2 transition-all cursor-pointer select-none ${
-        theme.bg
+        isPlaceholder
+          ? 'bg-[#090D14]/80 border-dashed border-tactical-border/40 hover:border-tactical-border/80'
+          : theme.bg
       } ${
         isHovered
           ? 'border-white bg-surface shadow-[0_0_20px_#fff] scale-105 z-30'
@@ -1887,30 +1846,36 @@ function TacticalTeamPill({
           ? `${theme.borderActive} ${theme.shadow} z-20 scale-[1.02] ring-1 ring-white/60`
           : isEliminated
           ? 'border-tactical-border/40 opacity-40 hover:opacity-85 z-0'
+          : isPlaceholder
+          ? 'z-0'
           : `${theme.border} ${theme.cardGlow} z-10`
       }`}
     >
-      {/* Team Emblem Logo */}
       <div className="flex items-center gap-2 min-w-0 pr-2">
         <div
           className={`relative w-6 h-6 rounded-full overflow-hidden border shrink-0 bg-surface ${
-            isWinner ? theme.borderActive : 'border-tactical-border'
+            isWinner ? theme.borderActive : isPlaceholder ? 'border-dashed border-tactical-border/50' : 'border-tactical-border'
           }`}
         >
-          {logo ? (
+          {logo && !logo.includes('team-placeholder.svg') ? (
             <Image src={logo} alt={name} fill className="object-cover" sizes="24px" />
           ) : (
-            <div className="w-full h-full flex items-center justify-center font-mono text-[9px] text-secondaryText">
-              {tag.slice(0, 2)}
+            <div className="w-full h-full flex items-center justify-center font-mono text-[9px] text-cyan/70 font-bold bg-[#0F172A]">
+              {tag.slice(0, 3)}
             </div>
           )}
         </div>
 
-        {/* Squad Name & Tag */}
         <div className="truncate">
           <span
-            className={`font-display font-black text-xs uppercase tracking-wider truncate block transition-colors ${
-              isHovered ? 'text-white' : isWinner ? 'text-white font-extrabold' : 'text-slate-200 group-hover:text-white'
+            className={`font-display text-xs uppercase tracking-wider truncate block transition-colors ${
+              isHovered
+                ? 'text-white font-black'
+                : isWinner
+                ? 'text-white font-extrabold'
+                : isPlaceholder
+                ? 'text-secondaryText font-medium text-[11px]'
+                : 'text-slate-200 font-black group-hover:text-white'
             }`}
           >
             {name}
@@ -1918,7 +1883,6 @@ function TacticalTeamPill({
         </div>
       </div>
 
-      {/* Score or Advance Badge */}
       <div className="flex items-center gap-1.5 shrink-0 ml-1">
         {score !== undefined && (
           <span
@@ -1932,7 +1896,6 @@ function TacticalTeamPill({
           </span>
         )}
 
-        {/* Quick 1-Click Simulation Button on Hover */}
         {onSimWin && !isWinner && (
           <button
             onClick={(e) => {
@@ -1950,9 +1913,6 @@ function TacticalTeamPill({
   );
 }
 
-// ========================================================================================
-// MATCH DOSSIER MODAL POPUP
-// ========================================================================================
 interface MatchDossierModalProps {
   match: Match;
   onClose: () => void;
@@ -1967,7 +1927,6 @@ function MatchDossierModal({ match, onClose, onSimulateWin, onSimulateRound }: M
         className="relative max-w-xl w-full bg-[#090D14] border-2 border-cyan/50 p-6 sm:p-8 clip-tactical shadow-[0_0_50px_rgba(0,213,255,0.25)] space-y-6"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="flex items-start justify-between pb-4 border-b border-tactical-border">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -1991,7 +1950,6 @@ function MatchDossierModal({ match, onClose, onSimulateWin, onSimulateRound }: M
           </button>
         </div>
 
-        {/* Versus Clash Card */}
         <div className="grid grid-cols-5 gap-3 items-center bg-surface/80 border border-tactical-border p-4">
           <div className="col-span-2 text-center space-y-2">
             <div className="relative w-14 h-14 mx-auto bg-surface border border-tactical-border rounded-full overflow-hidden">
@@ -2026,7 +1984,6 @@ function MatchDossierModal({ match, onClose, onSimulateWin, onSimulateRound }: M
           </div>
         </div>
 
-        {/* Tactical Parameters */}
         <div className="grid grid-cols-2 gap-3 text-xs font-mono">
           <div className="p-3 bg-card border border-tactical-border space-y-1">
             <span className="text-secondaryText text-[10px] uppercase tracking-wider block">CS2 MAP SELECTION</span>
@@ -2042,7 +1999,6 @@ function MatchDossierModal({ match, onClose, onSimulateWin, onSimulateRound }: M
           </div>
         </div>
 
-        {/* Footer Actions */}
         <div className="pt-2 flex items-center justify-between">
           <Link
             href={`/scoreboard/live?matchId=${match.id}`}

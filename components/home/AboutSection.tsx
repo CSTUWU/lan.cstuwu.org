@@ -5,8 +5,10 @@ import Link from 'next/link';
 import { Shield, Cpu, Users, Award, Target, Terminal, ChevronRight } from 'lucide-react';
 import Button from '../ui/Button';
 import Badge from '../ui/Badge';
+import { useRegistrationStatus } from '@/hooks/useRegistrationStatus';
 
 export default function AboutSection() {
+  const { isOpen } = useRegistrationStatus();
   const highlights = [
     {
       icon: <Users className="w-6 h-6 text-cyan" />,
@@ -36,13 +38,11 @@ export default function AboutSection() {
 
   return (
     <section id="about" className="relative py-28 bg-[#080B10] overflow-hidden">
-      {/* Ambient background glow */}
       <div className="absolute top-1/2 left-0 w-80 h-80 bg-cyan/5 rounded-full blur-[140px] pointer-events-none" />
       <div className="absolute bottom-0 right-0 w-80 h-80 bg-orange/5 rounded-full blur-[140px] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
-        {/* Top Header */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end mb-16 pb-8 border-b border-tactical-border">
           <div className="lg:col-span-8">
             <div className="inline-flex items-center gap-2 mb-3">
@@ -68,7 +68,6 @@ export default function AboutSection() {
           </div>
         </div>
 
-        {/* Story Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center mb-20">
           <div className="lg:col-span-7 space-y-6 text-secondaryText leading-relaxed text-sm sm:text-base font-sans">
             <div className="p-4 bg-surface/60 border-l-2 border-cyan font-mono text-xs text-white">
@@ -87,16 +86,17 @@ export default function AboutSection() {
             </p>
 
             <div className="flex flex-wrap gap-4 pt-2">
-              <Button href="/register" variant="cyan" size="md">
-                REGISTER ROSTER
-              </Button>
+              {isOpen && (
+                <Button href="/register" variant="cyan" size="md">
+                  REGISTER ROSTER
+                </Button>
+              )}
               <Button href="/about" variant="ghost" size="md">
                 TOURNAMENT INTEL
               </Button>
             </div>
           </div>
 
-          {/* Right Tactical Telemetry Box */}
           <div className="lg:col-span-5">
             <div className="relative bg-card/90 border border-tactical-border p-6 backdrop-blur-md">
               <span className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-orange" />
@@ -139,7 +139,6 @@ export default function AboutSection() {
           </div>
         </div>
 
-        {/* Highlights Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {highlights.map((item, idx) => (
             <div

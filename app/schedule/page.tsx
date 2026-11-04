@@ -11,8 +11,10 @@ import { Match, MatchStatus } from '@/lib/types';
 import { Calendar, Clock, MapPin, Tv, Shield, ChevronRight, CheckCircle2 } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
+import { useRegistrationStatus } from '@/hooks/useRegistrationStatus';
 
 export default function SchedulePage() {
+  const { isOpen } = useRegistrationStatus();
   const [matches, setMatches] = useState<Match[]>(INITIAL_MATCHES);
   const [filter, setFilter] = useState<'all' | 'upcoming' | 'completed'>('all');
 
@@ -53,7 +55,6 @@ export default function SchedulePage() {
           <div>
             <div className="inline-flex items-center gap-2 mb-2">
               <Badge variant="orange" size="sm">TIMELINE OPERATIONS</Badge>
-              <span className="text-xs font-mono text-secondaryText">{"// DEMONSTRATION SCHEDULE"}</span>
             </div>
             <h1 className="font-display font-black text-4xl sm:text-5xl uppercase text-white tracking-tight">
               MATCH <span className="text-cyan">SCHEDULE</span>
@@ -67,9 +68,11 @@ export default function SchedulePage() {
             <Button href="/scoreboard" variant="outline" size="sm">
               VIEW STANDINGS
             </Button>
-            <Button href="/register" variant="cyan" size="sm">
-              ENLIST TEAM
-            </Button>
+            {isOpen && (
+              <Button href="/register" variant="cyan" size="sm">
+                ENLIST TEAM
+              </Button>
+            )}
           </div>
         </div>
 
@@ -99,8 +102,16 @@ export default function SchedulePage() {
         {/* Matches List */}
         <div className="space-y-4">
           {filteredMatches.length === 0 ? (
-            <div className="text-center py-16 bg-surface/30 border border-tactical-border p-8 text-secondaryText font-mono text-xs">
-              No matches found under this filter.
+            <div className="text-center py-20 bg-surface/30 border border-dashed border-tactical-border p-8">
+              <Calendar className="w-12 h-12 text-secondaryText/40 mx-auto mb-3" />
+              <h3 className="font-display font-black text-lg text-white uppercase mb-1">
+                {filter !== 'all' ? 'No Matches Found' : 'Tournament Schedule Pending'}
+              </h3>
+              <p className="text-xs font-mono text-secondaryText max-w-md mx-auto">
+                {filter !== 'all'
+                  ? 'No match fixtures match the selected filter.'
+                  : 'Official match fixtures and auditorium stage timetable will be published following roster verification.'}
+              </p>
             </div>
           ) : (
             filteredMatches.map((m) => {

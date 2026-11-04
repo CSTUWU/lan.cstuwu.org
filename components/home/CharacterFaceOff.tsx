@@ -18,8 +18,10 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import Button from '../ui/Button';
+import { useRegistrationStatus } from '@/hooks/useRegistrationStatus';
 
 export default function CharacterFaceOff() {
+  const { isOpen } = useRegistrationStatus();
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -334,13 +336,11 @@ export default function CharacterFaceOff() {
       ref={containerRef}
       className="relative w-full bg-[#05070B] text-white overflow-hidden select-none"
     >
-      {/* Background Interactive Canvas Particle Field */}
       <canvas
         ref={canvasRef}
         className="absolute inset-0 w-full h-full pointer-events-none z-0 opacity-80"
       />
 
-      {/* Atmospheric Cinematic Lighting Flares */}
       <div className="absolute inset-0 pointer-events-none z-0">
         <div className="absolute top-1/3 left-0 w-[600px] h-[600px] bg-cyan/20 rounded-full blur-[180px]" />
         <div className="absolute top-1/3 right-0 w-[600px] h-[600px] bg-orange/20 rounded-full blur-[180px]" />
@@ -348,7 +348,6 @@ export default function CharacterFaceOff() {
         <div className="absolute inset-0 tactical-grid-bg opacity-25" />
       </div>
 
-      {/* Top Telemetry & Scrub Bar */}
       <div className="absolute top-0 left-0 w-full z-50">
         <div className="h-[3px] bg-surface w-full">
           <div
@@ -375,7 +374,6 @@ export default function CharacterFaceOff() {
         </div>
       </div>
 
-      {/* PINNED VIEWPORT STAGE */}
       <div
         ref={stageRef}
         className="relative h-screen w-full flex items-center justify-center overflow-hidden px-4"
@@ -385,7 +383,6 @@ export default function CharacterFaceOff() {
           ref={cameraRigRef}
           className="relative w-full h-full flex items-center justify-center will-change-transform origin-center"
         >
-          {/* CHARACTER 1: VECTOR (LEFT ENTRANCE, FACING RIGHT) */}
           <div
             ref={vectorWrapperRef}
             className="absolute z-20 w-[280px] sm:w-[380px] md:w-[460px] lg:w-[520px] h-[400px] sm:h-[540px] md:h-[640px] lg:h-[720px] will-change-transform"
@@ -437,7 +434,6 @@ export default function CharacterFaceOff() {
             </div>
           </div>
 
-          {/* CENTER: ENERGY COLLISION & FACE-OFF SPARKS */}
           <div
             ref={energyCollisionRef}
             className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[3px] bg-gradient-to-b from-cyan via-white to-orange z-25 pointer-events-none origin-center shadow-[0_0_25px_rgba(255,255,255,0.8)]"
@@ -477,7 +473,6 @@ export default function CharacterFaceOff() {
             </div>
           </div>
 
-          {/* CHARACTER 2: RAPTOR (RIGHT ENTRANCE, FACING LEFT) */}
           <div
             ref={raptorWrapperRef}
             className="absolute z-20 w-[280px] sm:w-[380px] md:w-[460px] lg:w-[520px] h-[400px] sm:h-[540px] md:h-[640px] lg:h-[720px] will-change-transform"
@@ -530,7 +525,6 @@ export default function CharacterFaceOff() {
           </div>
         </div>
 
-        {/* FINAL SCENE: CALL TO ARMS & TOURNAMENT LOCK-IN */}
         <div
           ref={finalCalloutRef}
           className="absolute z-40 max-w-2xl text-center px-6 py-8 sm:py-10 bg-[#080B10]/95 border-2 border-cyan/50 backdrop-blur-2xl shadow-[0_0_100px_rgba(0,0,0,0.95)] will-change-transform mx-4"
@@ -549,25 +543,29 @@ export default function CharacterFaceOff() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button
-              href="/register"
-              variant="cyan"
-              size="lg"
-              icon={<Crosshair className="w-5 h-5" />}
-              className="w-full sm:w-auto font-black shadow-[0_0_25px_rgba(0,213,255,0.4)]"
-            >
-              ENLIST TEAM VECTOR
-            </Button>
+            {isOpen && (
+              <>
+                <Button
+                  href="/register"
+                  variant="cyan"
+                  size="lg"
+                  icon={<Crosshair className="w-5 h-5" />}
+                  className="w-full sm:w-auto font-black shadow-[0_0_25px_rgba(0,213,255,0.4)]"
+                >
+                  ENLIST TEAM VECTOR
+                </Button>
 
-            <Button
-              href="/register"
-              variant="orange"
-              size="lg"
-              icon={<Flame className="w-5 h-5 text-white" />}
-              className="w-full sm:w-auto font-black shadow-[0_0_25px_rgba(255,116,56,0.4)]"
-            >
-              ENLIST TEAM RAPTOR
-            </Button>
+                <Button
+                  href="/register"
+                  variant="orange"
+                  size="lg"
+                  icon={<Flame className="w-5 h-5 text-white" />}
+                  className="w-full sm:w-auto font-black shadow-[0_0_25px_rgba(255,116,56,0.4)]"
+                >
+                  ENLIST TEAM RAPTOR
+                </Button>
+              </>
+            )}
 
             <Button
               href="/#format"
