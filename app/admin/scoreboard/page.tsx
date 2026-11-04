@@ -6,6 +6,7 @@ import Image from 'next/image';
 import AdminLayout from '@/components/admin/AdminLayout';
 import {
   getStoredMatches,
+  getStored16Matches,
   updateMatchScore,
   incrementMatchScore,
   switchMatchSides,
@@ -35,6 +36,7 @@ import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 
 export default function AdminScoreboardPage() {
+  const [bracketFilter, setBracketFilter] = useState<'16-squad' | '8-squad' | 'all'>('16-squad');
   const [matches, setMatches] = useState<Match[]>([]);
   const [selectedMatchId, setSelectedMatchId] = useState<string>('');
   const [scoreA, setScoreA] = useState<number>(0);
@@ -44,43 +46,67 @@ export default function AdminScoreboardPage() {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
 
+  const getCombinedMatches = (filter: '16-squad' | '8-squad' | 'all') => {
+    const list8 = getStoredMatches();
+    const list16 = getStored16Matches();
+    if (filter === '16-squad') return list16;
+    if (filter === '8-squad') return list8;
+    return [...list16, ...list8];
+  };
+
   const loadMatches = async () => {
-    const list = getStoredMatches();
-    setMatches(list);
+    const combined = getCombinedMatches(bracketFilter);
+    setMatches(combined);
 
     try {
       const res = await api.admin.getMatches();
       if (res.success && Array.isArray(res.data) && res.data.length > 0) {
         const transformed = res.data.map(transformBackendMatch);
-        setMatches(transformed);
-        return transformed;
+        if (bracketFilter === '8-squad' || bracketFilter === 'all') {
+          setMatches(bracketFilter === '8-squad' ? transformed : [...getStored16Matches(), ...transformed]);
+        }
       }
     } catch (e) {
       // Backend offline: continue with local list
     }
-    return list;
+    return combined;
   };
 
   useEffect(() => {
     loadMatches().then((list) => {
       if (list.length > 0) {
-        // Default to live match if available
-        const live = list.find((m) => m.status === 'live') || list[0];
-        setSelectedMatchId(live.id);
-        setScoreA(live.scoreA);
-        setScoreB(live.scoreB);
-        setStatus(live.status);
-        setMvp(live.mvp || '');
+        // Default to live match if available or first match
+        const currentStillExists = list.find((m) => m.id === selectedMatchId);
+        const active = currentStillExists || list.find((m) => m.status === 'live') || list[0];
+        setSelectedMatchId(active.id);
+        setScoreA(active.scoreA);
+        setScoreB(active.scoreB);
+        setStatus(active.status);
+        setMvp(active.mvp || '');
       }
     });
 
     const handleUpdate = () => {
-      const updated = getStoredMatches();
+      const updated = getCombinedMatches(bracketFilter);
       setMatches(updated);
+      const cur = updated.find((m) => m.id === selectedMatchId);
+      if (cur) {
+        setScoreA(cur.scoreA);
+        setScoreB(cur.scoreB);
+        setStatus(cur.status);
+      }
     };
+
     window.addEventListener('cst_matches_updated', handleUpdate);
-    return () => window.removeEventListener('cst_matches_updated', handleUpdate);
-  }, []);
+    window.addEventListener('cst_16_matches_updated', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+
+    return () => {
+      window.removeEventListener('cst_matches_updated', handleUpdate);
+      window.removeEventListener('cst_16_matches_updated', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
+  }, [bracketFilter, selectedMatchId]);
 
   const handleSelectMatch = (matchId: string) => {
     setSelectedMatchId(matchId);
@@ -236,6 +262,44 @@ export default function AdminScoreboardPage() {
             <span>{actionNotice}</span>
           </div>
         )}
+
+        {/* Tournament Bracket Filter */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-mono text-secondaryText uppercase font-bold mr-1">BRACKET POOL:</span>
+          <button
+            type="button"
+            onClick={() => setBracketFilter('16-squad')}
+            className={`px-3 py-1.5 font-mono text-xs uppercase font-bold border transition-colors ${
+              bracketFilter === '16-squad'
+                ? 'bg-gradient-to-r from-purple-600 to-cyan text-white border-purple-400 shadow-sm'
+                : 'bg-card text-secondaryText border-tactical-border hover:text-white'
+            }`}
+          >
+            16-SQUAD MAJOR DUAL-WING
+          </button>
+          <button
+            type="button"
+            onClick={() => setBracketFilter('8-squad')}
+            className={`px-3 py-1.5 font-mono text-xs uppercase font-bold border transition-colors ${
+              bracketFilter === '8-squad'
+                ? 'bg-cyan text-black border-cyan font-black'
+                : 'bg-card text-secondaryText border-tactical-border hover:text-white'
+            }`}
+          >
+            8-SQUAD UWU
+          </button>
+          <button
+            type="button"
+            onClick={() => setBracketFilter('all')}
+            className={`px-3 py-1.5 font-mono text-xs uppercase font-bold border transition-colors ${
+              bracketFilter === 'all'
+                ? 'bg-tactical-gold text-black border-tactical-gold font-black'
+                : 'bg-card text-secondaryText border-tactical-border hover:text-white'
+            }`}
+          >
+            ALL FIXTURES ({getCombinedMatches('all').length})
+          </button>
+        </div>
 
         {/* Fixture Selector */}
         <div className="bg-card/90 border border-tactical-border p-4">

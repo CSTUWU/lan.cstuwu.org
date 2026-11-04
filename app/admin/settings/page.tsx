@@ -70,7 +70,7 @@ export default function AdminSettingsPage() {
                 RESTORE DEMONSTRATION DEFAULTS
               </h3>
               <p className="text-xs font-mono text-secondaryText mt-1 leading-relaxed">
-                Re-seeds the application with original collegiate teams (UWU Tactical Vanguard, Moratuwa Titans, Colombo Apex, etc.), official matches, and default countdown schedules.
+                Re-seeds the application with official UWU inter-faculty squads (UWU CST Vanguard, UWU Tech Storm, UWU FAS Strikers, UWU MGT Titans, etc.), authentic playoff tree fixtures, and default countdown schedules.
               </p>
             </div>
           </div>

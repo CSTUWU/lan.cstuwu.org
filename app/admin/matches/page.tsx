@@ -3,11 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { getStoredTeams, getStoredMatches, createMatch } from '@/lib/storage';
+import { getStoredTeams, getStoredMatches, createMatch, generateAndStorePlayoffBracket } from '@/lib/storage';
 import { api } from '@/lib/api';
 import { transformBackendMatch, transformBackendTeam } from '@/lib/transformers';
 import { Team, Match, CS2Map, MatchStatus } from '@/lib/types';
-import { Swords, Plus, Calendar, Clock, MapPin, CheckCircle2, Shield, RefreshCw } from 'lucide-react';
+import { Swords, Plus, Calendar, Clock, MapPin, CheckCircle2, Shield, RefreshCw, Trophy, GitBranch } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 
@@ -132,6 +132,35 @@ export default function AdminMatchesPage() {
     loadData();
   };
 
+  const handleAutoGeneratePlayoffs = async () => {
+    if (approvedTeams.length < 2) {
+      alert(`At least 2 approved teams are required to seed playoffs (Currently: ${approvedTeams.length} approved squads).`);
+      return;
+    }
+    const confirmSeed = window.confirm(
+      `Generate single-elimination playoff bracket tree from ${approvedTeams.length} approved squads? This will seed Quarterfinals and downstream bracket progression.`
+    );
+    if (!confirmSeed) return;
+
+    setLoading(true);
+    try {
+      const res = await api.admin.generatePlayoffs().catch(() => null);
+      if (res?.success) {
+        setNotice('Playoff bracket tree automatically seeded on server database!');
+      } else {
+        generateAndStorePlayoffBracket();
+        setNotice('Playoff bracket tree seeded & synchronized across scoreboard!');
+      }
+    } catch (e) {
+      generateAndStorePlayoffBracket();
+      setNotice('Playoff bracket tree seeded locally.');
+    } finally {
+      await loadData();
+      setLoading(false);
+      setTimeout(() => setNotice(null), 5000);
+    }
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -151,7 +180,7 @@ export default function AdminMatchesPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={() => {
                 setLoading(true);
@@ -162,6 +191,14 @@ export default function AdminMatchesPage() {
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             </button>
+            <Button
+              onClick={handleAutoGeneratePlayoffs}
+              variant="outline"
+              size="md"
+              icon={<GitBranch className="w-4 h-4 text-tactical-gold" />}
+            >
+              SEED PLAYOFF BRACKET
+            </Button>
             <Button
               onClick={() => setShowCreateModal(true)}
               variant="cyan"

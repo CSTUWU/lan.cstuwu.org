@@ -2,18 +2,35 @@
 
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { getStoredCountdown, saveCountdown } from '@/lib/storage';
+import { getStoredCountdown, saveCountdown, generateAndStorePlayoffBracket } from '@/lib/storage';
 import { api } from '@/lib/api';
 import { transformBackendSettings } from '@/lib/transformers';
 import { CountdownSettings } from '@/lib/types';
-import { Timer, Calendar, CheckCircle2, Save, Radio, RefreshCw } from 'lucide-react';
+import { Timer, Calendar, CheckCircle2, Save, Radio, RefreshCw, GitBranch } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 
 export default function AdminCountdownPage() {
   const [settings, setSettings] = useState<CountdownSettings>(getStoredCountdown());
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [playoffNotice, setPlayoffNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const handleSeedPlayoffsNow = async () => {
+    try {
+      const res = await api.admin.generatePlayoffs().catch(() => null);
+      if (res?.success) {
+        setPlayoffNotice('Playoff bracket tree automatically seeded on backend database!');
+      } else {
+        generateAndStorePlayoffBracket();
+        setPlayoffNotice('Playoff bracket tree generated & synchronized across live scoreboard!');
+      }
+    } catch (e) {
+      generateAndStorePlayoffBracket();
+      setPlayoffNotice('Playoff bracket tree generated locally.');
+    }
+    setTimeout(() => setPlayoffNotice(null), 5000);
+  };
 
   const loadSettings = async () => {
     const local = getStoredCountdown();
@@ -127,16 +144,32 @@ export default function AdminCountdownPage() {
             <label className="block text-xs font-mono text-secondaryText uppercase tracking-wider mb-2">
               EVENT STATUS TICKER
             </label>
-            <select
-              value={settings.eventStatus}
-              onChange={(e) => setSettings({ ...settings, eventStatus: e.target.value as any })}
-              className="w-full bg-surface border border-tactical-border px-4 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-cyan"
-            >
-              <option value="REGISTRATIONS OPEN">REGISTRATIONS OPEN</option>
-              <option value="CHECK-IN PHASE">CHECK-IN PHASE</option>
-              <option value="BATTLEFIELD ACTIVE">BATTLEFIELD ACTIVE (LAN IN PROGRESS)</option>
-              <option value="CHAMPIONS CROWNED">CHAMPIONS CROWNED (CONCLUDED)</option>
-            </select>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <select
+                value={settings.eventStatus}
+                onChange={(e) => setSettings({ ...settings, eventStatus: e.target.value as any })}
+                className="flex-1 bg-surface border border-tactical-border px-4 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-cyan"
+              >
+                <option value="REGISTRATIONS OPEN">REGISTRATIONS OPEN</option>
+                <option value="CHECK-IN PHASE">CHECK-IN PHASE (REGISTRATION CONCLUDED)</option>
+                <option value="BATTLEFIELD ACTIVE">BATTLEFIELD ACTIVE (LAN PLAYOFFS IN PROGRESS)</option>
+                <option value="CHAMPIONS CROWNED">CHAMPIONS CROWNED (CONCLUDED)</option>
+              </select>
+              <button
+                type="button"
+                onClick={handleSeedPlayoffsNow}
+                className="px-4 py-2 bg-tactical-gold/15 border border-tactical-gold/50 text-tactical-gold hover:bg-tactical-gold hover:text-black font-mono text-xs uppercase font-bold flex items-center justify-center gap-2 transition-colors shrink-0"
+              >
+                <GitBranch className="w-3.5 h-3.5" />
+                <span>SEED PLAYOFF TREE FROM APPROVED SQUADS</span>
+              </button>
+            </div>
+            {playoffNotice && (
+              <p className="mt-2 text-xs font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/40 p-2 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+                <span>{playoffNotice}</span>
+              </p>
+            )}
           </div>
 
           <div>

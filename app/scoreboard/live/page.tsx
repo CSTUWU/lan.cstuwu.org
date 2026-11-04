@@ -4,11 +4,12 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
-import { getStoredMatches, getLiveBroadcastChannel, getActiveLiveMatch } from '@/lib/storage';
-import { INITIAL_MATCHES } from '@/lib/mockData';
+import { getStoredMatches, getLiveBroadcastChannel, getActiveLiveMatch, getStoredTeams } from '@/lib/storage';
+import { INITIAL_MATCHES, INITIAL_TEAMS } from '@/lib/mockData';
 import { api } from '@/lib/api';
 import { transformBackendMatch } from '@/lib/transformers';
-import { Match } from '@/lib/types';
+import { Match, Team } from '@/lib/types';
+import PlayoffBracketTree from '@/components/scoreboard/PlayoffBracketTree';
 import {
   Shield,
   Maximize2,
@@ -22,6 +23,7 @@ import {
   ChevronLeft,
   Crosshair,
   Sparkles,
+  Trophy,
 } from 'lucide-react';
 
 function StageProjectorScoreboardContent() {
@@ -29,9 +31,11 @@ function StageProjectorScoreboardContent() {
   const queryMatchId = searchParams.get('matchId');
 
   const [matches, setMatches] = useState<Match[]>(INITIAL_MATCHES);
+  const [teams, setTeams] = useState<Team[]>(INITIAL_TEAMS);
   const [activeMatch, setActiveMatch] = useState<Match>(() => {
     return INITIAL_MATCHES.find((m) => m.status === 'live') || INITIAL_MATCHES[0];
   });
+  const [displayMode, setDisplayMode] = useState<'match' | 'bracket'>('match');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [cleanMode, setCleanMode] = useState(false);
   const [lastUpdateEffect, setLastUpdateEffect] = useState(false);
@@ -60,6 +64,7 @@ function StageProjectorScoreboardContent() {
   const syncMatchState = useCallback(() => {
     const allMatches = getStoredMatches();
     setMatches(allMatches);
+    setTeams(getStoredTeams());
 
     let current: Match | undefined;
     if (queryMatchId) {
@@ -104,7 +109,7 @@ function StageProjectorScoreboardContent() {
     // 1. Cross-tab BroadcastChannel listener (instant sync from referee)
     const channel = getLiveBroadcastChannel();
     const handleBroadcast = (event: MessageEvent) => {
-      if (event.data?.type === 'CST_LIVE_MATCH_UPDATE') {
+      if (event.data?.type === 'CST_LIVE_MATCH_UPDATE' || event.data?.type === 'CST_16_MATCHES_UPDATE') {
         syncMatchState();
       }
     };
@@ -114,6 +119,7 @@ function StageProjectorScoreboardContent() {
     const handleStorage = () => syncMatchState();
     window.addEventListener('storage', handleStorage);
     window.addEventListener('cst_matches_updated', handleStorage);
+    window.addEventListener('cst_16_matches_updated', handleStorage);
 
     // 3. Fallback polling every 2 seconds for projector reliability
     const interval = setInterval(syncMatchState, 2000);
@@ -122,6 +128,7 @@ function StageProjectorScoreboardContent() {
       channel?.removeEventListener('message', handleBroadcast);
       window.removeEventListener('storage', handleStorage);
       window.removeEventListener('cst_matches_updated', handleStorage);
+      window.removeEventListener('cst_16_matches_updated', handleStorage);
       clearInterval(interval);
     };
   }, [syncMatchState]);
@@ -192,6 +199,31 @@ function StageProjectorScoreboardContent() {
 
           {/* Projector Controls */}
           <div className="flex items-center gap-2">
+            {/* Mode Switcher */}
+            <div className="flex items-center gap-1 bg-surface p-0.5 border border-tactical-border mr-2">
+              <button
+                onClick={() => setDisplayMode('match')}
+                className={`px-2.5 py-1 font-mono text-[11px] uppercase font-bold transition-all ${
+                  displayMode === 'match'
+                    ? 'bg-cyan text-black shadow-[0_0_10px_rgba(0,213,255,0.4)]'
+                    : 'text-secondaryText hover:text-white'
+                }`}
+              >
+                🔴 ARENA HUD
+              </button>
+              <button
+                onClick={() => setDisplayMode('bracket')}
+                className={`px-2.5 py-1 font-mono text-[11px] uppercase font-bold transition-all flex items-center gap-1 ${
+                  displayMode === 'bracket'
+                    ? 'bg-gradient-to-r from-tactical-gold to-yellow-500 text-black font-black shadow-[0_0_10px_rgba(255,184,0,0.4)]'
+                    : 'text-secondaryText hover:text-white'
+                }`}
+              >
+                <Trophy className="w-3 h-3" />
+                <span>BRACKET HUD</span>
+              </button>
+            </div>
+
             <button
               onClick={() => setSoundEnabled(!soundEnabled)}
               className={`p-2 border text-xs font-mono transition-colors ${
@@ -235,23 +267,33 @@ function StageProjectorScoreboardContent() {
       {/* MAIN STAGE ARENA DISPLAY */}
       <main className="relative z-20 flex-1 flex flex-col justify-center max-w-7xl w-full mx-auto px-4 sm:px-8 py-6">
         
-        {/* Tournament Phase Badge */}
-        <div className="flex flex-col items-center justify-center mb-6 text-center">
-          <div className="inline-flex items-center gap-2 bg-surface/90 border border-tactical-border px-4 py-1 mb-2 shadow-lg">
-            <Radio className="w-3.5 h-3.5 text-rose-500 animate-pulse" />
-            <span className="font-mono text-xs uppercase font-bold text-white tracking-widest">
-              {activeMatch.stage}
-            </span>
-            <span className="text-secondaryText font-mono text-xs">{"//"}</span>
-            <span className="font-mono text-xs uppercase font-bold text-cyan tracking-widest">
-              MAP: {activeMatch.map}
-            </span>
+        {displayMode === 'bracket' ? (
+          <div className="py-4">
+            <PlayoffBracketTree
+              matches={matches}
+              teams={teams}
+              onRefresh={syncMatchState}
+            />
           </div>
+        ) : (
+          <>
+            {/* Tournament Phase Badge */}
+            <div className="flex flex-col items-center justify-center mb-6 text-center">
+              <div className="inline-flex items-center gap-2 bg-surface/90 border border-tactical-border px-4 py-1 mb-2 shadow-lg">
+                <Radio className="w-3.5 h-3.5 text-rose-500 animate-pulse" />
+                <span className="font-mono text-xs uppercase font-bold text-white tracking-widest">
+                  {activeMatch.stage}
+                </span>
+                <span className="text-secondaryText font-mono text-xs">{"//"}</span>
+                <span className="font-mono text-xs uppercase font-bold text-cyan tracking-widest">
+                  MAP: {activeMatch.map}
+                </span>
+              </div>
 
-          <div className="text-xs font-mono text-secondaryText tracking-wider uppercase">
-            REGULATION MR12 FORMAT • FIRST SQUAD TO 13 ROUNDS WINS
-          </div>
-        </div>
+              <div className="text-xs font-mono text-secondaryText tracking-wider uppercase">
+                REGULATION MR12 FORMAT • FIRST SQUAD TO 13 ROUNDS WINS
+              </div>
+            </div>
 
         {/* GIANT SCOREBOARD VERSUS SECTION */}
         <div className="grid grid-cols-12 items-center gap-4 sm:gap-6">
@@ -438,6 +480,8 @@ function StageProjectorScoreboardContent() {
               RATED BY CST TOURNAMENT COMMITTEE
             </span>
           </div>
+        )}
+          </>
         )}
 
       </main>

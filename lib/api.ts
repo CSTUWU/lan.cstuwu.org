@@ -131,6 +131,11 @@ class ApiClient {
       this.request<any[]>('/public/standings', {
         method: 'GET',
       }),
+
+    getPlayoffBracket: () =>
+      this.request<any>('/public/matches/bracket', {
+        method: 'GET',
+      }),
   };
 
   // --- Protected Admin APIs ---
@@ -218,6 +223,11 @@ class ApiClient {
     deleteMatch: (id: string) =>
       this.request<any>(`/admin/matches/${id}`, {
         method: 'DELETE',
+      }),
+
+    generatePlayoffs: () =>
+      this.request<any>('/admin/matches/generate-playoffs', {
+        method: 'POST',
       }),
 
     getSettings: () =>

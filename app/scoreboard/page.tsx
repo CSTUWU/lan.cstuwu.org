@@ -26,11 +26,12 @@ import {
 } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
+import PlayoffBracketTree from '@/components/scoreboard/PlayoffBracketTree';
 
 export default function ScoreboardPage() {
   const [teams, setTeams] = useState<Team[]>(INITIAL_TEAMS);
   const [matches, setMatches] = useState<Match[]>(INITIAL_MATCHES);
-  const [activeTab, setActiveTab] = useState<'standings' | 'completed' | 'upcoming'>('standings');
+  const [activeTab, setActiveTab] = useState<'playoffs' | 'standings' | 'completed' | 'upcoming'>('playoffs');
 
   const reloadData = () => {
     setTeams(getStoredTeams());
@@ -67,11 +68,13 @@ export default function ScoreboardPage() {
 
     window.addEventListener('cst_teams_updated', handleTeamsUpdate);
     window.addEventListener('cst_matches_updated', handleMatchesUpdate);
+    window.addEventListener('cst_16_matches_updated', handleMatchesUpdate);
     window.addEventListener('storage', reloadData);
 
     return () => {
       window.removeEventListener('cst_teams_updated', handleTeamsUpdate);
       window.removeEventListener('cst_matches_updated', handleMatchesUpdate);
+      window.removeEventListener('cst_16_matches_updated', handleMatchesUpdate);
       window.removeEventListener('storage', reloadData);
     };
   }, []);
@@ -234,38 +237,64 @@ export default function ScoreboardPage() {
         )}
 
         {/* Navigation Tabs */}
-        <div className="flex items-center gap-3 mb-8 border-b border-tactical-border pb-4">
+        <div className="flex flex-wrap items-center gap-3 mb-8 border-b border-tactical-border pb-4">
+          <button
+            onClick={() => setActiveTab('playoffs')}
+            className={`px-4 py-2.5 font-mono text-xs uppercase font-bold tracking-wider transition-all border flex items-center gap-2 ${
+              activeTab === 'playoffs'
+                ? 'bg-gradient-to-r from-cyan to-blue-600 text-black border-cyan shadow-[0_0_20px_rgba(0,213,255,0.4)]'
+                : 'bg-card text-secondaryText border-tactical-border hover:text-white'
+            }`}
+          >
+            <Trophy className="w-3.5 h-3.5" />
+            <span>PLAYOFF BRACKET TREE</span>
+            <span className="w-2 h-2 rounded-full bg-cyan animate-ping" />
+          </button>
           <button
             onClick={() => setActiveTab('standings')}
-            className={`px-4 py-2 font-mono text-xs uppercase font-bold tracking-wider transition-all border ${
+            className={`px-4 py-2.5 font-mono text-xs uppercase font-bold tracking-wider transition-all border flex items-center gap-2 ${
               activeTab === 'standings'
                 ? 'bg-cyan text-background border-cyan shadow-[0_0_15px_rgba(0,213,255,0.3)]'
                 : 'bg-card text-secondaryText border-tactical-border hover:text-white'
             }`}
           >
-            STANDINGS & ADVANCED MATRIX
+            <Shield className="w-3.5 h-3.5" />
+            <span>STANDINGS & ADVANCED MATRIX</span>
           </button>
           <button
             onClick={() => setActiveTab('completed')}
-            className={`px-4 py-2 font-mono text-xs uppercase font-bold tracking-wider transition-all border ${
+            className={`px-4 py-2.5 font-mono text-xs uppercase font-bold tracking-wider transition-all border flex items-center gap-2 ${
               activeTab === 'completed'
                 ? 'bg-cyan text-background border-cyan shadow-[0_0_15px_rgba(0,213,255,0.3)]'
                 : 'bg-card text-secondaryText border-tactical-border hover:text-white'
             }`}
           >
-            COMPLETED MATCHES ({completedMatches.length})
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            <span>COMPLETED MATCHES ({completedMatches.length})</span>
           </button>
           <button
             onClick={() => setActiveTab('upcoming')}
-            className={`px-4 py-2 font-mono text-xs uppercase font-bold tracking-wider transition-all border ${
+            className={`px-4 py-2.5 font-mono text-xs uppercase font-bold tracking-wider transition-all border flex items-center gap-2 ${
               activeTab === 'upcoming'
                 ? 'bg-cyan text-background border-cyan shadow-[0_0_15px_rgba(0,213,255,0.3)]'
                 : 'bg-card text-secondaryText border-tactical-border hover:text-white'
             }`}
           >
-            UPCOMING FIXTURES ({upcomingMatches.length})
+            <Calendar className="w-3.5 h-3.5" />
+            <span>UPCOMING FIXTURES ({upcomingMatches.length})</span>
           </button>
         </div>
+
+        {/* TAB 0: PLAYOFF BRACKET TREE */}
+        {activeTab === 'playoffs' && (
+          <div className="mb-12">
+            <PlayoffBracketTree
+              matches={matches}
+              teams={teams}
+              onRefresh={reloadData}
+            />
+          </div>
+        )}
 
         {/* TAB 1: ADVANCED STANDINGS TABLE */}
         {activeTab === 'standings' && (

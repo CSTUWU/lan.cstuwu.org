@@ -89,6 +89,7 @@ export function transformBackendMatch(raw: any): Match {
 
   return {
     id,
+    matchNumber: raw.matchNumber,
     teamAId,
     teamBId,
     teamAName,
@@ -105,6 +106,11 @@ export function transformBackendMatch(raw: any): Match {
     stage: raw.stage || 'Official Match',
     streamUrl: raw.streamUrl,
     mvp: raw.mvp,
+    bracketRound: raw.bracketRound,
+    bracketPosition: raw.bracketPosition,
+    nextMatchId: raw.nextMatchId || (raw.nextMatchNumber ? `m-${raw.nextMatchNumber}` : undefined),
+    nextMatchSlot: raw.nextMatchSlot,
+    winnerId: raw.winner?._id || raw.winner || (raw.status === 'completed' ? (raw.scoreA > raw.scoreB ? teamAId : teamBId) : undefined),
     currentRound: raw.currentRound ?? ((raw.scoreA ?? 0) + (raw.scoreB ?? 0)),
     half: raw.half || 1,
     c4Planted: !!raw.c4Planted,

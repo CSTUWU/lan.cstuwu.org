@@ -56,6 +56,7 @@ export type CS2Map = 'Mirage' | 'Dust II' | 'Inferno' | 'Ancient' | 'Nuke' | 'An
 
 export interface Match {
   id: string;
+  matchNumber?: number;
   teamAId: string;
   teamBId: string;
   teamAName: string;
@@ -69,9 +70,14 @@ export interface Match {
   status: MatchStatus;
   scoreA: number;
   scoreB: number;
-  stage: string; // e.g. "Upper Bracket Semifinal", "Grand Final"
+  stage: string; // e.g. "Quarterfinal 1", "Semifinal 1", "Grand Final"
   streamUrl?: string;
   mvp?: string;
+  bracketRound?: 'round_of_16' | 'quarterfinals' | 'semifinals' | 'final' | 'third_place' | 'groups';
+  bracketPosition?: number;
+  nextMatchId?: string;
+  nextMatchSlot?: 'teamA' | 'teamB';
+  winnerId?: string;
   // Real-time projector live metrics
   currentRound?: number;
   half?: 1 | 2 | 'OT';
@@ -79,6 +85,15 @@ export interface Match {
   roundHistory?: ('teamA' | 'teamB')[];
   teamASide?: 'CT' | 'T';
   teamBSide?: 'CT' | 'T';
+}
+
+export interface PlayoffBracket {
+  roundOf16?: Match[];
+  quarterfinals: Match[];
+  semifinals: Match[];
+  final: Match | null;
+  thirdPlace?: Match | null;
+  champion?: Team | null;
 }
 
 export interface CountdownSettings {

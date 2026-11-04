@@ -2,9 +2,16 @@
 
 import { Team, Match, CountdownSettings, ApprovalStatus } from './types';
 import { INITIAL_TEAMS, INITIAL_MATCHES, INITIAL_COUNTDOWN } from './mockData';
+import {
+  generatePlayoffTreeFromTeams,
+  analyzeAndAdvanceBracketWinners,
+  generate16TeamPlayoffTree,
+  SIXTEEN_BRACKET_TEAMS,
+} from './playoffEngine';
 
 const TEAMS_KEY = 'cst_lan_teams_2026';
 const MATCHES_KEY = 'cst_lan_matches_2026';
+const MATCHES_16_KEY = 'cst_lan_matches_16_2026';
 const COUNTDOWN_KEY = 'cst_lan_countdown_2026';
 const AUTH_KEY = 'cst_lan_admin_auth';
 const LIVE_CHANNEL_NAME = 'cst_cs2_live_channel';
@@ -39,6 +46,149 @@ const notifyMatchesUpdated = (matches: Match[], updatedMatchId?: string) => {
       console.warn('BroadcastChannel error', e);
     }
   }
+};
+
+export const notify16MatchesUpdated = (matches: Match[], updatedMatchId?: string) => {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(MATCHES_16_KEY, JSON.stringify(matches));
+    window.dispatchEvent(new CustomEvent('cst_16_matches_updated', { detail: { matches, updatedMatchId } }));
+
+    try {
+      const channel = getLiveBroadcastChannel();
+      channel?.postMessage({
+        type: 'CST_16_MATCHES_UPDATE',
+        updatedMatchId,
+        matches,
+        timestamp: Date.now(),
+      });
+    } catch (e) {
+      console.warn('BroadcastChannel error', e);
+    }
+  }
+};
+
+export const getStored16Matches = (): Match[] => {
+  if (typeof window === 'undefined') return generate16TeamPlayoffTree();
+  try {
+    const raw = localStorage.getItem(MATCHES_16_KEY);
+    let list: Match[] = [];
+    if (!raw) {
+      list = generate16TeamPlayoffTree();
+      localStorage.setItem(MATCHES_16_KEY, JSON.stringify(list));
+    } else {
+      list = JSON.parse(raw);
+    }
+
+    // Auto-advance winners in 16-squad playoff bracket tree
+    const { updatedMatches, isUpdated } = analyzeAndAdvanceBracketWinners(list, SIXTEEN_BRACKET_TEAMS);
+    if (isUpdated) {
+      localStorage.setItem(MATCHES_16_KEY, JSON.stringify(updatedMatches));
+      return updatedMatches;
+    }
+    return list;
+  } catch (e) {
+    console.error('Failed reading 16-squad matches from localStorage', e);
+    return generate16TeamPlayoffTree();
+  }
+};
+
+export const update16MatchScore = (
+  matchId: string,
+  scoreA: number,
+  scoreB: number,
+  status: Match['status'] = 'completed',
+  mvp?: string
+): boolean => {
+  const matches = getStored16Matches();
+  const index = matches.findIndex((m) => m.id === matchId);
+  if (index === -1) return false;
+
+  const currentRound = scoreA + scoreB;
+  const half: Match['half'] = currentRound <= 12 ? 1 : currentRound <= 24 ? 2 : 'OT';
+
+  matches[index] = {
+    ...matches[index],
+    scoreA,
+    scoreB,
+    status,
+    currentRound,
+    half,
+    ...(mvp !== undefined ? { mvp } : {}),
+  };
+
+  const { updatedMatches } = analyzeAndAdvanceBracketWinners(matches, SIXTEEN_BRACKET_TEAMS);
+  notify16MatchesUpdated(updatedMatches, matchId);
+  return true;
+};
+
+export const increment16MatchScore = (
+  matchId: string,
+  winningTeam: 'teamA' | 'teamB',
+  delta: number = 1
+): Match | null => {
+  const matches = getStored16Matches();
+  const index = matches.findIndex((m) => m.id === matchId);
+  if (index === -1) return null;
+
+  const match = { ...matches[index] };
+  if (delta > 0) {
+    if (winningTeam === 'teamA') match.scoreA = Math.max(0, match.scoreA + 1);
+    else match.scoreB = Math.max(0, match.scoreB + 1);
+  } else if (delta < 0) {
+    if (winningTeam === 'teamA') match.scoreA = Math.max(0, match.scoreA - 1);
+    else match.scoreB = Math.max(0, match.scoreB - 1);
+  }
+
+  const currentRound = match.scoreA + match.scoreB;
+  match.currentRound = currentRound;
+  match.half = currentRound <= 12 ? 1 : currentRound <= 24 ? 2 : 'OT';
+
+  // CS2 MR12 victory condition
+  if (
+    (match.scoreA >= 13 && match.scoreA - match.scoreB >= 2) ||
+    (match.scoreB >= 13 && match.scoreB - match.scoreA >= 2)
+  ) {
+    match.status = 'completed';
+  } else {
+    match.status = 'live';
+  }
+
+  matches[index] = match;
+  const { updatedMatches } = analyzeAndAdvanceBracketWinners(matches, SIXTEEN_BRACKET_TEAMS);
+  notify16MatchesUpdated(updatedMatches, matchId);
+  return updatedMatches[index] || match;
+};
+
+export const set16MatchWinner = (
+  matchId: string,
+  winningTeam: 'teamA' | 'teamB'
+): Match | null => {
+  const matches = getStored16Matches();
+  const index = matches.findIndex((m) => m.id === matchId);
+  if (index === -1) return null;
+
+  const match = { ...matches[index] };
+  if (winningTeam === 'teamA') {
+    match.scoreA = 13;
+    match.scoreB = Math.min(match.scoreB, 11);
+    match.winnerId = match.teamAId;
+  } else {
+    match.scoreB = 13;
+    match.scoreA = Math.min(match.scoreA, 11);
+    match.winnerId = match.teamBId;
+  }
+  match.status = 'completed';
+  matches[index] = match;
+
+  const { updatedMatches } = analyzeAndAdvanceBracketWinners(matches, SIXTEEN_BRACKET_TEAMS);
+  notify16MatchesUpdated(updatedMatches, matchId);
+  return updatedMatches[index] || match;
+};
+
+export const reset16Matches = (): Match[] => {
+  const fresh = generate16TeamPlayoffTree();
+  notify16MatchesUpdated(fresh);
+  return fresh;
 };
 
 export const getStoredTeams = (): Team[] => {
@@ -101,25 +251,48 @@ export const getStoredMatches = (): Match[] => {
   if (typeof window === 'undefined') return INITIAL_MATCHES;
   try {
     const raw = localStorage.getItem(MATCHES_KEY);
+    let list: Match[] = [];
     if (!raw) {
+      list = INITIAL_MATCHES;
       localStorage.setItem(MATCHES_KEY, JSON.stringify(INITIAL_MATCHES));
-      return INITIAL_MATCHES;
+    } else {
+      list = JSON.parse(raw);
     }
-    return JSON.parse(raw);
+
+    // Auto-advance winners in playoff bracket tree
+    const { updatedMatches, isUpdated } = analyzeAndAdvanceBracketWinners(list, getStoredTeams());
+    if (isUpdated) {
+      localStorage.setItem(MATCHES_KEY, JSON.stringify(updatedMatches));
+      return updatedMatches;
+    }
+    return list;
   } catch (e) {
     console.error('Failed reading matches from localStorage', e);
     return INITIAL_MATCHES;
   }
 };
 
+export const generateAndStorePlayoffBracket = (teams?: Team[]): Match[] => {
+  const currentTeams = teams || getStoredTeams();
+  const playoffMatches = generatePlayoffTreeFromTeams(currentTeams);
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(MATCHES_KEY, JSON.stringify(playoffMatches));
+    notifyMatchesUpdated(playoffMatches);
+    recalculateStandings(playoffMatches);
+  }
+  return playoffMatches;
+};
+
 export const getMatchById = (matchId: string): Match | undefined => {
   const matches = getStoredMatches();
-  return matches.find((m) => m.id === matchId);
+  const found = matches.find((m) => m.id === matchId);
+  if (found) return found;
+  return getStored16Matches().find((m) => m.id === matchId);
 };
 
 export const getActiveLiveMatch = (): Match | undefined => {
   const matches = getStoredMatches();
-  return matches.find((m) => m.status === 'live') || matches[0];
+  return matches.find((m) => m.status === 'live') || getStored16Matches().find((m) => m.status === 'live') || matches[0];
 };
 
 export const createMatch = (matchData: Omit<Match, 'id'>): Match => {
@@ -148,7 +321,14 @@ export const updateMatchScore = (
 ): boolean => {
   const matches = getStoredMatches();
   const index = matches.findIndex((m) => m.id === matchId);
-  if (index === -1) return false;
+  if (index === -1) {
+    // Check if match belongs to 16-team tournament tree
+    const match16 = getStored16Matches().find((m) => m.id === matchId);
+    if (match16) {
+      return update16MatchScore(matchId, scoreA, scoreB, status, mvp);
+    }
+    return false;
+  }
 
   const currentRound = scoreA + scoreB;
   let half: Match['half'] = currentRound <= 12 ? 1 : currentRound <= 24 ? 2 : 'OT';
@@ -163,10 +343,11 @@ export const updateMatchScore = (
     ...(mvp !== undefined ? { mvp } : {}),
   };
 
-  notifyMatchesUpdated(matches, matchId);
+  const { updatedMatches } = analyzeAndAdvanceBracketWinners(matches, getStoredTeams());
+  notifyMatchesUpdated(updatedMatches, matchId);
 
   // Recalculate standings when match is updated or completed
-  recalculateStandings(matches);
+  recalculateStandings(updatedMatches);
   return true;
 };
 
@@ -178,7 +359,14 @@ export const incrementMatchScore = (
 ): Match | null => {
   const matches = getStoredMatches();
   const index = matches.findIndex((m) => m.id === matchId);
-  if (index === -1) return null;
+  if (index === -1) {
+    // Check if match belongs to 16-team tournament tree
+    const match16 = getStored16Matches().find((m) => m.id === matchId);
+    if (match16) {
+      return increment16MatchScore(matchId, winningTeam, delta);
+    }
+    return null;
+  }
 
   const match = { ...matches[index] };
   const history = [...(match.roundHistory || [])];
@@ -224,9 +412,10 @@ export const incrementMatchScore = (
   }
 
   matches[index] = match;
-  notifyMatchesUpdated(matches, matchId);
-  recalculateStandings(matches);
-  return match;
+  const { updatedMatches } = analyzeAndAdvanceBracketWinners(matches, getStoredTeams());
+  notifyMatchesUpdated(updatedMatches, matchId);
+  recalculateStandings(updatedMatches);
+  return updatedMatches[index] || match;
 };
 
 // Halftime Side Switch (CT <-> T)
