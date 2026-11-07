@@ -19,9 +19,25 @@ class ApiClient {
       ...(options.headers as Record<string, string>),
     };
 
-    // If body is NOT FormData, set application/json
     if (!(options.body instanceof FormData) && !headers['Content-Type']) {
       headers['Content-Type'] = 'application/json';
+    }
+
+    if (typeof window !== 'undefined') {
+      try {
+        const jwt = localStorage.getItem('cst_admin_jwt');
+        if (jwt && !headers['Authorization']) {
+          headers['Authorization'] = `Bearer ${jwt}`;
+        }
+        const isAuth =
+          localStorage.getItem('cst_lan_admin_auth') === 'authenticated' ||
+          localStorage.getItem('cst_admin_authenticated') === 'authenticated' ||
+          document.cookie.includes('cst_lan_admin_auth=authenticated');
+        if (isAuth && !headers['X-Admin-Auth']) {
+          headers['X-Admin-Auth'] = 'authenticated';
+        }
+      } catch (e) {
+      }
     }
 
     try {
@@ -55,18 +71,32 @@ class ApiClient {
     }
   }
 
-  // --- Auth APIs ---
   public auth = {
-    login: (usernameOrEmail: string, password: string) =>
-      this.request<{ token: string; admin: any }>('/auth/login', {
+    login: async (usernameOrEmail: string, password: string) => {
+      const res = await this.request<{ token: string; admin: any }>('/auth/login', {
         method: 'POST',
         body: JSON.stringify({ usernameOrEmail, password }),
-      }),
+      });
+      if (res.success && res.data?.token && typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('cst_admin_jwt', res.data.token);
+          localStorage.setItem('cst_lan_admin_auth', 'authenticated');
+        } catch (e) {}
+      }
+      return res;
+    },
 
-    logout: () =>
-      this.request('/auth/logout', {
+    logout: async () => {
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.removeItem('cst_admin_jwt');
+          localStorage.removeItem('cst_lan_admin_auth');
+        } catch (e) {}
+      }
+      return this.request('/auth/logout', {
         method: 'POST',
-      }),
+      });
+    },
 
     me: () =>
       this.request<{ admin: any }>('/auth/me', {
@@ -74,7 +104,6 @@ class ApiClient {
       }),
   };
 
-  // --- Registration APIs ---
   public registrations = {
     submit: (formData: FormData | Record<string, any>) => {
       if (formData instanceof FormData) {
@@ -95,7 +124,6 @@ class ApiClient {
       }),
   };
 
-  // --- Public Read APIs ---
   public public = {
     getSettings: () =>
       this.request<any>('/public/settings', {
@@ -131,9 +159,13 @@ class ApiClient {
       this.request<any[]>('/public/standings', {
         method: 'GET',
       }),
+
+    getPlayoffBracket: () =>
+      this.request<any>('/public/matches/bracket', {
+        method: 'GET',
+      }),
   };
 
-  // --- Protected Admin APIs ---
   public admin = {
     getOverview: () =>
       this.request<any>('/admin/dashboard/overview', {
@@ -218,6 +250,11 @@ class ApiClient {
     deleteMatch: (id: string) =>
       this.request<any>(`/admin/matches/${id}`, {
         method: 'DELETE',
+      }),
+
+    generatePlayoffs: () =>
+      this.request<any>('/admin/matches/generate-playoffs', {
+        method: 'POST',
       }),
 
     getSettings: () =>

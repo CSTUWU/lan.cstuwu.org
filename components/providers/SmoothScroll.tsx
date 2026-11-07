@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, ReactNode } from 'react';
-import Lenis from 'lenis';
 import { ScrollTrigger } from '@/lib/gsap';
 
 interface SmoothScrollProps {
@@ -10,42 +9,21 @@ interface SmoothScrollProps {
 
 export default function SmoothScroll({ children }: SmoothScrollProps) {
   useEffect(() => {
-    // Check if user prefers reduced motion
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReducedMotion) return;
+    // Ensure GSAP ScrollTrigger updates on window resize or load
+    const handleResize = () => {
+      ScrollTrigger.refresh();
+    };
 
-    try {
-      const lenis = new Lenis({
-        duration: 1.1,
-        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-        orientation: 'vertical',
-        gestureOrientation: 'vertical',
-        smoothWheel: true,
-        wheelMultiplier: 0.9,
-      });
+    window.addEventListener('resize', handleResize);
+    // Refresh ScrollTrigger once DOM and initial assets are ready
+    const timer = setTimeout(() => {
+      ScrollTrigger.refresh();
+    }, 150);
 
-      lenis.on('scroll', () => {
-        try {
-          ScrollTrigger.update();
-        } catch (e) {
-          // ignore
-        }
-      });
-
-      let rafId: number;
-      const raf = (time: number) => {
-        lenis.raf(time);
-        rafId = requestAnimationFrame(raf);
-      };
-      rafId = requestAnimationFrame(raf);
-
-      return () => {
-        cancelAnimationFrame(rafId);
-        lenis.destroy();
-      };
-    } catch (err) {
-      console.warn('SmoothScroll Lenis init error', err);
-    }
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      clearTimeout(timer);
+    };
   }, []);
 
   return <>{children}</>;

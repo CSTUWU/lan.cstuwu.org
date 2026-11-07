@@ -1,7 +1,7 @@
 import React from 'react';
 import Hero from '@/components/home/Hero';
-import CountdownSection from '@/components/home/CountdownSection';
-import CommanderShowcase from '@/components/home/CommanderShowcase';
+import CinematicShowcase from '@/components/home/CinematicShowcase';
+import PrizePoolSection from '@/components/home/PrizePoolSection';
 import AboutSection from '@/components/home/AboutSection';
 import TournamentFormat from '@/components/home/TournamentFormat';
 import MapPoolSection from '@/components/home/MapPoolSection';
@@ -11,13 +11,18 @@ export default function HomePage() {
   return (
     <div className="relative w-full">
       <Hero />
-      <CountdownSection />
-      <CommanderShowcase />
+
+      <CinematicShowcase />
+
+      <PrizePoolSection />
+
       <AboutSection />
+
       <TournamentFormat />
+
       <MapPoolSection />
+
       <TeamsPreview />
     </div>
   );
 }
-

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { getStoredTeams, updateTeamStatus } from '@/lib/storage';
+import { getStoredTeams, updateTeamStatus, createAndSeedPlayoffTree } from '@/lib/storage';
 import { api } from '@/lib/api';
 import { transformBackendTeam } from '@/lib/transformers';
 import { Team, ApprovalStatus, Player } from '@/lib/types';
@@ -24,6 +24,7 @@ import {
   Award,
   Filter,
   RefreshCw,
+  Trophy,
 } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
@@ -47,7 +48,6 @@ export default function AdminTeamsPage() {
         const transformed = res.data.map(transformBackendTeam);
         setTeams(transformed);
         
-        // Expand all squads by default so admins can immediately inspect rosters
         const expandedMap: Record<string, boolean> = {};
         transformed.forEach((t) => {
           expandedMap[t.id] = true;
@@ -79,6 +79,35 @@ export default function AdminTeamsPage() {
       ...prev,
       [teamId]: !prev[teamId],
     }));
+  };
+
+  const handleCreatePlayoffTree = () => {
+    const candidateTeams = teams.filter(t => (t.status || '').toLowerCase() !== 'rejected');
+    if (candidateTeams.length < 2) {
+      alert(`At least 2 teams are required to create the playoff bracket (Currently: ${candidateTeams.length} squads).`);
+      return;
+    }
+    const isEightSquad = candidateTeams.length <= 8;
+    const confirmSeed = window.confirm(
+      `CREATE PLAYOFF TREE from ${candidateTeams.length} registered squads?\n\n` +
+      (isEightSquad
+        ? `• 8-TEAM DUAL-WING BRACKET:\n` +
+          `  - Left Wing: 4 squads (2 Quarterfinal matches)\n` +
+          `  - Right Wing: 4 squads (2 Quarterfinal matches)\n` +
+          `  - Round 2 (Semifinals) and Grand Final will be completely free.\n`
+        : `• 16-TEAM DUAL-WING BRACKET:\n` +
+          `  - Left Wing: 8 squads (4 Round of 16 matches)\n` +
+          `  - Right Wing: 8 squads (4 Round of 16 matches)\n` +
+          `  - Round 2 (Quarterfinals), Semifinals & Grand Final will be completely free.\n`) +
+      `• Match wins will automatically advance winners down the tree!`
+    );
+    if (!confirmSeed) return;
+
+    createAndSeedPlayoffTree(candidateTeams);
+    setNotice(
+      `✓ ${isEightSquad ? '8-Squad Dual-Wing' : '16-Squad Major'} Playoff Tree created! Seeded with ${candidateTeams.length} squads; downstream rounds are free.`
+    );
+    setTimeout(() => setNotice(null), 5000);
   };
 
   const handleExpandAll = (expand: boolean) => {
@@ -118,28 +147,24 @@ export default function AdminTeamsPage() {
       t.captain.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       t.players.some(
         (p) =>
-          p.ign.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (p.ign || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
           p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          p.steamId.toLowerCase().includes(searchQuery.toLowerCase())
-      ) ||
-      (t.substitute &&
-        (t.substitute.ign.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          t.substitute.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          t.substitute.steamId.toLowerCase().includes(searchQuery.toLowerCase())));
+          (p.faculty || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (p.steamId || '').toLowerCase().includes(searchQuery.toLowerCase())
+      );
 
     if (statusFilter === 'approved') return matchesSearch && t.status === 'approved';
     if (statusFilter === 'pending') return matchesSearch && t.status === 'pending';
     return matchesSearch;
   });
 
-  const totalPlayersCount = teams.reduce((acc, t) => acc + t.players.length + (t.substitute ? 1 : 0), 0);
+  const totalPlayersCount = teams.reduce((acc, t) => acc + t.players.length, 0);
   const approvedCount = teams.filter((t) => t.status === 'approved').length;
 
   return (
     <AdminLayout>
       <div className="space-y-6 max-w-7xl">
         
-        {/* Page Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-tactical-border">
           <div>
             <div className="inline-flex items-center gap-2 mb-1">
@@ -154,7 +179,15 @@ export default function AdminTeamsPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={handleCreatePlayoffTree}
+              className="px-3.5 py-2 bg-gradient-to-r from-amber-500 to-orange hover:from-amber-400 hover:to-orange text-background font-display font-black text-xs uppercase tracking-wider flex items-center gap-1.5 border border-amber-400 shadow-[0_0_20px_rgba(255,184,0,0.3)] transition-all"
+              title="Seed 1st layer with registered squads; Round 2, Semifinals & Finals start free and advance automatically on win"
+            >
+              <Trophy className="w-3.5 h-3.5 text-background" />
+              <span>CREATE PLAYOFF TREE</span>
+            </button>
             <button
               onClick={() => {
                 setLoading(true);
@@ -180,7 +213,6 @@ export default function AdminTeamsPage() {
           </div>
         </div>
 
-        {/* Notice Alert */}
         {notice && (
           <div className="p-3 bg-cyan/10 border border-cyan/40 text-xs font-mono text-cyan flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-cyan" />
@@ -188,7 +220,6 @@ export default function AdminTeamsPage() {
           </div>
         )}
 
-        {/* Key Metrics Strip */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-card/90 border border-tactical-border p-4">
             <div className="text-[10px] font-mono text-secondaryText uppercase tracking-wider">TOTAL TEAMS</div>
@@ -210,7 +241,6 @@ export default function AdminTeamsPage() {
           </div>
         </div>
 
-        {/* Search & Filter Bar */}
         <div className="bg-card/90 border border-tactical-border p-4 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="relative w-full md:w-96">
             <Search className="w-4 h-4 text-secondaryText absolute left-3 top-1/2 -translate-y-1/2" />
@@ -243,7 +273,6 @@ export default function AdminTeamsPage() {
           </div>
         </div>
 
-        {/* Team-Wise Squad Accordion List */}
         <div className="space-y-4">
           {filteredTeams.length === 0 ? (
             <div className="bg-card/80 border border-tactical-border p-12 text-center">
@@ -267,7 +296,6 @@ export default function AdminTeamsPage() {
                     className="p-4 sm:p-5 bg-surface/40 hover:bg-surface/70 cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors select-none"
                   >
                     <div className="flex items-center gap-4">
-                      {/* Team Logo */}
                       <div className="relative w-12 h-12 bg-surface border border-tactical-border shrink-0 overflow-hidden">
                         <Image src={team.logo} alt={team.name} fill className="object-cover" sizes="48px" />
                       </div>
@@ -280,13 +308,12 @@ export default function AdminTeamsPage() {
                           </h3>
                         </div>
                         <p className="text-xs font-mono text-secondaryText">
-                          {team.university} • {team.players.length} Starters {team.substitute ? '+ 1 Sub' : ''}
+                          {team.university} • {team.players.length} Active Players
                         </p>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-3 self-end md:self-auto" onClick={(e) => e.stopPropagation()}>
-                      {/* Status Badge */}
                       <span
                         className={`text-[10px] font-mono font-bold px-2.5 py-1 uppercase tracking-wider border ${
                           isApproved
@@ -297,7 +324,6 @@ export default function AdminTeamsPage() {
                         {team.status.toUpperCase()}
                       </span>
 
-                      {/* Quick Status Toggle Button */}
                       <button
                         onClick={() => handleStatusToggle(team.id, team.status)}
                         className={`px-3 py-1 text-xs font-mono uppercase font-bold border transition-colors ${
@@ -309,7 +335,6 @@ export default function AdminTeamsPage() {
                         {isApproved ? 'DEACTIVATE' : 'ACTIVATE SQUAD'}
                       </button>
 
-                      {/* Expand / Collapse Icon */}
                       <button
                         onClick={() => toggleExpand(team.id)}
                         className="p-1.5 text-secondaryText hover:text-white border border-tactical-border bg-surface"
@@ -320,11 +345,9 @@ export default function AdminTeamsPage() {
                     </div>
                   </div>
 
-                  {/* Expanded Squad Members Dossier */}
                   {isExpanded && (
                     <div className="p-5 sm:p-6 border-t border-tactical-border bg-card/60 space-y-6">
                       
-                      {/* Team Captain & Liaison Dossier */}
                       <div className="p-4 bg-cyan/5 border border-cyan/30 flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-cyan/20 border border-cyan/60 flex items-center justify-center shrink-0">
@@ -358,7 +381,6 @@ export default function AdminTeamsPage() {
                         </div>
                       </div>
 
-                      {/* 5-Man Active Starting Lineup */}
                       <div>
                         <div className="flex items-center justify-between mb-3">
                           <h4 className="font-display font-bold text-xs uppercase tracking-wider text-white flex items-center gap-2">
@@ -382,78 +404,37 @@ export default function AdminTeamsPage() {
                                   </span>
                                 </div>
                                 
-                                {/* In-Game Name */}
-                                <div className="font-display font-black text-base text-white truncate" title={player.ign}>
-                                  {player.ign}
+                                <div className="font-display font-black text-base text-white truncate" title={player.name || player.ign}>
+                                  {player.name || player.ign}
                                 </div>
 
-                                {/* Full Real Name */}
-                                <div className="text-xs font-mono text-secondaryText truncate mt-0.5" title={player.name}>
-                                  {player.name}
+                                <div className="text-xs font-mono text-cyan truncate mt-0.5" title={player.faculty || player.name}>
+                                  {player.faculty || (player.ign ? `(${player.ign})` : '')}
                                 </div>
                               </div>
 
-                              {/* Steam ID & Copy */}
                               <div className="mt-3 pt-2.5 border-t border-tactical-border/60 flex items-center justify-between text-[11px] font-mono">
-                                <span className="text-secondaryText truncate max-w-[120px]" title={player.steamId}>
-                                  {player.steamId}
+                                <span className="text-secondaryText truncate max-w-[120px]" title={player.steamId || player.faculty}>
+                                  {player.steamId || player.faculty}
                                 </span>
-                                <button
-                                  onClick={() => copyToClipboard(player.steamId)}
-                                  className="text-cyan hover:text-white transition-colors ml-1 shrink-0"
-                                  title="Copy Steam ID"
-                                >
-                                  {copiedSteamId === player.steamId ? (
-                                    <Check className="w-3.5 h-3.5 text-emerald-400" />
-                                  ) : (
-                                    <Copy className="w-3.5 h-3.5" />
-                                  )}
-                                </button>
+                                {player.steamId && (
+                                  <button
+                                    onClick={() => copyToClipboard(player.steamId!)}
+                                    className="text-cyan hover:text-white transition-colors ml-1 shrink-0"
+                                    title="Copy Steam ID"
+                                  >
+                                    {copiedSteamId === player.steamId ? (
+                                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                                    ) : (
+                                      <Copy className="w-3.5 h-3.5" />
+                                    )}
+                                  </button>
+                                )}
                               </div>
                             </div>
                           ))}
                         </div>
                       </div>
-
-                      {/* Designated Substitute Player */}
-                      {team.substitute && (
-                        <div>
-                          <h4 className="font-display font-bold text-xs uppercase tracking-wider text-secondaryText mb-2 flex items-center gap-2">
-                            <Shield className="w-3.5 h-3.5 text-orange" />
-                            <span>DESIGNATED SQUAD SUBSTITUTE (6TH PLAYER)</span>
-                          </h4>
-
-                          <div className="p-3 bg-surface/30 border border-dashed border-tactical-border/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono">
-                            <div className="flex items-center gap-3">
-                              <span className="px-2 py-0.5 bg-orange/10 border border-orange/40 text-orange font-bold text-[10px] uppercase">
-                                SUB
-                              </span>
-                              <div>
-                                <span className="text-white font-bold">{team.substitute.ign}</span>{' '}
-                                <span className="text-secondaryText">({team.substitute.name})</span>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-4 text-secondaryText text-[11px]">
-                              <span>EMAIL: <span className="text-white">{team.substitute.email || 'N/A'}</span></span>
-                              <div className="flex items-center gap-1.5">
-                                <span>STEAM: <span className="text-white font-bold">{team.substitute.steamId}</span></span>
-                                <button
-                                  onClick={() => copyToClipboard(team.substitute!.steamId)}
-                                  className="text-cyan hover:text-white transition-colors"
-                                  title="Copy Steam ID"
-                                >
-                                  {copiedSteamId === team.substitute.steamId ? (
-                                    <Check className="w-3.5 h-3.5 text-emerald-400" />
-                                  ) : (
-                                    <Copy className="w-3.5 h-3.5" />
-                                  )}
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
 
                     </div>
                   )}

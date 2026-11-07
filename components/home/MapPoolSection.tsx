@@ -11,18 +11,18 @@ export default function MapPoolSection() {
 
   return (
     <section id="maps" className="relative py-28 bg-[#080B10] overflow-hidden">
-      {/* Background glow */}
       <div className="absolute top-1/2 right-1/4 w-[500px] h-[500px] bg-orange/5 rounded-full blur-[150px] pointer-events-none" />
       <div className="absolute inset-0 tactical-grid-bg opacity-15 pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
-        {/* Section Header */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-16 pb-6 border-b border-tactical-border">
           <div>
             <div className="inline-flex items-center gap-2 mb-3">
               <Badge variant="orange" size="sm">ACTIVE DUTY MAP POOL</Badge>
-              <span className="text-secondaryText text-xs font-mono">{"// 7 COMPETITIVE VENUES"}</span>
+              <span className="text-secondaryText text-xs font-mono">
+                {`// ${CS2_MAP_POOL.length} COMPETITIVE VENUES`}
+              </span>
             </div>
             <h2 className="font-display font-black text-3xl sm:text-5xl uppercase text-white tracking-tight leading-tight">
               THE BATTLEFIELD <span className="text-cyan">TERRAIN</span>
@@ -34,10 +34,8 @@ export default function MapPoolSection() {
           </div>
         </div>
 
-        {/* Selected Map Feature Showcase */}
         <div className="relative mb-12 bg-card border border-tactical-border overflow-hidden">
           <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[380px]">
-            {/* Visual Cover */}
             <div className="lg:col-span-7 relative min-h-[260px] lg:min-h-full">
               <Image
                 src={selectedMap.image}
@@ -55,7 +53,6 @@ export default function MapPoolSection() {
               </div>
             </div>
 
-            {/* Map Details */}
             <div className="lg:col-span-5 p-6 sm:p-8 flex flex-col justify-between bg-card/95 backdrop-blur-md">
               <div>
                 <div className="flex items-center justify-between text-xs font-mono text-secondaryText mb-2">
@@ -89,7 +86,6 @@ export default function MapPoolSection() {
           </div>
         </div>
 
-        {/* 7 Maps Selector Strip */}
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
           {CS2_MAP_POOL.map((m) => {
             const isSelected = selectedMap.name === m.name;
@@ -97,14 +93,26 @@ export default function MapPoolSection() {
               <button
                 key={m.name}
                 onClick={() => setSelectedMap(m)}
-                className={`relative p-3 text-left transition-all duration-300 clip-tactical border ${
+                aria-label={`Select ${m.name} map`}
+                aria-pressed={isSelected}
+                className={`relative p-3 text-left transition-all duration-300 clip-tactical border group ${
                   isSelected
                     ? 'bg-surface border-cyan text-white shadow-[0_0_20px_rgba(0,213,255,0.25)]'
                     : 'bg-card/60 border-tactical-border text-secondaryText hover:border-tactical-borderLight hover:text-white'
                 }`}
               >
-                <div className="text-[10px] font-mono text-secondaryText/70 mb-1">
+                <div className="relative aspect-[4/3] w-full overflow-hidden mb-3 border border-tactical-border/70">
+                  <Image
+                    src={m.image}
+                    alt={`${m.name} map`}
+                    fill
+                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 14vw"
+                    className="object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
+                  <span className="absolute bottom-1 left-2 text-[10px] font-mono text-white/80">
                   0{CS2_MAP_POOL.indexOf(m) + 1}
+                  </span>
                 </div>
                 <div className="font-display font-black text-base sm:text-lg uppercase tracking-wider text-white">
                   {m.name}
@@ -124,4 +132,3 @@ export default function MapPoolSection() {
     </section>
   );
 }
-

@@ -18,32 +18,23 @@ export function transformBackendTeam(raw: any): Team {
 
   const captain = {
     name: raw.captain?.name || raw.captain?.fullName || 'Team Captain',
+    whatsappNumber: raw.captain?.whatsappNumber || raw.captain?.phone || '',
+    phone: raw.captain?.whatsappNumber || raw.captain?.phone || '',
+    faculty: raw.captain?.faculty || '',
     email: raw.captain?.email || '',
-    phone: raw.captain?.phone || '',
   };
 
   const players: Player[] = Array.isArray(raw.players)
     ? raw.players.map((p: any, idx: number) => ({
         id: p._id || p.id || `p-${idx}`,
         name: p.fullName || p.name || `Player ${idx + 1}`,
-        ign: p.inGameName || p.ign || `IGN_${idx + 1}`,
-        steamId: p.steamId || `STEAM_0:0:${idx}`,
+        faculty: p.faculty || 'Faculty of Applied Sciences',
+        ign: p.inGameName || p.ign || '',
+        steamId: p.steamId || '',
         email: p.email || '',
-        role: p.role || 'Rifler',
+        role: p.role || 'Player',
       }))
     : [];
-
-  let substitute: Player | undefined = undefined;
-  if (raw.substitute && (raw.substitute.fullName || raw.substitute.name || raw.substitute.ign || raw.substitute.inGameName)) {
-    substitute = {
-      id: raw.substitute._id || raw.substitute.id || 'sub',
-      name: raw.substitute.fullName || raw.substitute.name || 'Substitute Player',
-      ign: raw.substitute.inGameName || raw.substitute.ign || 'SUB',
-      steamId: raw.substitute.steamId || 'STEAM_0:0:9999',
-      email: raw.substitute.email || '',
-      role: raw.substitute.role || 'Substitute',
-    };
-  }
 
   return {
     id,
@@ -55,7 +46,6 @@ export function transformBackendTeam(raw: any): Team {
     createdAt: raw.createdAt ? new Date(raw.createdAt).toISOString() : new Date().toISOString(),
     captain,
     players,
-    substitute,
     matchesPlayed: raw.matchesPlayed ?? 0,
     wins: raw.wins ?? 0,
     losses: raw.losses ?? 0,
@@ -99,6 +89,7 @@ export function transformBackendMatch(raw: any): Match {
 
   return {
     id,
+    matchNumber: raw.matchNumber,
     teamAId,
     teamBId,
     teamAName,
@@ -115,6 +106,11 @@ export function transformBackendMatch(raw: any): Match {
     stage: raw.stage || 'Official Match',
     streamUrl: raw.streamUrl,
     mvp: raw.mvp,
+    bracketRound: raw.bracketRound,
+    bracketPosition: raw.bracketPosition,
+    nextMatchId: raw.nextMatchId || (raw.nextMatchNumber ? `m-${raw.nextMatchNumber}` : undefined),
+    nextMatchSlot: raw.nextMatchSlot,
+    winnerId: raw.winner?._id || raw.winner || (raw.status === 'completed' ? (raw.scoreA > raw.scoreB ? teamAId : teamBId) : undefined),
     currentRound: raw.currentRound ?? ((raw.scoreA ?? 0) + (raw.scoreB ?? 0)),
     half: raw.half || 1,
     c4Planted: !!raw.c4Planted,
@@ -130,14 +126,20 @@ export function transformBackendSettings(raw: any): CountdownSettings {
       tournamentDate: '2026-11-20T09:00:00',
       registrationDeadline: '2026-11-10T23:59:59',
       eventStatus: 'REGISTRATIONS OPEN',
+      isRegistrationOpen: true,
       announcementText: 'CST LAN CHALLENGE 2026 - Official Counter-Strike 2 Championship hosted by Uva Wellassa University',
     };
   }
+
+  const isOpen = typeof raw.registrationOpen === 'boolean'
+    ? raw.registrationOpen
+    : (raw.eventStatus === 'REGISTRATIONS OPEN');
 
   return {
     tournamentDate: raw.tournamentDate ? new Date(raw.tournamentDate).toISOString() : '2026-11-20T09:00:00',
     registrationDeadline: raw.registrationDeadline ? new Date(raw.registrationDeadline).toISOString() : '2026-11-10T23:59:59',
     eventStatus: raw.eventStatus || 'REGISTRATIONS OPEN',
+    isRegistrationOpen: isOpen,
     announcementText: raw.announcementText || 'CST LAN CHALLENGE 2026',
   };
 }

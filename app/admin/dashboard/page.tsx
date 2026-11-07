@@ -33,13 +33,11 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(false);
 
   const loadData = async () => {
-    // 1. Initial immediate local render
     const localTeams = getStoredTeams();
     const localMatches = getStoredMatches();
     setTeams(localTeams);
     setMatches(localMatches);
 
-    // 2. Fetch live telemetry from backend
     try {
       const [resOverview, resActivity, resRegs, resMatches] = await Promise.all([
         api.admin.getOverview().catch(() => null),
@@ -120,7 +118,6 @@ export default function AdminDashboardPage() {
     <AdminLayout>
       <div className="space-y-8">
         
-        {/* Top Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-tactical-border">
           <div>
             <div className="inline-flex items-center gap-2 mb-1">
@@ -169,7 +166,6 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* 6 Key Stat Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
           {statCards.map((card, idx) => (
             <div
@@ -189,10 +185,8 @@ export default function AdminDashboardPage() {
           ))}
         </div>
 
-        {/* 2-Column Section: Recent Registrations & Upcoming Fixtures */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           
-          {/* Recent Registrations Table */}
           <div className="lg:col-span-7 bg-card/90 border border-tactical-border p-6 backdrop-blur-md">
             <div className="flex items-center justify-between border-b border-tactical-border pb-4 mb-4">
               <h3 className="font-display font-bold text-base text-white uppercase tracking-wider flex items-center gap-2">
@@ -285,10 +279,8 @@ export default function AdminDashboardPage() {
             </div>
           </div>
 
-          {/* Upcoming Matches & Activity Log */}
           <div className="lg:col-span-5 space-y-6">
             
-            {/* Matches preview */}
             <div className="bg-card/90 border border-tactical-border p-6 backdrop-blur-md">
               <div className="flex items-center justify-between border-b border-tactical-border pb-4 mb-4">
                 <h3 className="font-display font-bold text-base text-white uppercase tracking-wider flex items-center gap-2">
@@ -332,7 +324,6 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
-            {/* Quick Actions Panel */}
             <div className="bg-surface/70 border border-tactical-border p-6">
               <h3 className="font-display font-bold text-sm text-white uppercase tracking-wider mb-3">
                 QUICK OPERATIONAL ACTIONS
@@ -365,7 +356,6 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
-            {/* Recent Audit Activities */}
             {activityLogs.length > 0 && (
               <div className="bg-card/90 border border-tactical-border p-5">
                 <h4 className="font-display font-bold text-xs text-white uppercase tracking-wider mb-3 flex items-center gap-2">
