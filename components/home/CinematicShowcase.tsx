@@ -26,21 +26,17 @@ export default function CinematicShowcase() {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Content Slide Refs (Left -> Right -> Center)
   const slideLeftRef = useRef<HTMLDivElement>(null);
   const slideRightRef = useRef<HTMLDivElement>(null);
   const slideCenterRef = useRef<HTMLDivElement>(null);
 
-  // HUD telemetry
   const scrubBarRef = useRef<HTMLDivElement>(null);
   const telemetryTagRef = useRef<HTMLSpanElement>(null);
 
-  // Image sequence cache
   const imagesRef = useRef<HTMLImageElement[]>([]);
   const currentFrameRef = useRef<number>(0);
   const [isReady, setIsReady] = useState(false);
 
-  // 1. Draw frame on canvas with aspect ratio cover
   const drawFrame = useCallback((frameIndex: number) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -67,7 +63,6 @@ export default function CinematicShowcase() {
     currentFrameRef.current = frameIndex;
   }, []);
 
-  // 2. High-DPI Canvas resize handler
   const handleResize = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -82,7 +77,6 @@ export default function CinematicShowcase() {
     drawFrame(currentFrameRef.current);
   }, [drawFrame]);
 
-  // 3. Preload frame sequence progressively
   useEffect(() => {
     let isCancelled = false;
     const images: HTMLImageElement[] = new Array(TOTAL_FRAMES);
@@ -102,7 +96,6 @@ export default function CinematicShowcase() {
       } catch (e) {}
     };
 
-    // Load remaining frames
     for (let i = 1; i < TOTAL_FRAMES; i++) {
       const img = new Image();
       const frameNum = String(i + 1).padStart(4, '0');
@@ -343,7 +336,7 @@ export default function CinematicShowcase() {
             </h2>
 
             <p className="text-xs sm:text-sm font-mono text-secondaryText leading-relaxed mb-5">
-              Represent your university. The CST LAN Challenge 2026 brings elite student athletes together under Valve&apos;s Counter-Strike 2 sub-tick architecture.
+              The CST LAN Challenge 2026 brings elite student athletes together under Valve&apos;s Counter-Strike 2 sub-tick architecture.
             </p>
 
             <div className="p-3.5 bg-surface/70 border border-cyan/30 rounded mb-5 flex items-center justify-between">
@@ -429,7 +422,7 @@ export default function CinematicShowcase() {
                   ROSTER SIZE
                 </span>
                 <span className="font-display font-black text-lg text-orange">
-                  5 PLAYERS + 1 SUB
+                  5 PLAYERS
                 </span>
               </div>
             </div>
@@ -483,12 +476,12 @@ export default function CinematicShowcase() {
             </p>
 
             <div className="p-3 bg-surface/80 border border-tactical-border rounded mb-6 flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-[10px] sm:text-xs font-mono text-white">
-              <span className="px-2 py-0.5 bg-cyan/10 border border-cyan/40 text-cyan font-bold">DE_MIRAGE</span>
-              <span className="px-2 py-0.5 bg-orange/10 border border-orange/40 text-orange font-bold">DE_INFERNO</span>
-              <span className="px-2 py-0.5 bg-cyan/10 border border-cyan/40 text-cyan font-bold">DE_NUKE</span>
-              <span className="px-2 py-0.5 bg-orange/10 border border-orange/40 text-orange font-bold">DE_DUST2</span>
-              <span className="px-2 py-0.5 bg-cyan/10 border border-cyan/40 text-cyan font-bold">DE_ANUBIS</span>
-              <span className="px-2 py-0.5 bg-orange/10 border border-orange/40 text-orange font-bold">DE_ANCIENT</span>
+              <span className="px-2 py-0.5 bg-cyan/10 border border-cyan/40 text-cyan font-bold">ANCIENT</span>
+              <span className="px-2 py-0.5 bg-orange/10 border border-orange/40 text-orange font-bold">ANUBIS</span>
+              <span className="px-2 py-0.5 bg-cyan/10 border border-cyan/40 text-cyan font-bold">CACHE</span>
+              <span className="px-2 py-0.5 bg-orange/10 border border-orange/40 text-orange font-bold">DUST II</span>
+              <span className="px-2 py-0.5 bg-cyan/10 border border-cyan/40 text-cyan font-bold">NUKE</span>
+              <span className="px-2 py-0.5 bg-orange/10 border border-orange/40 text-orange font-bold">MIRAGE</span>
             </div>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">

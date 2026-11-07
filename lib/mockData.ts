@@ -14,59 +14,51 @@ export const INITIAL_MATCHES: Match[] = [];
 
 export const CS2_MAP_POOL = [
   {
-    name: 'Mirage',
-    scenario: 'Bomb Defusal',
-    location: 'Middle East',
-    description: 'A staple Counter-Strike map emphasizing middle control, tactical smoke executes on A site, and lightning-fast palace takes.',
-    image: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=800&auto=format&fit=crop&q=80',
-    meta: 'High Tactical Depth • Mid-Control Focus'
-  },
+  name: 'Mirage',
+  scenario: 'Bomb Defusal',
+  location: 'Middle East',
+  description: 'A staple Counter-Strike map emphasizing middle control, tactical smoke executes on A site, and lightning-fast palace takes.',
+  image: 'https://cdn.playcs.gg/img/maps/de_mirage.webp',
+  meta: 'High Tactical Depth • Mid-Control Focus'
+},
   {
-    name: 'Dust II',
-    scenario: 'Bomb Defusal',
-    location: 'Morocco',
-    description: 'The most iconic layout in FPS history. Four corridors, long sightlines, rapid rotation options, and intense long A sniper duels.',
-    image: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&auto=format&fit=crop&q=80',
-    meta: 'Aim Duel Heavy • Classic CS Layout'
-  },
+  name: 'Dust II',
+  scenario: 'Bomb Defusal',
+  location: 'Morocco, North Africa',
+  description: 'An iconic Counter-Strike map featuring long-range A Long engagements, intense mid control through the central doors, and fast-paced B-site rushes through tunnels.',
+  image: 'https://cdn.playcs.gg/img/maps/de_dust2.webp',
+  meta: 'Classic Tactical Gameplay • Long-Range Combat Focus'
+},
   {
-    name: 'Inferno',
-    scenario: 'Bomb Defusal',
-    location: 'Italy',
-    description: 'Choke point heavy, requires disciplined utility usage down Banana, tight apartment retakes, and synchronized team executions.',
-    image: 'https://images.unsplash.com/photo-1533105079780-92b9be482077?w=800&auto=format&fit=crop&q=80',
-    meta: 'Utility Mastery • Intense Chokepoints'
-  },
+  name: 'Cache',
+  scenario: 'Bomb Defusal',
+  location: 'Pripyat, Ukraine',
+  description: 'A competitive Counter-Strike map set in an abandoned industrial complex, featuring intense mid control, strategic rotations through vents, and coordinated attacks on A and B bombsites.',
+  image: 'https://cdn.playcs.gg/img/maps/de_cache.webp',
+  meta: 'High Tactical Depth • Mid-Control Focus'
+},
   {
-    name: 'Ancient',
-    scenario: 'Bomb Defusal',
-    location: 'Central America',
-    description: 'Lush ruins offering deep mid skirmishes, cavern flanks, tight B site ramp defenses, and rich CS2 volumetric smoke interactions.',
-    image: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&auto=format&fit=crop&q=80',
-    meta: 'Volumetric Smoke Synergy • Mid Flanks'
-  },
+  name: 'Ancient',
+  scenario: 'Bomb Defusal',
+  location: 'Central America',
+  description: 'A jungle-themed Counter-Strike map featuring tight corridors, challenging mid control, stone ruins, and tactical executes on A and B bombsites.',
+  image: 'https://cdn.playcs.gg/img/maps/de_ancient.webp',
+  meta: 'High Tactical Depth • Jungle Warfare Focus'
+},
   {
-    name: 'Nuke',
-    scenario: 'Bomb Defusal',
-    location: 'USA (Cedar Creek)',
-    description: 'Multi-level verticality with subterranean B site, roof drops, ventilation shafts, and outside yard smoke line dominance.',
-    image: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&auto=format&fit=crop&q=80',
-    meta: 'Vertical Audio Precision • Outside Control'
-  },
+  name: 'Nuke',
+  scenario: 'Bomb Defusal',
+  location: 'United States',
+  description: 'A vertically designed Counter-Strike map set in a nuclear power plant, featuring intense outside control, tactical rotations through vents, and coordinated attacks across its stacked A and B bombsites.',
+  image: 'https://cdn.playcs.gg/img/maps/de_nuke.webp',
+  meta: 'High Tactical Depth • Vertical Gameplay Focus'
+},
   {
-    name: 'Anubis',
-    scenario: 'Bomb Defusal',
-    location: 'Egypt',
-    description: 'Water canals, palace arches, fast-paced T-sided tactical splits, and dynamic bridge firefights in pristine desert architectures.',
-    image: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&auto=format&fit=crop&q=80',
-    meta: 'Canal Mobility • Dynamic Rotations'
-  },
-  {
-    name: 'Vertigo',
-    scenario: 'Bomb Defusal',
-    location: 'High-Rise Construction',
-    description: 'High-altitude construction site featuring ramp pressure, scaffold boosts, generator pushes, and quick rotation ladders.',
-    image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&auto=format&fit=crop&q=80',
-    meta: 'High-Altitude Verticals • A-Ramp Brawls'
-  }
+  name: 'Anubis',
+  scenario: 'Bomb Defusal',
+  location: 'Egypt, North Africa',
+  description: 'A visually striking Counter-Strike map inspired by ancient Egyptian architecture, featuring intense mid control, tactical waterway rotations, and coordinated attacks through canals and temple corridors.',
+  image: 'https://cdn.playcs.gg/img/maps/de_anubis.webp',
+  meta: 'High Tactical Depth • Waterway-Control Focus'
+}
 ];

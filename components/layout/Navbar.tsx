@@ -97,7 +97,7 @@ export default function Navbar() {
               <div>
                 <div className="flex items-center gap-2">
                   <span className="font-display font-black text-lg sm:text-xl tracking-wider text-white">
-                    CST <span className="text-cyan">LAN</span> <span className="text-orange">2026</span>
+                    <span className="text-cyan">LAN</span> <span className="text-orange">CHALLENGE</span>
                   </span>
                   <span className="hidden sm:inline-block text-[9px] font-mono font-semibold px-1.5 py-0.5 bg-cyan/10 text-cyan border border-cyan/30 rounded-none">
                     CS2

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { getStoredTeams, updateTeamStatus } from '@/lib/storage';
+import { getStoredTeams, updateTeamStatus, createAndSeedPlayoffTree } from '@/lib/storage';
 import { api } from '@/lib/api';
 import { transformBackendTeam } from '@/lib/transformers';
 import { Team, ApprovalStatus, Player } from '@/lib/types';
@@ -24,6 +24,7 @@ import {
   Award,
   Filter,
   RefreshCw,
+  Trophy,
 } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
@@ -78,6 +79,35 @@ export default function AdminTeamsPage() {
       ...prev,
       [teamId]: !prev[teamId],
     }));
+  };
+
+  const handleCreatePlayoffTree = () => {
+    const candidateTeams = teams.filter(t => (t.status || '').toLowerCase() !== 'rejected');
+    if (candidateTeams.length < 2) {
+      alert(`At least 2 teams are required to create the playoff bracket (Currently: ${candidateTeams.length} squads).`);
+      return;
+    }
+    const isEightSquad = candidateTeams.length <= 8;
+    const confirmSeed = window.confirm(
+      `CREATE PLAYOFF TREE from ${candidateTeams.length} registered squads?\n\n` +
+      (isEightSquad
+        ? `• 8-TEAM DUAL-WING BRACKET:\n` +
+          `  - Left Wing: 4 squads (2 Quarterfinal matches)\n` +
+          `  - Right Wing: 4 squads (2 Quarterfinal matches)\n` +
+          `  - Round 2 (Semifinals) and Grand Final will be completely free.\n`
+        : `• 16-TEAM DUAL-WING BRACKET:\n` +
+          `  - Left Wing: 8 squads (4 Round of 16 matches)\n` +
+          `  - Right Wing: 8 squads (4 Round of 16 matches)\n` +
+          `  - Round 2 (Quarterfinals), Semifinals & Grand Final will be completely free.\n`) +
+      `• Match wins will automatically advance winners down the tree!`
+    );
+    if (!confirmSeed) return;
+
+    createAndSeedPlayoffTree(candidateTeams);
+    setNotice(
+      `✓ ${isEightSquad ? '8-Squad Dual-Wing' : '16-Squad Major'} Playoff Tree created! Seeded with ${candidateTeams.length} squads; downstream rounds are free.`
+    );
+    setTimeout(() => setNotice(null), 5000);
   };
 
   const handleExpandAll = (expand: boolean) => {
@@ -149,7 +179,15 @@ export default function AdminTeamsPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={handleCreatePlayoffTree}
+              className="px-3.5 py-2 bg-gradient-to-r from-amber-500 to-orange hover:from-amber-400 hover:to-orange text-background font-display font-black text-xs uppercase tracking-wider flex items-center gap-1.5 border border-amber-400 shadow-[0_0_20px_rgba(255,184,0,0.3)] transition-all"
+              title="Seed 1st layer with registered squads; Round 2, Semifinals & Finals start free and advance automatically on win"
+            >
+              <Trophy className="w-3.5 h-3.5 text-background" />
+              <span>CREATE PLAYOFF TREE</span>
+            </button>
             <button
               onClick={() => {
                 setLoading(true);

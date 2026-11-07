@@ -7,6 +7,7 @@ import {
   analyzeAndAdvanceBracketWinners,
   generate16TeamPlayoffTree,
   SIXTEEN_BRACKET_TEAMS,
+  getDefaultSlotPlaceholder,
 } from './playoffEngine';
 
 const TEAMS_KEY = 'cst_lan_teams_2026';
@@ -15,6 +16,43 @@ const MATCHES_16_KEY = 'cst_lan_matches_16_2026';
 const COUNTDOWN_KEY = 'cst_lan_countdown_2026';
 const AUTH_KEY = 'cst_lan_admin_auth';
 const LIVE_CHANNEL_NAME = 'cst_cs2_live_channel';
+const ACTIVE_BRACKET_MODE_KEY = 'cst_lan_active_bracket_mode';
+
+export type ActiveBracketMode = '8-squad' | '16-squad';
+
+export const getActiveBracketMode = (): ActiveBracketMode => {
+  if (typeof window === 'undefined') return '8-squad';
+  try {
+    const stored = localStorage.getItem(ACTIVE_BRACKET_MODE_KEY);
+    if (stored === '8-squad' || stored === '16-squad') return stored;
+    // Auto-detect based on registered teams count
+    const rawTeams = localStorage.getItem(TEAMS_KEY);
+    const teams: Team[] = rawTeams ? JSON.parse(rawTeams) : [];
+    const approved = teams.filter((t) => (t.status || '').toLowerCase() === 'approved');
+    const sourceTeams = approved.length > 0 ? approved : teams.filter((t) => (t.status || '').toLowerCase() !== 'rejected');
+    const mode: ActiveBracketMode = sourceTeams.length > 8 ? '16-squad' : '8-squad';
+    localStorage.setItem(ACTIVE_BRACKET_MODE_KEY, mode);
+    return mode;
+  } catch {
+    return '8-squad';
+  }
+};
+
+export const setActiveBracketMode = (mode: ActiveBracketMode) => {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(ACTIVE_BRACKET_MODE_KEY, mode);
+    window.dispatchEvent(new CustomEvent('cst_bracket_mode_changed', { detail: { mode } }));
+    const channel = getLiveBroadcastChannel();
+    channel?.postMessage({
+      type: 'CST_BRACKET_MODE_CHANGED',
+      mode,
+      timestamp: Date.now(),
+    });
+  } catch (e) {
+    console.warn('Failed setting active bracket mode', e);
+  }
+};
 
 // Cross-tab broadcast channel for instant (<10ms) stage projector synchronization
 let liveBroadcastChannel: BroadcastChannel | null = null;
@@ -271,6 +309,147 @@ export const refresh16PlayoffTreeFromApprovedTeams = (providedTeams?: Team[]): M
   return updatedMatches;
 };
 
+/**
+ * Core Administrator Action: CREATE / SEED PLAYOFF TREE
+ * Automatically adapts based on registered team count:
+ * - If <= 8 teams: generates 8-team dual-wing tree (4 teams Left, 4 teams Right, Semifinals & Finals free).
+ * - If > 8 teams: generates 16-team dual-wing tree (8 teams Left, 8 teams Right, QF, SF & Finals free).
+ * - Downstream rounds start completely free (0-0, upcoming).
+ * - Match wins cascade automatically down the tree to crown the Champion!
+ */
+export const createAndSeedPlayoffTree = (teams?: Team[]): Match[] => {
+  const currentTeams = teams && teams.length > 0 ? teams : getStoredTeams();
+  // Prefer approved teams; if none explicitly approved, use all registered non-rejected teams
+  const approved = currentTeams.filter((t) => (t.status || '').toLowerCase() === 'approved');
+  const sourceTeams = approved.length > 0 ? approved : currentTeams.filter((t) => (t.status || '').toLowerCase() !== 'rejected');
+
+  const count = sourceTeams.length;
+  const isEightSquad = count <= 8;
+
+  if (isEightSquad) {
+    // Generate clean 8-squad dual-wing playoff tree:
+    // Left Wing (4 teams): QF 1 & QF 2 -> Semifinal 1
+    // Right Wing (4 teams): QF 3 & QF 4 -> Semifinal 2
+    // Grand Final: Left Semifinal Winner vs Right Semifinal Winner
+    const fresh8Tree = generatePlayoffTreeFromTeams(sourceTeams);
+    const clean8Tree = fresh8Tree.map((m) => {
+      if (m.bracketRound === 'semifinals' || m.bracketRound === 'final' || m.bracketRound === 'third_place') {
+        return {
+          ...m,
+          scoreA: 0,
+          scoreB: 0,
+          status: 'upcoming' as const,
+          winnerId: undefined,
+          currentRound: 0,
+        };
+      }
+      return {
+        ...m,
+        scoreA: 0,
+        scoreB: 0,
+        status: 'upcoming' as const,
+        winnerId: undefined,
+        currentRound: 0,
+      };
+    });
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(MATCHES_KEY, JSON.stringify(clean8Tree));
+      notifyMatchesUpdated(clean8Tree);
+      setActiveBracketMode('8-squad');
+      recalculateStandings(clean8Tree);
+    }
+
+    return clean8Tree;
+  } else {
+    // Generate clean 16-squad playoff tree from source teams
+    const freshTree = generate16TeamPlayoffTree(sourceTeams);
+
+    // Guarantee that 2nd Round (Quarterfinals), Semifinals, and Final are completely free / reset
+    const cleanTree = freshTree.map((m) => {
+      if (m.bracketRound === 'quarterfinals') {
+        const pA = getDefaultSlotPlaceholder(m.id, 'teamA');
+        const pB = getDefaultSlotPlaceholder(m.id, 'teamB');
+        return {
+          ...m,
+          teamAId: pA.id,
+          teamAName: pA.name,
+          teamATag: pA.tag,
+          teamALogo: pA.logo,
+          teamBId: pB.id,
+          teamBName: pB.name,
+          teamBTag: pB.tag,
+          teamBLogo: pB.logo,
+          scoreA: 0,
+          scoreB: 0,
+          status: 'upcoming' as const,
+          winnerId: undefined,
+          currentRound: 0,
+        };
+      }
+      if (m.bracketRound === 'semifinals') {
+        const pA = getDefaultSlotPlaceholder(m.id, 'teamA');
+        const pB = getDefaultSlotPlaceholder(m.id, 'teamB');
+        return {
+          ...m,
+          teamAId: pA.id,
+          teamAName: pA.name,
+          teamATag: pA.tag,
+          teamALogo: pA.logo,
+          teamBId: pB.id,
+          teamBName: pB.name,
+          teamBTag: pB.tag,
+          teamBLogo: pB.logo,
+          scoreA: 0,
+          scoreB: 0,
+          status: 'upcoming' as const,
+          winnerId: undefined,
+          currentRound: 0,
+        };
+      }
+      if (m.bracketRound === 'final') {
+        const pA = getDefaultSlotPlaceholder(m.id, 'teamA');
+        const pB = getDefaultSlotPlaceholder(m.id, 'teamB');
+        return {
+          ...m,
+          teamAId: pA.id,
+          teamAName: pA.name,
+          teamATag: pA.tag,
+          teamALogo: pA.logo,
+          teamBId: pB.id,
+          teamBName: pB.name,
+          teamBTag: pB.tag,
+          teamBLogo: pB.logo,
+          scoreA: 0,
+          scoreB: 0,
+          status: 'upcoming' as const,
+          winnerId: undefined,
+          currentRound: 0,
+        };
+      }
+      return {
+        ...m,
+        scoreA: 0,
+        scoreB: 0,
+        status: 'upcoming' as const,
+        winnerId: undefined,
+        currentRound: 0,
+      };
+    });
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(MATCHES_16_KEY, JSON.stringify(cleanTree));
+      notify16MatchesUpdated(cleanTree);
+      setActiveBracketMode('16-squad');
+    }
+
+    // Also seed 8-squad UWU bracket
+    generateAndStorePlayoffBracket(sourceTeams);
+
+    return cleanTree;
+  }
+};
+
 export const getStoredTeams = (): Team[] => {
   if (typeof window === 'undefined') return INITIAL_TEAMS;
   try {
@@ -313,6 +492,14 @@ export const saveTeam = (newTeam: Omit<Team, 'id' | 'createdAt' | 'status'>): Te
   if (typeof window !== 'undefined') {
     localStorage.setItem(TEAMS_KEY, JSON.stringify(updated));
     window.dispatchEvent(new Event('cst_teams_updated'));
+    try {
+      const channel = getLiveBroadcastChannel();
+      channel?.postMessage({
+        type: 'CST_TEAMS_UPDATE',
+        teams: updated,
+        timestamp: Date.now(),
+      });
+    } catch (e) {}
   }
   return created;
 };
@@ -325,6 +512,14 @@ export const updateTeam = (teamId: string, partial: Partial<Team>): boolean => {
   if (typeof window !== 'undefined') {
     localStorage.setItem(TEAMS_KEY, JSON.stringify(teams));
     window.dispatchEvent(new Event('cst_teams_updated'));
+    try {
+      const channel = getLiveBroadcastChannel();
+      channel?.postMessage({
+        type: 'CST_TEAMS_UPDATE',
+        teams,
+        timestamp: Date.now(),
+      });
+    } catch (e) {}
   }
   return true;
 };

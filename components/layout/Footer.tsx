@@ -33,7 +33,7 @@ export default function Footer() {
             </Link>
 
             <p className="text-xs text-secondaryText leading-relaxed max-w-sm">
-              The premier Counter-Strike 2 inter-university gaming championship organized by the
+              The premier Counter-Strike 2 gaming championship organized by the
               <span className="text-white font-semibold"> Computer Science and Technology Degree Programme</span>, 
               Faculty of Applied Sciences, <span className="text-cyan font-semibold">Uva Wellassa University of Sri Lanka</span>.
             </p>

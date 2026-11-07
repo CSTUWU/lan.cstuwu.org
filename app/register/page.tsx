@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
-import { saveTeam, getStoredTeams } from '@/lib/storage';
+import { saveTeam, getStoredTeams, getLiveBroadcastChannel } from '@/lib/storage';
 import { Team, Player, Captain, UWU_FACULTIES } from '@/lib/types';
 import {
   Shield,
@@ -224,8 +224,17 @@ export default function RegisterPage() {
 
         const existing = getStoredTeams();
         if (!existing.some((t) => t.id === teamObj.id || t.name.toLowerCase() === teamObj.name.toLowerCase())) {
-          localStorage.setItem('cst_lan_teams_2026', JSON.stringify([teamObj, ...existing]));
+          const updated = [teamObj, ...existing];
+          localStorage.setItem('cst_lan_teams_2026', JSON.stringify(updated));
           window.dispatchEvent(new Event('cst_teams_updated'));
+          try {
+            const channel = getLiveBroadcastChannel();
+            channel?.postMessage({
+              type: 'CST_TEAMS_UPDATE',
+              teams: updated,
+              timestamp: Date.now(),
+            });
+          } catch (e) {}
         }
 
         setCreatedTeam(teamObj);

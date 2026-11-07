@@ -26,12 +26,10 @@ export default function Hero() {
   const scrubBarRef = useRef<HTMLDivElement>(null);
   const progressTextRef = useRef<HTMLSpanElement>(null);
 
-  // Loaded frames cache
   const imagesRef = useRef<HTMLImageElement[]>([]);
   const currentFrameRef = useRef<number>(0);
   const [isReady, setIsReady] = useState<boolean>(false);
 
-  // Live Countdown State
   const [timeLeft, setTimeLeft] = useState({
     days: 17,
     hours: 8,
@@ -39,7 +37,6 @@ export default function Hero() {
     seconds: 0,
   });
 
-  // 1. Live Countdown ticker
   useEffect(() => {
     api.public.getSettings().then(() => {}).catch(() => {});
 
@@ -67,7 +64,6 @@ export default function Hero() {
     return () => clearInterval(interval);
   }, []);
 
-  // 2. Render frame to canvas with aspect-ratio cover
   const drawFrame = useCallback((frameIndex: number) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -80,7 +76,6 @@ export default function Hero() {
     const canvasWidth = canvas.width;
     const canvasHeight = canvas.height;
 
-    // Aspect ratio cover
     const hRatio = canvasWidth / img.naturalWidth;
     const vRatio = canvasHeight / img.naturalHeight;
     const ratio = Math.max(hRatio, vRatio);
@@ -95,7 +90,6 @@ export default function Hero() {
     currentFrameRef.current = frameIndex;
   }, []);
 
-  // 3. Canvas resize handler for Retina / 4K
   const handleResize = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -195,7 +189,6 @@ export default function Hero() {
               progressTextRef.current.innerText = `00:0${sec}s // ${(self.progress * 100).toFixed(0)}%`;
             }
 
-            // Notify Navbar when text appears (progress >= 0.40 when characters slide out)
             const isTextVisible = self.progress >= 0.40;
             if (lastNotifiedVisible !== isTextVisible) {
               lastNotifiedVisible = isTextVisible;
@@ -207,7 +200,6 @@ export default function Hero() {
         },
       });
 
-      // Frame scrubbing virtual property across the full sequence
       scrubTimeline.to(
         frameObj,
         {
@@ -325,7 +317,6 @@ export default function Hero() {
     return () => ctx.revert();
   }, [drawFrame]);
 
-  // Smooth scroll helper when clicking the initial cue
   const handleScrollToContent = () => {
     if (typeof window !== 'undefined') {
       window.scrollTo({

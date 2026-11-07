@@ -3,7 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { getStoredTeams, getStoredMatches, createMatch, generateAndStorePlayoffBracket } from '@/lib/storage';
+import {
+  getStoredTeams,
+  getStoredMatches,
+  createMatch,
+  generateAndStorePlayoffBracket,
+  createAndSeedPlayoffTree,
+} from '@/lib/storage';
 import { api } from '@/lib/api';
 import { transformBackendMatch, transformBackendTeam } from '@/lib/transformers';
 import { Team, Match, CS2Map, MatchStatus } from '@/lib/types';
@@ -131,27 +137,39 @@ export default function AdminMatchesPage() {
   };
 
   const handleAutoGeneratePlayoffs = async () => {
-    if (approvedTeams.length < 2) {
-      alert(`At least 2 approved teams are required to seed playoffs (Currently: ${approvedTeams.length} approved squads).`);
+    const candidateTeams = approvedTeams.length > 0 ? approvedTeams : teams.filter(t => (t.status || '').toLowerCase() !== 'rejected');
+    if (candidateTeams.length < 2) {
+      alert(`At least 2 teams are required to create the playoff bracket (Currently: ${candidateTeams.length} squads). Please enlist or approve squads first.`);
       return;
     }
+    const isEightSquad = candidateTeams.length <= 8;
     const confirmSeed = window.confirm(
-      `Generate single-elimination playoff bracket tree from ${approvedTeams.length} approved squads? This will seed Quarterfinals and downstream bracket progression.`
+      `CREATE PLAYOFF TREE from ${candidateTeams.length} registered squads?\n\n` +
+      (isEightSquad
+        ? `• 8-TEAM DUAL-WING BRACKET:\n` +
+          `  - Left Wing: 4 squads (2 Quarterfinal matches)\n` +
+          `  - Right Wing: 4 squads (2 Quarterfinal matches)\n` +
+          `  - Round 2 (Semifinals) and Grand Final will be completely free.\n`
+        : `• 16-TEAM DUAL-WING BRACKET:\n` +
+          `  - Left Wing: 8 squads (4 Round of 16 matches)\n` +
+          `  - Right Wing: 8 squads (4 Round of 16 matches)\n` +
+          `  - Round 2 (Quarterfinals), Semifinals & Grand Final will be completely free.\n`) +
+      `• Match wins will automatically advance winners down the tree to the trophy!`
     );
     if (!confirmSeed) return;
 
     setLoading(true);
     try {
-      const res = await api.admin.generatePlayoffs().catch(() => null);
-      if (res?.success) {
-        setNotice('Playoff bracket tree automatically seeded on server database!');
-      } else {
-        generateAndStorePlayoffBracket();
-        setNotice('Playoff bracket tree seeded & synchronized across scoreboard!');
-      }
+      createAndSeedPlayoffTree(candidateTeams);
+      setNotice(
+        `✓ ${isEightSquad ? '8-Squad Dual-Wing' : '16-Squad Major'} Playoff Tree created! Seeded with ${candidateTeams.length} squads; downstream rounds are free.`
+      );
+      try {
+        await api.admin.generatePlayoffs().catch(() => null);
+      } catch (e) {}
     } catch (e) {
-      generateAndStorePlayoffBracket();
-      setNotice('Playoff bracket tree seeded locally.');
+      createAndSeedPlayoffTree(candidateTeams);
+      setNotice('✓ Playoff tree created locally.');
     } finally {
       await loadData();
       setLoading(false);
@@ -190,11 +208,11 @@ export default function AdminMatchesPage() {
             </button>
             <Button
               onClick={handleAutoGeneratePlayoffs}
-              variant="outline"
+              variant="orange"
               size="md"
-              icon={<GitBranch className="w-4 h-4 text-tactical-gold" />}
+              icon={<Trophy className="w-4 h-4 text-background" />}
             >
-              SEED PLAYOFF BRACKET
+              CREATE PLAYOFF TREE
             </Button>
             <Button
               onClick={() => setShowCreateModal(true)}

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { getStoredTeams } from '@/lib/storage';
+import { getStoredTeams, getLiveBroadcastChannel } from '@/lib/storage';
 import { INITIAL_TEAMS } from '@/lib/mockData';
 import { api } from '@/lib/api';
 import { transformBackendTeam } from '@/lib/transformers';
@@ -24,15 +24,32 @@ export default function TeamsPage() {
     setTeams(getStoredTeams());
     
     // Query public teams API
-    api.public.getTeams().then((res) => {
-      if (res?.success && Array.isArray(res.data) && res.data.length > 0) {
-        setTeams(res.data.map(transformBackendTeam));
-      }
-    }).catch(() => {});
+    api.public
+      .getTeams()
+      .then((res) => {
+        if (res?.success && Array.isArray(res.data) && res.data.length > 0) {
+          setTeams(res.data.map(transformBackendTeam));
+        }
+      })
+      .catch(() => {});
 
     const handleUpdate = () => setTeams(getStoredTeams());
     window.addEventListener('cst_teams_updated', handleUpdate);
-    return () => window.removeEventListener('cst_teams_updated', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+
+    const channel = getLiveBroadcastChannel();
+    const handleChannelMsg = (event: MessageEvent) => {
+      if (event.data?.type === 'CST_TEAMS_UPDATE') {
+        handleUpdate();
+      }
+    };
+    channel?.addEventListener('message', handleChannelMsg);
+
+    return () => {
+      window.removeEventListener('cst_teams_updated', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+      channel?.removeEventListener('message', handleChannelMsg);
+    };
   }, []);
 
   const filteredTeams = teams.filter((team) => {
@@ -41,7 +58,8 @@ export default function TeamsPage() {
       team.tag.toLowerCase().includes(searchQuery.toLowerCase()) ||
       team.university.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesStatus = statusFilter === 'all' || team.status === statusFilter;
+    const statusLower = (team.status || 'pending').toLowerCase();
+    const matchesStatus = statusFilter === 'all' || statusLower === statusFilter.toLowerCase();
     return matchesSearch && matchesStatus;
   });
 
@@ -138,16 +156,22 @@ export default function TeamsPage() {
                 <span className="absolute top-0 right-0 w-2.5 h-2.5 border-t-2 border-r-2 border-cyan opacity-40 group-hover:opacity-100" />
 
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="relative w-14 h-14 bg-surface border border-tactical-border shrink-0 overflow-hidden">
-                    <Image
-                      src={team.logo}
-                      alt={team.name}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform"
-                      sizes="56px"
-                    />
+                  <div className="relative w-14 h-14 bg-surface border border-tactical-border shrink-0 overflow-hidden flex items-center justify-center">
+                    {team.logo && !team.logo.includes('team-placeholder.svg') ? (
+                      <Image
+                        src={team.logo}
+                        alt={team.name}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform"
+                        sizes="56px"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center font-mono text-xs text-cyan font-bold bg-[#0F172A] border border-cyan/20">
+                        {team.tag?.slice(0, 3) || 'CS2'}
+                      </div>
+                    )}
                   </div>
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <span className="text-[11px] font-mono text-cyan tracking-wider font-bold">
                       [{team.tag}]
                     </span>

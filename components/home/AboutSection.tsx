@@ -10,12 +10,7 @@ import { useRegistrationStatus } from '@/hooks/useRegistrationStatus';
 export default function AboutSection() {
   const { isOpen } = useRegistrationStatus();
   const highlights = [
-    {
-      icon: <Users className="w-6 h-6 text-cyan" />,
-      title: 'INTER-UNIVERSITY COMBAT',
-      desc: 'Top student rosters from leading universities nationwide battling for the coveted 2026 CST LAN Championship.',
-      border: 'hover:border-cyan/50',
-    },
+    
     {
       icon: <Cpu className="w-6 h-6 text-orange" />,
       title: 'CS2 SUB-TICK PRECISION',
@@ -78,7 +73,7 @@ export default function AboutSection() {
             </div>
 
             <p>
-              Hosted and organized by the <strong className="text-white">Computer Science and Technology Degree Programme</strong>, Department of Computer Science and Informatics, <strong className="text-cyan">Uva Wellassa University of Sri Lanka</strong>, this landmark tournament unites the island’s sharpest strategic minds and most deadly FPS sharpshooters.
+              Hosted and organized by the <strong className="text-white">Computer Science and Technology Degree Programme</strong>,<br /><strong className="text-cyan">Uva Wellassa University of Sri Lanka</strong>, this landmark tournament unites the island’s sharpest strategic minds and most deadly FPS sharpshooters.
             </p>
 
             <p>
@@ -139,11 +134,11 @@ export default function AboutSection() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
           {highlights.map((item, idx) => (
             <div
               key={idx}
-              className={`bg-surface/50 border border-tactical-border p-6 transition-all duration-300 ${item.border} hover:bg-card/70 group`}
+              className={`bg-surface/50 border border-tactical-border p-6 transition-all duration-300 ${item.border} hover:bg-card/70 group ${idx === 2 ? 'sm:col-span-2 sm:justify-self-center sm:w-1/2 lg:col-span-1 lg:justify-self-stretch lg:w-auto' : ''}`}
             >
               <div className="mb-4 p-3 bg-card inline-block border border-tactical-border/80 group-hover:scale-110 transition-transform">
                 {item.icon}
@@ -162,4 +157,3 @@ export default function AboutSection() {
     </section>
   );
 }
-

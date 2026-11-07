@@ -7,12 +7,14 @@ import AdminLayout from '@/components/admin/AdminLayout';
 import {
   getStoredMatches,
   getStored16Matches,
+  getStoredTeams,
   updateMatchScore,
   incrementMatchScore,
   switchMatchSides,
   toggleMatchC4,
   setMatchLiveStatus,
   updateLiveMatch,
+  createAndSeedPlayoffTree,
 } from '@/lib/storage';
 import { api } from '@/lib/api';
 import { transformBackendMatch } from '@/lib/transformers';
@@ -219,6 +221,35 @@ export default function AdminScoreboardPage() {
     }
   };
 
+  const handleCreatePlayoffTree = () => {
+    const currentTeams = getStoredTeams();
+    const approved = currentTeams.filter((t) => (t.status || '').toLowerCase() === 'approved');
+    const sourceTeams = approved.length > 0 ? approved : currentTeams.filter((t) => (t.status || '').toLowerCase() !== 'rejected');
+    const isEightSquad = sourceTeams.length <= 8;
+
+    const confirmSeed = window.confirm(
+      `CREATE PLAYOFF TREE from ${sourceTeams.length} registered squads?\n\n` +
+      (isEightSquad
+        ? `• 8-TEAM DUAL-WING BRACKET:\n` +
+          `  - Left Wing: 4 squads (2 Quarterfinal matches)\n` +
+          `  - Right Wing: 4 squads (2 Quarterfinal matches)\n` +
+          `  - Round 2 (Semifinals) and Grand Final will start completely free.\n`
+        : `• 16-TEAM DUAL-WING BRACKET:\n` +
+          `  - Left Wing: 8 squads (4 Round of 16 matches)\n` +
+          `  - Right Wing: 8 squads (4 Round of 16 matches)\n` +
+          `  - Round 2 (Quarterfinals), Semifinals & Grand Final will start completely free.\n`) +
+      `• Winning match scores will automatically advance winners down the tree to the trophy!`
+    );
+    if (!confirmSeed) return;
+
+    createAndSeedPlayoffTree();
+    const updated = getCombinedMatches(bracketFilter);
+    setMatches(updated);
+    showNotice(
+      `✓ ${isEightSquad ? '8-Squad Dual-Wing' : '16-Squad Major'} Playoff Tree created! Downstream rounds are free.`
+    );
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6 max-w-5xl">
@@ -237,13 +268,24 @@ export default function AdminScoreboardPage() {
             </p>
           </div>
 
-          <button
-            onClick={openProjectorWindow}
-            className="px-4 py-2.5 bg-gradient-to-r from-cyan to-blue-600 hover:from-cyan hover:to-cyan text-background font-display font-black text-xs uppercase tracking-wider flex items-center gap-2 border border-cyan shadow-[0_0_20px_rgba(0,213,255,0.4)] transition-all shrink-0"
-          >
-            <ExternalLink className="w-4 h-4" />
-            <span>LAUNCH STAGE PROJECTOR (NEW WINDOW)</span>
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={handleCreatePlayoffTree}
+              className="px-4 py-2.5 bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 hover:brightness-110 text-white font-display font-black text-xs uppercase tracking-wider flex items-center gap-2 border border-amber-400 shadow-[0_0_20px_rgba(255,184,0,0.3)] transition-all shrink-0"
+              title="Seed 1st layer with registered squads; Round 2, Semifinals & Finals start free and advance automatically on win"
+            >
+              <Trophy className="w-4 h-4 text-tactical-gold" />
+              <span>CREATE PLAYOFF TREE</span>
+            </button>
+
+            <button
+              onClick={openProjectorWindow}
+              className="px-4 py-2.5 bg-gradient-to-r from-cyan to-blue-600 hover:from-cyan hover:to-cyan text-background font-display font-black text-xs uppercase tracking-wider flex items-center gap-2 border border-cyan shadow-[0_0_20px_rgba(0,213,255,0.4)] transition-all shrink-0"
+            >
+              <ExternalLink className="w-4 h-4" />
+              <span>LAUNCH STAGE PROJECTOR (NEW WINDOW)</span>
+            </button>
+          </div>
         </div>
 
         {actionNotice && (

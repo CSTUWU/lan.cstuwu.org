@@ -5,30 +5,28 @@ import { Match, Team, PlayoffBracket, CS2Map } from './types';
 const PLAYOFF_MAPS: CS2Map[] = ['Mirage', 'Inferno', 'Dust II', 'Ancient', 'Nuke', 'Anubis', 'Vertigo'];
 
 
-export function generatePlayoffTreeFromTeams(teams: Team[]): Match[] {
-  const approved = teams.filter((t) => t.status === 'approved');
-  const sorted = [...approved].sort((a, b) => {
-    if ((b.points || 0) !== (a.points || 0)) return (b.points || 0) - (a.points || 0);
-    if ((b.roundDiff || 0) !== (a.roundDiff || 0)) return (b.roundDiff || 0) - (a.roundDiff || 0);
-    return (b.wins || 0) - (a.wins || 0);
-  });
+export function generatePlayoffTreeFromTeams(teams?: Team[]): Match[] {
+  const currentTeams = teams || [];
+  const approved = currentTeams.filter((t) => (t.status || '').toLowerCase() === 'approved');
+  const sourceTeams = approved.length > 0 ? approved : currentTeams.filter((t) => (t.status || '').toLowerCase() !== 'rejected');
 
-  const slotSquads: (Team | null)[] = [
-    sorted[0] || null, // Seed 1
-    sorted[7] || sorted[1] || null, // Seed 8
-    sorted[3] || null, // Seed 4
-    sorted[4] || null, // Seed 5
-    sorted[1] || null, // Seed 2
-    sorted[6] || null, // Seed 7
-    sorted[2] || null, // Seed 3
-    sorted[5] || null, // Seed 6
-  ];
+  // Symmetrical 8-squad dual-wing bracket seeding:
+  // Left Wing (4 teams): QF 1 (Slots 0, 1) & QF 2 (Slots 2, 3)
+  // Right Wing (4 teams): QF 3 (Slots 4, 5) & QF 4 (Slots 6, 7)
+  const slotSquads: Team[] = Array.from({ length: 8 }, (_, idx) => {
+    if (sourceTeams[idx]) {
+      return sourceTeams[idx];
+    }
+    return DEFAULT_TBD_TEAMS[idx];
+  });
 
   const now = new Date();
   const baseTime = new Date(now.getTime() + 86400000); // Tomorrow
   baseTime.setHours(10, 0, 0, 0);
 
   const matches: Match[] = [
+    // ================= 1. QUARTERFINALS (LAYER 1: 4 MATCHES) =================
+    // Left Wing Top: Match 1 (Slots 0 vs 1)
     {
       id: 'm-qf-1',
       matchNumber: 101,
@@ -37,14 +35,14 @@ export function generatePlayoffTreeFromTeams(teams: Team[]): Match[] {
       nextMatchId: 'm-sf-1',
       nextMatchSlot: 'teamA',
       stage: 'Quarterfinal 01 (MR12)',
-      teamAId: slotSquads[0]?.id || 't-seed-1',
-      teamAName: slotSquads[0]?.name || 'Seed 01 (TBD)',
-      teamATag: slotSquads[0]?.tag || 'SEED.1',
-      teamALogo: slotSquads[0]?.logo || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200&auto=format&fit=crop&q=80',
-      teamBId: slotSquads[1]?.id || 't-seed-8',
-      teamBName: slotSquads[1]?.name || 'Seed 08 (TBD)',
-      teamBTag: slotSquads[1]?.tag || 'SEED.8',
-      teamBLogo: slotSquads[1]?.logo || 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=200&auto=format&fit=crop&q=80',
+      teamAId: slotSquads[0].id,
+      teamAName: slotSquads[0].name,
+      teamATag: slotSquads[0].tag,
+      teamALogo: slotSquads[0].logo || '/images/team-placeholder.svg',
+      teamBId: slotSquads[1].id,
+      teamBName: slotSquads[1].name,
+      teamBTag: slotSquads[1].tag,
+      teamBLogo: slotSquads[1].logo || '/images/team-placeholder.svg',
       map: 'Mirage',
       dateTime: new Date(baseTime.getTime()).toISOString(),
       status: 'upcoming',
@@ -56,6 +54,7 @@ export function generatePlayoffTreeFromTeams(teams: Team[]): Match[] {
       teamASide: 'CT',
       teamBSide: 'T',
     },
+    // Left Wing Bottom: Match 2 (Slots 2 vs 3)
     {
       id: 'm-qf-2',
       matchNumber: 102,
@@ -64,14 +63,14 @@ export function generatePlayoffTreeFromTeams(teams: Team[]): Match[] {
       nextMatchId: 'm-sf-1',
       nextMatchSlot: 'teamB',
       stage: 'Quarterfinal 02 (MR12)',
-      teamAId: slotSquads[2]?.id || 't-seed-4',
-      teamAName: slotSquads[2]?.name || 'Seed 04 (TBD)',
-      teamATag: slotSquads[2]?.tag || 'SEED.4',
-      teamALogo: slotSquads[2]?.logo || 'https://images.unsplash.com/photo-1563089145-599997674d42?w=200&auto=format&fit=crop&q=80',
-      teamBId: slotSquads[3]?.id || 't-seed-5',
-      teamBName: slotSquads[3]?.name || 'Seed 05 (TBD)',
-      teamBTag: slotSquads[3]?.tag || 'SEED.5',
-      teamBLogo: slotSquads[3]?.logo || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=200&auto=format&fit=crop&q=80',
+      teamAId: slotSquads[2].id,
+      teamAName: slotSquads[2].name,
+      teamATag: slotSquads[2].tag,
+      teamALogo: slotSquads[2].logo || '/images/team-placeholder.svg',
+      teamBId: slotSquads[3].id,
+      teamBName: slotSquads[3].name,
+      teamBTag: slotSquads[3].tag,
+      teamBLogo: slotSquads[3].logo || '/images/team-placeholder.svg',
       map: 'Inferno',
       dateTime: new Date(baseTime.getTime() + 7200000).toISOString(),
       status: 'upcoming',
@@ -83,6 +82,7 @@ export function generatePlayoffTreeFromTeams(teams: Team[]): Match[] {
       teamASide: 'CT',
       teamBSide: 'T',
     },
+    // Right Wing Top: Match 3 (Slots 4 vs 5)
     {
       id: 'm-qf-3',
       matchNumber: 103,
@@ -91,14 +91,14 @@ export function generatePlayoffTreeFromTeams(teams: Team[]): Match[] {
       nextMatchId: 'm-sf-2',
       nextMatchSlot: 'teamA',
       stage: 'Quarterfinal 03 (MR12)',
-      teamAId: slotSquads[4]?.id || 't-seed-2',
-      teamAName: slotSquads[4]?.name || 'Seed 02 (TBD)',
-      teamATag: slotSquads[4]?.tag || 'SEED.2',
-      teamALogo: slotSquads[4]?.logo || 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=200&auto=format&fit=crop&q=80',
-      teamBId: slotSquads[5]?.id || 't-seed-7',
-      teamBName: slotSquads[5]?.name || 'Seed 07 (TBD)',
-      teamBTag: slotSquads[5]?.tag || 'SEED.7',
-      teamBLogo: slotSquads[5]?.logo || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200&auto=format&fit=crop&q=80',
+      teamAId: slotSquads[4].id,
+      teamAName: slotSquads[4].name,
+      teamATag: slotSquads[4].tag,
+      teamALogo: slotSquads[4].logo || '/images/team-placeholder.svg',
+      teamBId: slotSquads[5].id,
+      teamBName: slotSquads[5].name,
+      teamBTag: slotSquads[5].tag,
+      teamBLogo: slotSquads[5].logo || '/images/team-placeholder.svg',
       map: 'Dust II',
       dateTime: new Date(baseTime.getTime() + 14400000).toISOString(),
       status: 'upcoming',
@@ -110,6 +110,7 @@ export function generatePlayoffTreeFromTeams(teams: Team[]): Match[] {
       teamASide: 'CT',
       teamBSide: 'T',
     },
+    // Right Wing Bottom: Match 4 (Slots 6 vs 7)
     {
       id: 'm-qf-4',
       matchNumber: 104,
@@ -118,14 +119,14 @@ export function generatePlayoffTreeFromTeams(teams: Team[]): Match[] {
       nextMatchId: 'm-sf-2',
       nextMatchSlot: 'teamB',
       stage: 'Quarterfinal 04 (MR12)',
-      teamAId: slotSquads[6]?.id || 't-seed-3',
-      teamAName: slotSquads[6]?.name || 'Seed 03 (TBD)',
-      teamATag: slotSquads[6]?.tag || 'SEED.3',
-      teamALogo: slotSquads[6]?.logo || 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=200&auto=format&fit=crop&q=80',
-      teamBId: slotSquads[7]?.id || 't-seed-6',
-      teamBName: slotSquads[7]?.name || 'Seed 06 (TBD)',
-      teamBTag: slotSquads[7]?.tag || 'SEED.6',
-      teamBLogo: slotSquads[7]?.logo || 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=200&auto=format&fit=crop&q=80',
+      teamAId: slotSquads[6].id,
+      teamAName: slotSquads[6].name,
+      teamATag: slotSquads[6].tag,
+      teamALogo: slotSquads[6].logo || '/images/team-placeholder.svg',
+      teamBId: slotSquads[7].id,
+      teamBName: slotSquads[7].name,
+      teamBTag: slotSquads[7].tag,
+      teamBLogo: slotSquads[7].logo || '/images/team-placeholder.svg',
       map: 'Ancient',
       dateTime: new Date(baseTime.getTime() + 21600000).toISOString(),
       status: 'upcoming',
@@ -138,7 +139,8 @@ export function generatePlayoffTreeFromTeams(teams: Team[]): Match[] {
       teamBSide: 'T',
     },
 
-    // 2. Semifinals
+    // ================= 2. SEMIFINALS (START COMPLETELY FREE) =================
+    // Left Semifinal (Winner QF 01 vs Winner QF 02)
     {
       id: 'm-sf-1',
       matchNumber: 105,
@@ -150,11 +152,11 @@ export function generatePlayoffTreeFromTeams(teams: Team[]): Match[] {
       teamAId: 'tbd-sf1-a',
       teamAName: 'Winner QF 01',
       teamATag: 'W.QF1',
-      teamALogo: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200&auto=format&fit=crop&q=80',
+      teamALogo: '/images/team-placeholder.svg',
       teamBId: 'tbd-sf1-b',
       teamBName: 'Winner QF 02',
       teamBTag: 'W.QF2',
-      teamBLogo: 'https://images.unsplash.com/photo-1563089145-599997674d42?w=200&auto=format&fit=crop&q=80',
+      teamBLogo: '/images/team-placeholder.svg',
       map: 'Nuke',
       dateTime: new Date(baseTime.getTime() + 86400000 + 3600000).toISOString(),
       status: 'upcoming',
@@ -168,6 +170,7 @@ export function generatePlayoffTreeFromTeams(teams: Team[]): Match[] {
       teamASide: 'CT',
       teamBSide: 'T',
     },
+    // Right Semifinal (Winner QF 03 vs Winner QF 04)
     {
       id: 'm-sf-2',
       matchNumber: 106,
@@ -179,11 +182,11 @@ export function generatePlayoffTreeFromTeams(teams: Team[]): Match[] {
       teamAId: 'tbd-sf2-a',
       teamAName: 'Winner QF 03',
       teamATag: 'W.QF3',
-      teamALogo: 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=200&auto=format&fit=crop&q=80',
+      teamALogo: '/images/team-placeholder.svg',
       teamBId: 'tbd-sf2-b',
       teamBName: 'Winner QF 04',
       teamBTag: 'W.QF4',
-      teamBLogo: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=200&auto=format&fit=crop&q=80',
+      teamBLogo: '/images/team-placeholder.svg',
       map: 'Anubis',
       dateTime: new Date(baseTime.getTime() + 86400000 + 10800000).toISOString(),
       status: 'upcoming',
@@ -197,7 +200,7 @@ export function generatePlayoffTreeFromTeams(teams: Team[]): Match[] {
       teamBSide: 'T',
     },
 
-    // 3. Grand Championship Final
+    // ================= 3. GRAND FINAL (STARTS COMPLETELY FREE) =================
     {
       id: 'm-gf',
       matchNumber: 107,
@@ -207,11 +210,11 @@ export function generatePlayoffTreeFromTeams(teams: Team[]): Match[] {
       teamAId: 'tbd-sf1',
       teamAName: 'Winner Semifinal 01',
       teamATag: 'W.SF1',
-      teamALogo: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200&auto=format&fit=crop&q=80',
+      teamALogo: '/images/team-placeholder.svg',
       teamBId: 'tbd-sf2',
       teamBName: 'Winner Semifinal 02',
       teamBTag: 'W.SF2',
-      teamBLogo: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200&auto=format&fit=crop&q=80',
+      teamBLogo: '/images/team-placeholder.svg',
       map: 'Mirage',
       dateTime: new Date(baseTime.getTime() + 86400000 + 21600000).toISOString(),
       status: 'upcoming',
@@ -225,7 +228,7 @@ export function generatePlayoffTreeFromTeams(teams: Team[]): Match[] {
       teamBSide: 'T',
     },
 
-    // 4. 3rd Place Bronze Decider
+    // ================= 4. 3RD PLACE BRONZE DECIDER (FREE) =================
     {
       id: 'm-3rd',
       matchNumber: 108,
@@ -235,11 +238,11 @@ export function generatePlayoffTreeFromTeams(teams: Team[]): Match[] {
       teamAId: 'tbd-lsf1',
       teamAName: 'Runner-up Semifinal 01',
       teamATag: 'RU.SF1',
-      teamALogo: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200&auto=format&fit=crop&q=80',
+      teamALogo: '/images/team-placeholder.svg',
       teamBId: 'tbd-lsf2',
       teamBName: 'Runner-up Semifinal 02',
       teamBTag: 'RU.SF2',
-      teamBLogo: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200&auto=format&fit=crop&q=80',
+      teamBLogo: '/images/team-placeholder.svg',
       map: 'Dust II',
       dateTime: new Date(baseTime.getTime() + 86400000 + 18000000).toISOString(),
       status: 'upcoming',
@@ -474,10 +477,12 @@ export const SIXTEEN_BRACKET_TEAMS: Team[] = DEFAULT_TBD_TEAMS;
  * matching the exact structure from the reference tournament bracket
  */
 export function generate16TeamPlayoffTree(customTeams?: Team[]): Match[] {
-  const approvedCustom = customTeams ? customTeams.filter((team) => team.status === 'approved') : [];
+  const approved = customTeams ? customTeams.filter((team) => (team.status || '').toLowerCase() === 'approved') : [];
+  const sourceTeams = approved.length > 0 ? approved : (customTeams ? customTeams.filter((t) => (t.status || '').toLowerCase() !== 'rejected') : []);
+
   const t = Array.from({ length: 16 }, (_, idx) => {
-    if (approvedCustom[idx]) {
-      return approvedCustom[idx];
+    if (sourceTeams[idx]) {
+      return sourceTeams[idx];
     }
     return DEFAULT_TBD_TEAMS[idx];
   });

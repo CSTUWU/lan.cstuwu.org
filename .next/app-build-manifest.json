@@ -11,15 +11,30 @@
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
     ],
+    "/teams/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/teams/page.js"
+    ],
+    "/about/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/about/page.js"
+    ],
+    "/schedule/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/schedule/page.js"
+    ],
     "/scoreboard/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/scoreboard/page.js"
     ],
-    "/scoreboard/live/page": [
+    "/register/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/scoreboard/live/page.js"
+      "static/chunks/app/register/page.js"
     ]
   }
 }

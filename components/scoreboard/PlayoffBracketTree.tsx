@@ -55,6 +55,9 @@ import {
   reset16Matches,
   getLiveBroadcastChannel,
   refresh16PlayoffTreeFromApprovedTeams,
+  createAndSeedPlayoffTree,
+  getActiveBracketMode,
+  setActiveBracketMode,
 } from '@/lib/storage';
 
 interface PlayoffBracketTreeProps {
@@ -62,6 +65,7 @@ interface PlayoffBracketTreeProps {
   teams: Team[];
   onRefresh?: () => void;
   defaultMode?: '16-squad' | '8-squad' | 'linear';
+  showAdminControls?: boolean;
 }
 
 type BracketLayoutMode = '16-squad' | '8-squad' | 'linear';
@@ -148,9 +152,13 @@ export default function PlayoffBracketTree({
   matches,
   teams,
   onRefresh,
-  defaultMode = '16-squad',
+  defaultMode,
+  showAdminControls = false,
 }: PlayoffBracketTreeProps) {
-  const [layoutMode, setLayoutMode] = useState<BracketLayoutMode>(defaultMode);
+  const [layoutMode, setLayoutMode] = useState<BracketLayoutMode>(() => {
+    if (defaultMode) return defaultMode;
+    return getActiveBracketMode();
+  });
   const [scale, setScale] = useState(1);
   const [activeHoverTeam, setActiveHoverTeam] = useState<string | null>(null);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
@@ -165,6 +173,18 @@ export default function PlayoffBracketTree({
   const eightBracket = useMemo(() => getPlayoffBracket(matches, teams), [matches, teams]);
 
   const sixteenBracket = useMemo(() => getPlayoffBracket(sixteenMatches, teams), [sixteenMatches, teams]);
+
+  useEffect(() => {
+    // Listen for bracket mode changes triggered from Admin or other tabs
+    const handleModeChange = (e: Event) => {
+      const customEvent = e as CustomEvent<{ mode: BracketLayoutMode }>;
+      if (customEvent.detail?.mode) {
+        setLayoutMode(customEvent.detail.mode);
+      }
+    };
+    window.addEventListener('cst_bracket_mode_changed', handleModeChange);
+    return () => window.removeEventListener('cst_bracket_mode_changed', handleModeChange);
+  }, []);
 
   useEffect(() => {
     // Synchronize 1st layer of 16-squad playoff tree with approved teams
@@ -271,6 +291,13 @@ export default function PlayoffBracketTree({
     triggerNotice('✓ 16-Squad Playoff Tree restored to initial major tournament state!');
   };
 
+  const handleCreatePlayoffTree = () => {
+    const fresh = createAndSeedPlayoffTree(teams);
+    setSixteenMatches(fresh);
+    triggerNotice('✓ Playoff Tree created! 1st layer seeded with teams. Round 2, Semifinals & Finals are free.');
+    if (onRefresh) onRefresh();
+  };
+
   const handleAutoSimulateChampionship = async () => {
     if (isSimulatingAll) return;
     setIsSimulatingAll(true);
@@ -349,7 +376,10 @@ export default function PlayoffBracketTree({
             
             <div className="bg-surface/90 border border-tactical-border p-1 flex items-center gap-1">
               <button
-                onClick={() => setLayoutMode('16-squad')}
+                onClick={() => {
+                  setLayoutMode('16-squad');
+                  setActiveBracketMode('16-squad');
+                }}
                 className={`px-3 py-1.5 font-mono text-xs uppercase font-bold flex items-center gap-1.5 transition-all ${
                   layoutMode === '16-squad'
                     ? 'bg-gradient-to-r from-purple-600 to-cyan text-white shadow-[0_0_15px_rgba(168,85,247,0.4)]'
@@ -362,7 +392,10 @@ export default function PlayoffBracketTree({
               </button>
 
               <button
-                onClick={() => setLayoutMode('8-squad')}
+                onClick={() => {
+                  setLayoutMode('8-squad');
+                  setActiveBracketMode('8-squad');
+                }}
                 className={`px-3 py-1.5 font-mono text-xs uppercase font-bold flex items-center gap-1.5 transition-all ${
                   layoutMode === '8-squad'
                     ? 'bg-cyan text-background font-black shadow-[0_0_15px_rgba(0,213,255,0.4)]'
@@ -419,40 +452,53 @@ export default function PlayoffBracketTree({
               </button>
             </div>
 
-            {layoutMode === '16-squad' ? (
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleAutoSimulateChampionship}
-                  disabled={isSimulatingAll}
-                  className="px-3.5 py-2 bg-gradient-to-r from-purple-600 via-amber-500 to-cyan text-white hover:brightness-110 font-mono text-xs uppercase font-black flex items-center gap-1.5 border border-amber-400 shadow-[0_0_20px_rgba(255,184,0,0.4)] transition-all disabled:opacity-50"
-                  title="Watch automated progression from Round of 16 all the way to Champion Trophy!"
-                >
-                  <Zap className={`w-3.5 h-3.5 text-tactical-gold ${isSimulatingAll ? 'animate-spin' : 'animate-bounce'}`} />
-                  <span>{isSimulatingAll ? 'SIMULATING...' : 'AUTO-SIMULATE ALL'}</span>
-                </button>
+            {showAdminControls && (
+              <>
+                {layoutMode === '16-squad' ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      onClick={handleCreatePlayoffTree}
+                      className="px-3.5 py-2 bg-gradient-to-r from-purple-600 to-cyan hover:brightness-110 text-white font-mono text-xs uppercase font-black flex items-center gap-1.5 border border-cyan/60 shadow-[0_0_20px_rgba(0,213,255,0.3)] transition-all"
+                      title="Seed 1st layer with registered squads; Round 2, Semifinals & Finals start free and advance automatically on win"
+                    >
+                      <Trophy className="w-3.5 h-3.5 text-cyan" />
+                      <span>CREATE PLAYOFF TREE</span>
+                    </button>
 
-                <button
-                  onClick={handleReset16Tree}
-                  className="px-3 py-2 bg-surface border border-tactical-border hover:border-purple-400 text-secondaryText hover:text-white font-mono text-xs uppercase flex items-center gap-1.5 transition-colors"
-                  title="Reset 16 squads to initial tournament bracket state"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  <span>RESET BRACKET</span>
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => {
-                  generateAndStorePlayoffBracket(teams);
-                  if (onRefresh) onRefresh();
-                  triggerNotice('✓ Re-seeded official 8-squad UWU bracket!');
-                }}
-                className="px-3 py-2 bg-surface border border-tactical-border hover:border-cyan text-secondaryText hover:text-white font-mono text-xs uppercase flex items-center gap-1.5 transition-colors"
-                title="Re-seed 8-squad bracket from approved teams"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                <span>RE-SEED UWU</span>
-              </button>
+                    <button
+                      onClick={handleAutoSimulateChampionship}
+                      disabled={isSimulatingAll}
+                      className="px-3.5 py-2 bg-gradient-to-r from-purple-600 via-amber-500 to-cyan text-white hover:brightness-110 font-mono text-xs uppercase font-black flex items-center gap-1.5 border border-amber-400 shadow-[0_0_20px_rgba(255,184,0,0.4)] transition-all disabled:opacity-50"
+                      title="Watch automated progression from Round of 16 all the way to Champion Trophy!"
+                    >
+                      <Zap className={`w-3.5 h-3.5 text-tactical-gold ${isSimulatingAll ? 'animate-spin' : 'animate-bounce'}`} />
+                      <span>{isSimulatingAll ? 'SIMULATING...' : 'AUTO-SIMULATE ALL'}</span>
+                    </button>
+
+                    <button
+                      onClick={handleReset16Tree}
+                      className="px-3 py-2 bg-surface border border-tactical-border hover:border-purple-400 text-secondaryText hover:text-white font-mono text-xs uppercase flex items-center gap-1.5 transition-colors"
+                      title="Reset 16 squads to initial tournament bracket state"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>RESET BRACKET</span>
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => {
+                      generateAndStorePlayoffBracket(teams);
+                      if (onRefresh) onRefresh();
+                      triggerNotice('✓ Re-seeded official 8-squad UWU bracket!');
+                    }}
+                    className="px-3 py-2 bg-surface border border-tactical-border hover:border-cyan text-secondaryText hover:text-white font-mono text-xs uppercase flex items-center gap-1.5 transition-colors"
+                    title="Re-seed 8-squad bracket from approved teams"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>RE-SEED UWU</span>
+                  </button>
+                )}
+              </>
             )}
 
             <Link
@@ -494,8 +540,8 @@ export default function PlayoffBracketTree({
               activeHoverTeam={activeHoverTeam}
               setActiveHoverTeam={setActiveHoverTeam}
               onSelectMatch={setSelectedMatch}
-              onSimulateWin={handleSimulate16Win}
-              onSimulateRound={handleSimulate16Round}
+              onSimulateWin={showAdminControls ? handleSimulate16Win : undefined}
+              onSimulateRound={showAdminControls ? handleSimulate16Round : undefined}
             />
           )}
 
@@ -506,8 +552,8 @@ export default function PlayoffBracketTree({
               activeHoverTeam={activeHoverTeam}
               setActiveHoverTeam={setActiveHoverTeam}
               onSelectMatch={setSelectedMatch}
-              onSimulateWin={handleSimulate8Win}
-              onSimulateRound={handleSimulate8Round}
+              onSimulateWin={showAdminControls ? handleSimulate8Win : undefined}
+              onSimulateRound={showAdminControls ? handleSimulate8Round : undefined}
             />
           )}
 
@@ -515,8 +561,8 @@ export default function PlayoffBracketTree({
             <LinearStageBracketView
               bracket={eightBracket}
               onSelectMatch={setSelectedMatch}
-              onSimulateWin={handleSimulate8Win}
-              onSimulateRound={handleSimulate8Round}
+              onSimulateWin={showAdminControls ? handleSimulate8Win : undefined}
+              onSimulateRound={showAdminControls ? handleSimulate8Round : undefined}
             />
           )}
         </div>
@@ -525,6 +571,7 @@ export default function PlayoffBracketTree({
       {selectedMatch && (
         <MatchDossierModal
           match={selectedMatch}
+          showAdminControls={showAdminControls}
           onClose={() => setSelectedMatch(null)}
           onSimulateWin={(side) => {
             if (layoutMode === '16-squad') handleSimulate16Win(selectedMatch.id, side);
@@ -549,8 +596,8 @@ interface DualWingBracket16Props {
   activeHoverTeam: string | null;
   setActiveHoverTeam: (id: string | null) => void;
   onSelectMatch: (m: Match) => void;
-  onSimulateWin: (id: string, side: 'teamA' | 'teamB') => void;
-  onSimulateRound: (id: string, side: 'teamA' | 'teamB') => void;
+  onSimulateWin?: (id: string, side: 'teamA' | 'teamB') => void;
+  onSimulateRound?: (id: string, side: 'teamA' | 'teamB') => void;
 }
 
 function DualWingBracket16View({
@@ -581,6 +628,9 @@ function DualWingBracket16View({
   const sf_2 = matches.find((m) => m.id === 'm-sf-2') || matches[13];
 
   const finalMatch = matches.find((m) => m.id === 'm-gf') || matches[14] || bracket.final;
+
+  const simWin = (id?: string, side?: 'teamA' | 'teamB') =>
+    onSimulateWin && id && side ? () => onSimulateWin(id, side) : undefined;
 
   // Dynamic Connector wire styling that illuminates the winning route
   const getWireClasses = (teamId?: string, winnerId?: string) => {
@@ -739,7 +789,7 @@ function DualWingBracket16View({
               onMouseEnter={() => setActiveHoverTeam(r16_1.teamAId)}
               onMouseLeave={() => setActiveHoverTeam(null)}
               onClick={() => onSelectMatch(r16_1)}
-              onSimWin={() => onSimulateWin(r16_1.id, 'teamA')}
+              onSimWin={simWin(r16_1?.id, 'teamA')}
             />
             <TacticalTeamPill
               name={r16_1.teamBName}
@@ -753,7 +803,7 @@ function DualWingBracket16View({
               onMouseEnter={() => setActiveHoverTeam(r16_1.teamBId)}
               onMouseLeave={() => setActiveHoverTeam(null)}
               onClick={() => onSelectMatch(r16_1)}
-              onSimWin={() => onSimulateWin(r16_1.id, 'teamB')}
+              onSimWin={simWin(r16_1?.id, 'teamB')}
             />
           </div>
 
@@ -771,7 +821,7 @@ function DualWingBracket16View({
               onMouseEnter={() => setActiveHoverTeam(r16_2.teamAId)}
               onMouseLeave={() => setActiveHoverTeam(null)}
               onClick={() => onSelectMatch(r16_2)}
-              onSimWin={() => onSimulateWin(r16_2.id, 'teamA')}
+              onSimWin={simWin(r16_2?.id, 'teamA')}
             />
             <TacticalTeamPill
               name={r16_2.teamBName}
@@ -785,7 +835,7 @@ function DualWingBracket16View({
               onMouseEnter={() => setActiveHoverTeam(r16_2.teamBId)}
               onMouseLeave={() => setActiveHoverTeam(null)}
               onClick={() => onSelectMatch(r16_2)}
-              onSimWin={() => onSimulateWin(r16_2.id, 'teamB')}
+              onSimWin={simWin(r16_2?.id, 'teamB')}
             />
           </div>
         </div>
@@ -811,7 +861,7 @@ function DualWingBracket16View({
               onMouseEnter={() => setActiveHoverTeam(r16_3.teamAId)}
               onMouseLeave={() => setActiveHoverTeam(null)}
               onClick={() => onSelectMatch(r16_3)}
-              onSimWin={() => onSimulateWin(r16_3.id, 'teamA')}
+              onSimWin={simWin(r16_3?.id, 'teamA')}
             />
             <TacticalTeamPill
               name={r16_3.teamBName}
@@ -825,7 +875,7 @@ function DualWingBracket16View({
               onMouseEnter={() => setActiveHoverTeam(r16_3.teamBId)}
               onMouseLeave={() => setActiveHoverTeam(null)}
               onClick={() => onSelectMatch(r16_3)}
-              onSimWin={() => onSimulateWin(r16_3.id, 'teamB')}
+              onSimWin={simWin(r16_3?.id, 'teamB')}
             />
           </div>
 
@@ -843,7 +893,7 @@ function DualWingBracket16View({
               onMouseEnter={() => setActiveHoverTeam(r16_4.teamAId)}
               onMouseLeave={() => setActiveHoverTeam(null)}
               onClick={() => onSelectMatch(r16_4)}
-              onSimWin={() => onSimulateWin(r16_4.id, 'teamA')}
+              onSimWin={simWin(r16_4?.id, 'teamA')}
             />
             <TacticalTeamPill
               name={r16_4.teamBName}
@@ -857,7 +907,7 @@ function DualWingBracket16View({
               onMouseEnter={() => setActiveHoverTeam(r16_4.teamBId)}
               onMouseLeave={() => setActiveHoverTeam(null)}
               onClick={() => onSelectMatch(r16_4)}
-              onSimWin={() => onSimulateWin(r16_4.id, 'teamB')}
+              onSimWin={simWin(r16_4?.id, 'teamB')}
             />
           </div>
         </div>
@@ -882,7 +932,7 @@ function DualWingBracket16View({
             onMouseEnter={() => setActiveHoverTeam(qf_1.teamAId)}
             onMouseLeave={() => setActiveHoverTeam(null)}
             onClick={() => onSelectMatch(qf_1)}
-            onSimWin={() => onSimulateWin(qf_1.id, 'teamA')}
+            onSimWin={simWin(qf_1?.id, 'teamA')}
           />
           <TacticalTeamPill
             name={qf_1.teamBName}
@@ -896,7 +946,7 @@ function DualWingBracket16View({
             onMouseEnter={() => setActiveHoverTeam(qf_1.teamBId)}
             onMouseLeave={() => setActiveHoverTeam(null)}
             onClick={() => onSelectMatch(qf_1)}
-            onSimWin={() => onSimulateWin(qf_1.id, 'teamB')}
+            onSimWin={simWin(qf_1?.id, 'teamB')}
           />
         </div>
 
@@ -914,7 +964,7 @@ function DualWingBracket16View({
             onMouseEnter={() => setActiveHoverTeam(qf_2.teamAId)}
             onMouseLeave={() => setActiveHoverTeam(null)}
             onClick={() => onSelectMatch(qf_2)}
-            onSimWin={() => onSimulateWin(qf_2.id, 'teamA')}
+            onSimWin={simWin(qf_2?.id, 'teamA')}
           />
           <TacticalTeamPill
             name={qf_2.teamBName}
@@ -928,7 +978,7 @@ function DualWingBracket16View({
             onMouseEnter={() => setActiveHoverTeam(qf_2.teamBId)}
             onMouseLeave={() => setActiveHoverTeam(null)}
             onClick={() => onSelectMatch(qf_2)}
-            onSimWin={() => onSimulateWin(qf_2.id, 'teamB')}
+            onSimWin={simWin(qf_2?.id, 'teamB')}
           />
         </div>
       </div>
@@ -1136,7 +1186,7 @@ function DualWingBracket16View({
             onMouseEnter={() => setActiveHoverTeam(qf_3.teamAId)}
             onMouseLeave={() => setActiveHoverTeam(null)}
             onClick={() => onSelectMatch(qf_3)}
-            onSimWin={() => onSimulateWin(qf_3.id, 'teamA')}
+            onSimWin={simWin(qf_3?.id, 'teamA')}
           />
           <TacticalTeamPill
             name={qf_3.teamBName}
@@ -1150,7 +1200,7 @@ function DualWingBracket16View({
             onMouseEnter={() => setActiveHoverTeam(qf_3.teamBId)}
             onMouseLeave={() => setActiveHoverTeam(null)}
             onClick={() => onSelectMatch(qf_3)}
-            onSimWin={() => onSimulateWin(qf_3.id, 'teamB')}
+            onSimWin={simWin(qf_3?.id, 'teamB')}
           />
         </div>
 
@@ -1168,7 +1218,7 @@ function DualWingBracket16View({
             onMouseEnter={() => setActiveHoverTeam(qf_4.teamAId)}
             onMouseLeave={() => setActiveHoverTeam(null)}
             onClick={() => onSelectMatch(qf_4)}
-            onSimWin={() => onSimulateWin(qf_4.id, 'teamA')}
+            onSimWin={simWin(qf_4?.id, 'teamA')}
           />
           <TacticalTeamPill
             name={qf_4.teamBName}
@@ -1182,7 +1232,7 @@ function DualWingBracket16View({
             onMouseEnter={() => setActiveHoverTeam(qf_4.teamBId)}
             onMouseLeave={() => setActiveHoverTeam(null)}
             onClick={() => onSelectMatch(qf_4)}
-            onSimWin={() => onSimulateWin(qf_4.id, 'teamB')}
+            onSimWin={simWin(qf_4?.id, 'teamB')}
           />
         </div>
       </div>
@@ -1208,7 +1258,7 @@ function DualWingBracket16View({
               onMouseEnter={() => setActiveHoverTeam(r16_5.teamAId)}
               onMouseLeave={() => setActiveHoverTeam(null)}
               onClick={() => onSelectMatch(r16_5)}
-              onSimWin={() => onSimulateWin(r16_5.id, 'teamA')}
+              onSimWin={simWin(r16_5?.id, 'teamA')}
             />
             <TacticalTeamPill
               name={r16_5.teamBName}
@@ -1222,7 +1272,7 @@ function DualWingBracket16View({
               onMouseEnter={() => setActiveHoverTeam(r16_5.teamBId)}
               onMouseLeave={() => setActiveHoverTeam(null)}
               onClick={() => onSelectMatch(r16_5)}
-              onSimWin={() => onSimulateWin(r16_5.id, 'teamB')}
+              onSimWin={simWin(r16_5?.id, 'teamB')}
             />
           </div>
 
@@ -1239,7 +1289,7 @@ function DualWingBracket16View({
               onMouseEnter={() => setActiveHoverTeam(r16_6.teamAId)}
               onMouseLeave={() => setActiveHoverTeam(null)}
               onClick={() => onSelectMatch(r16_6)}
-              onSimWin={() => onSimulateWin(r16_6.id, 'teamA')}
+              onSimWin={simWin(r16_6?.id, 'teamA')}
             />
             <TacticalTeamPill
               name={r16_6.teamBName}
@@ -1253,7 +1303,7 @@ function DualWingBracket16View({
               onMouseEnter={() => setActiveHoverTeam(r16_6.teamBId)}
               onMouseLeave={() => setActiveHoverTeam(null)}
               onClick={() => onSelectMatch(r16_6)}
-              onSimWin={() => onSimulateWin(r16_6.id, 'teamB')}
+              onSimWin={simWin(r16_6?.id, 'teamB')}
             />
           </div>
         </div>
@@ -1278,7 +1328,7 @@ function DualWingBracket16View({
               onMouseEnter={() => setActiveHoverTeam(r16_7.teamAId)}
               onMouseLeave={() => setActiveHoverTeam(null)}
               onClick={() => onSelectMatch(r16_7)}
-              onSimWin={() => onSimulateWin(r16_7.id, 'teamA')}
+              onSimWin={simWin(r16_7?.id, 'teamA')}
             />
             <TacticalTeamPill
               name={r16_7.teamBName}
@@ -1292,7 +1342,7 @@ function DualWingBracket16View({
               onMouseEnter={() => setActiveHoverTeam(r16_7.teamBId)}
               onMouseLeave={() => setActiveHoverTeam(null)}
               onClick={() => onSelectMatch(r16_7)}
-              onSimWin={() => onSimulateWin(r16_7.id, 'teamB')}
+              onSimWin={simWin(r16_7?.id, 'teamB')}
             />
           </div>
 
@@ -1309,7 +1359,7 @@ function DualWingBracket16View({
               onMouseEnter={() => setActiveHoverTeam(r16_8.teamAId)}
               onMouseLeave={() => setActiveHoverTeam(null)}
               onClick={() => onSelectMatch(r16_8)}
-              onSimWin={() => onSimulateWin(r16_8.id, 'teamA')}
+              onSimWin={simWin(r16_8?.id, 'teamA')}
             />
             <TacticalTeamPill
               name={r16_8.teamBName}
@@ -1323,7 +1373,7 @@ function DualWingBracket16View({
               onMouseEnter={() => setActiveHoverTeam(r16_8.teamBId)}
               onMouseLeave={() => setActiveHoverTeam(null)}
               onClick={() => onSelectMatch(r16_8)}
-              onSimWin={() => onSimulateWin(r16_8.id, 'teamB')}
+              onSimWin={simWin(r16_8?.id, 'teamB')}
             />
           </div>
         </div>
@@ -1338,8 +1388,8 @@ interface DualWingBracket8Props {
   activeHoverTeam: string | null;
   setActiveHoverTeam: (id: string | null) => void;
   onSelectMatch: (m: Match) => void;
-  onSimulateWin: (id: string, side: 'teamA' | 'teamB') => void;
-  onSimulateRound: (id: string, side: 'teamA' | 'teamB') => void;
+  onSimulateWin?: (id: string, side: 'teamA' | 'teamB') => void;
+  onSimulateRound?: (id: string, side: 'teamA' | 'teamB') => void;
 }
 
 function DualWingBracket8View({
@@ -1409,7 +1459,7 @@ function DualWingBracket8View({
               onMouseEnter={() => setActiveHoverTeam(qf1.teamAId)}
               onMouseLeave={() => setActiveHoverTeam(null)}
               onClick={() => onSelectMatch(qf1)}
-              onSimWin={() => onSimulateWin(qf1.id, 'teamA')}
+              onSimWin={onSimulateWin ? () => onSimulateWin(qf1.id, 'teamA') : undefined}
             />
             <TacticalTeamPill
               name={qf1.teamBName}
@@ -1422,7 +1472,7 @@ function DualWingBracket8View({
               onMouseEnter={() => setActiveHoverTeam(qf1.teamBId)}
               onMouseLeave={() => setActiveHoverTeam(null)}
               onClick={() => onSelectMatch(qf1)}
-              onSimWin={() => onSimulateWin(qf1.id, 'teamB')}
+              onSimWin={onSimulateWin ? () => onSimulateWin(qf1.id, 'teamB') : undefined}
             />
           </div>
         )}
@@ -1444,7 +1494,7 @@ function DualWingBracket8View({
               onMouseEnter={() => setActiveHoverTeam(qf2.teamAId)}
               onMouseLeave={() => setActiveHoverTeam(null)}
               onClick={() => onSelectMatch(qf2)}
-              onSimWin={() => onSimulateWin(qf2.id, 'teamA')}
+              onSimWin={onSimulateWin ? () => onSimulateWin(qf2.id, 'teamA') : undefined}
             />
             <TacticalTeamPill
               name={qf2.teamBName}
@@ -1457,7 +1507,7 @@ function DualWingBracket8View({
               onMouseEnter={() => setActiveHoverTeam(qf2.teamBId)}
               onMouseLeave={() => setActiveHoverTeam(null)}
               onClick={() => onSelectMatch(qf2)}
-              onSimWin={() => onSimulateWin(qf2.id, 'teamB')}
+              onSimWin={onSimulateWin ? () => onSimulateWin(qf2.id, 'teamB') : undefined}
             />
           </div>
         )}
@@ -1481,7 +1531,7 @@ function DualWingBracket8View({
               onMouseEnter={() => setActiveHoverTeam(sf1.teamAId)}
               onMouseLeave={() => setActiveHoverTeam(null)}
               onClick={() => onSelectMatch(sf1)}
-              onSimWin={() => onSimulateWin(sf1.id, 'teamA')}
+              onSimWin={onSimulateWin ? () => onSimulateWin(sf1.id, 'teamA') : undefined}
             />
             <TacticalTeamPill
               name={sf1.teamBName}
@@ -1494,7 +1544,7 @@ function DualWingBracket8View({
               onMouseEnter={() => setActiveHoverTeam(sf1.teamBId)}
               onMouseLeave={() => setActiveHoverTeam(null)}
               onClick={() => onSelectMatch(sf1)}
-              onSimWin={() => onSimulateWin(sf1.id, 'teamB')}
+              onSimWin={onSimulateWin ? () => onSimulateWin(sf1.id, 'teamB') : undefined}
             />
           </div>
         </div>
@@ -1514,14 +1564,26 @@ function DualWingBracket8View({
           <div className="w-full space-y-3">
             <div
               onClick={() => onSelectMatch(finalMatch)}
-              className="p-3 bg-gradient-to-r from-purple-900/80 to-[#1A1028] border-2 border-purple-400 text-center shadow-[0_0_20px_rgba(168,85,247,0.5)] clip-tactical cursor-pointer hover:scale-105 transition-transform"
+              className={`p-3 bg-gradient-to-r from-purple-900/80 to-[#1A1028] border-2 text-center clip-tactical cursor-pointer hover:scale-105 transition-all ${
+                finalMatch.winnerId === finalMatch.teamAId
+                  ? 'border-tactical-gold shadow-[0_0_25px_rgba(255,184,0,0.6)] ring-1 ring-amber-400'
+                  : 'border-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.5)]'
+              }`}
             >
               <div className="font-display font-black text-xs uppercase text-white truncate tracking-wider">
                 {finalMatch.teamAName}
               </div>
-              <div className="text-[9px] font-mono text-purple-300 uppercase tracking-widest font-bold">
-                LEFT SEMIFINAL WINNER
+              <div className="text-[9px] font-mono text-purple-300 uppercase tracking-widest font-bold flex items-center justify-center gap-1.5 mt-0.5">
+                <span>LEFT SEMIFINAL WINNER</span>
+                {finalMatch.winnerId === finalMatch.teamAId && (
+                  <span className="text-tactical-gold font-black">★ WON</span>
+                )}
               </div>
+              {(finalMatch.scoreA > 0 || finalMatch.scoreB > 0 || finalMatch.status === 'live' || finalMatch.status === 'completed') && (
+                <div className="font-mono text-sm font-black text-tactical-gold mt-1">
+                  {finalMatch.scoreA}
+                </div>
+              )}
             </div>
 
             <div className="flex items-center justify-center gap-2">
@@ -1530,14 +1592,43 @@ function DualWingBracket8View({
 
             <div
               onClick={() => onSelectMatch(finalMatch)}
-              className="p-3 bg-gradient-to-r from-cyan-900/80 to-[#0A1B28] border-2 border-cyan-400 text-center shadow-[0_0_20px_rgba(0,213,255,0.5)] clip-tactical cursor-pointer hover:scale-105 transition-transform"
+              className={`p-3 bg-gradient-to-r from-cyan-900/80 to-[#0A1B28] border-2 text-center clip-tactical cursor-pointer hover:scale-105 transition-all ${
+                finalMatch.winnerId === finalMatch.teamBId
+                  ? 'border-tactical-gold shadow-[0_0_25px_rgba(255,184,0,0.6)] ring-1 ring-amber-400'
+                  : 'border-cyan-400 shadow-[0_0_20px_rgba(0,213,255,0.5)]'
+              }`}
             >
               <div className="font-display font-black text-xs uppercase text-white truncate tracking-wider">
                 {finalMatch.teamBName}
               </div>
-              <div className="text-[9px] font-mono text-cyan-300 uppercase tracking-widest font-bold">
-                RIGHT SEMIFINAL WINNER
+              <div className="text-[9px] font-mono text-cyan-300 uppercase tracking-widest font-bold flex items-center justify-center gap-1.5 mt-0.5">
+                <span>RIGHT SEMIFINAL WINNER</span>
+                {finalMatch.winnerId === finalMatch.teamBId && (
+                  <span className="text-tactical-gold font-black">★ WON</span>
+                )}
               </div>
+              {(finalMatch.scoreA > 0 || finalMatch.scoreB > 0 || finalMatch.status === 'live' || finalMatch.status === 'completed') && (
+                <div className="font-mono text-sm font-black text-tactical-gold mt-1">
+                  {finalMatch.scoreB}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Crowned Champion Badge or Awaiting Champion Status */}
+        {bracket.champion ? (
+          <div className="mt-4 pt-3 border-t border-tactical-gold/40 text-center animate-in zoom-in-95 duration-500 w-full">
+            <div className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold text-tactical-gold uppercase tracking-widest px-2.5 py-1 bg-amber-500/20 border border-amber-500/60 shadow-[0_0_20px_rgba(255,184,0,0.5)]">
+              <Crown className="w-3.5 h-3.5 text-tactical-gold animate-bounce" />
+              <span className="truncate max-w-[170px]">{bracket.champion.name}</span>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-4 pt-3 border-t border-tactical-gold/20 text-center w-full">
+            <div className="inline-flex items-center gap-1.5 text-[9px] font-mono font-bold text-tactical-gold/80 uppercase tracking-widest px-2.5 py-1 bg-amber-500/10 border border-amber-500/30">
+              <Trophy className="w-3 h-3 text-tactical-gold/70" />
+              <span>AWAITING CHAMPION</span>
             </div>
           </div>
         )}
@@ -1561,7 +1652,7 @@ function DualWingBracket8View({
               onMouseEnter={() => setActiveHoverTeam(sf2.teamAId)}
               onMouseLeave={() => setActiveHoverTeam(null)}
               onClick={() => onSelectMatch(sf2)}
-              onSimWin={() => onSimulateWin(sf2.id, 'teamA')}
+              onSimWin={onSimulateWin ? () => onSimulateWin(sf2.id, 'teamA') : undefined}
             />
             <TacticalTeamPill
               name={sf2.teamBName}
@@ -1574,7 +1665,7 @@ function DualWingBracket8View({
               onMouseEnter={() => setActiveHoverTeam(sf2.teamBId)}
               onMouseLeave={() => setActiveHoverTeam(null)}
               onClick={() => onSelectMatch(sf2)}
-              onSimWin={() => onSimulateWin(sf2.id, 'teamB')}
+              onSimWin={onSimulateWin ? () => onSimulateWin(sf2.id, 'teamB') : undefined}
             />
           </div>
         </div>
@@ -1598,7 +1689,7 @@ function DualWingBracket8View({
               onMouseEnter={() => setActiveHoverTeam(qf3.teamAId)}
               onMouseLeave={() => setActiveHoverTeam(null)}
               onClick={() => onSelectMatch(qf3)}
-              onSimWin={() => onSimulateWin(qf3.id, 'teamA')}
+              onSimWin={onSimulateWin ? () => onSimulateWin(qf3.id, 'teamA') : undefined}
             />
             <TacticalTeamPill
               name={qf3.teamBName}
@@ -1611,7 +1702,7 @@ function DualWingBracket8View({
               onMouseEnter={() => setActiveHoverTeam(qf3.teamBId)}
               onMouseLeave={() => setActiveHoverTeam(null)}
               onClick={() => onSelectMatch(qf3)}
-              onSimWin={() => onSimulateWin(qf3.id, 'teamB')}
+              onSimWin={onSimulateWin ? () => onSimulateWin(qf3.id, 'teamB') : undefined}
             />
           </div>
         )}
@@ -1633,7 +1724,7 @@ function DualWingBracket8View({
               onMouseEnter={() => setActiveHoverTeam(qf4.teamAId)}
               onMouseLeave={() => setActiveHoverTeam(null)}
               onClick={() => onSelectMatch(qf4)}
-              onSimWin={() => onSimulateWin(qf4.id, 'teamA')}
+              onSimWin={onSimulateWin ? () => onSimulateWin(qf4.id, 'teamA') : undefined}
             />
             <TacticalTeamPill
               name={qf4.teamBName}
@@ -1646,7 +1737,7 @@ function DualWingBracket8View({
               onMouseEnter={() => setActiveHoverTeam(qf4.teamBId)}
               onMouseLeave={() => setActiveHoverTeam(null)}
               onClick={() => onSelectMatch(qf4)}
-              onSimWin={() => onSimulateWin(qf4.id, 'teamB')}
+              onSimWin={onSimulateWin ? () => onSimulateWin(qf4.id, 'teamB') : undefined}
             />
           </div>
         )}
@@ -1658,8 +1749,8 @@ function DualWingBracket8View({
 interface LinearStageBracketProps {
   bracket: PlayoffBracket;
   onSelectMatch: (m: Match) => void;
-  onSimulateWin: (id: string, side: 'teamA' | 'teamB') => void;
-  onSimulateRound: (id: string, side: 'teamA' | 'teamB') => void;
+  onSimulateWin?: (id: string, side: 'teamA' | 'teamB') => void;
+  onSimulateRound?: (id: string, side: 'teamA' | 'teamB') => void;
 }
 
 function LinearStageBracketView({
@@ -1692,7 +1783,7 @@ function LinearStageBracketView({
               isWinner={match.winnerId === match.teamAId}
               themeKey={idx < 2 ? 'purple' : 'cyan'}
               onClick={() => onSelectMatch(match)}
-              onSimWin={() => onSimulateWin(match.id, 'teamA')}
+              onSimWin={onSimulateWin ? () => onSimulateWin(match.id, 'teamA') : undefined}
             />
             <TacticalTeamPill
               name={match.teamBName}
@@ -1702,7 +1793,7 @@ function LinearStageBracketView({
               isWinner={match.winnerId === match.teamBId}
               themeKey={idx < 2 ? 'orange' : 'red'}
               onClick={() => onSelectMatch(match)}
-              onSimWin={() => onSimulateWin(match.id, 'teamB')}
+              onSimWin={onSimulateWin ? () => onSimulateWin(match.id, 'teamB') : undefined}
             />
           </div>
         ))}
@@ -1729,7 +1820,7 @@ function LinearStageBracketView({
               isWinner={match.winnerId === match.teamAId}
               themeKey={idx === 0 ? 'purple' : 'cyan'}
               onClick={() => onSelectMatch(match)}
-              onSimWin={() => onSimulateWin(match.id, 'teamA')}
+              onSimWin={onSimulateWin ? () => onSimulateWin(match.id, 'teamA') : undefined}
             />
             <TacticalTeamPill
               name={match.teamBName}
@@ -1739,7 +1830,7 @@ function LinearStageBracketView({
               isWinner={match.winnerId === match.teamBId}
               themeKey={idx === 0 ? 'orange' : 'red'}
               onClick={() => onSelectMatch(match)}
-              onSimWin={() => onSimulateWin(match.id, 'teamB')}
+              onSimWin={onSimulateWin ? () => onSimulateWin(match.id, 'teamB') : undefined}
             />
           </div>
         ))}
@@ -1766,7 +1857,7 @@ function LinearStageBracketView({
               isWinner={bracket.final.winnerId === bracket.final.teamAId}
               themeKey="gold"
               onClick={() => onSelectMatch(bracket.final!)}
-              onSimWin={() => onSimulateWin(bracket.final!.id, 'teamA')}
+              onSimWin={onSimulateWin ? () => onSimulateWin(bracket.final!.id, 'teamA') : undefined}
             />
             <div className="text-center font-mono text-xs font-black text-tactical-gold">VS</div>
             <TacticalTeamPill
@@ -1777,7 +1868,7 @@ function LinearStageBracketView({
               isWinner={bracket.final.winnerId === bracket.final.teamBId}
               themeKey="gold"
               onClick={() => onSelectMatch(bracket.final!)}
-              onSimWin={() => onSimulateWin(bracket.final!.id, 'teamB')}
+              onSimWin={onSimulateWin ? () => onSimulateWin(bracket.final!.id, 'teamB') : undefined}
             />
           </div>
         )}
@@ -1916,11 +2007,12 @@ function TacticalTeamPill({
 interface MatchDossierModalProps {
   match: Match;
   onClose: () => void;
-  onSimulateWin: (side: 'teamA' | 'teamB') => void;
-  onSimulateRound: (side: 'teamA' | 'teamB') => void;
+  showAdminControls?: boolean;
+  onSimulateWin?: (side: 'teamA' | 'teamB') => void;
+  onSimulateRound?: (side: 'teamA' | 'teamB') => void;
 }
 
-function MatchDossierModal({ match, onClose, onSimulateWin, onSimulateRound }: MatchDossierModalProps) {
+function MatchDossierModal({ match, onClose, showAdminControls = false, onSimulateWin, onSimulateRound }: MatchDossierModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
       <div
@@ -1957,12 +2049,14 @@ function MatchDossierModal({ match, onClose, onSimulateWin, onSimulateRound }: M
             </div>
             <h4 className="font-display font-black text-sm text-white uppercase truncate">{match.teamAName}</h4>
             <div className="text-2xl font-display font-black text-cyan">{match.scoreA}</div>
-            <button
-              onClick={() => onSimulateWin('teamA')}
-              className="px-2.5 py-1 bg-cyan text-black font-mono text-[10px] font-black uppercase hover:bg-cyan/90 transition-colors"
-            >
-              SIM WIN (+13)
-            </button>
+            {showAdminControls && onSimulateWin && (
+              <button
+                onClick={() => onSimulateWin('teamA')}
+                className="px-2.5 py-1 bg-cyan text-black font-mono text-[10px] font-black uppercase hover:bg-cyan/90 transition-colors"
+              >
+                SIM WIN (+13)
+              </button>
+            )}
           </div>
 
           <div className="col-span-1 text-center font-display font-black text-lg text-tactical-gold">
@@ -1975,12 +2069,14 @@ function MatchDossierModal({ match, onClose, onSimulateWin, onSimulateRound }: M
             </div>
             <h4 className="font-display font-black text-sm text-white uppercase truncate">{match.teamBName}</h4>
             <div className="text-2xl font-display font-black text-orange">{match.scoreB}</div>
-            <button
-              onClick={() => onSimulateWin('teamB')}
-              className="px-2.5 py-1 bg-orange text-black font-mono text-[10px] font-black uppercase hover:bg-orange/90 transition-colors"
-            >
-              SIM WIN (+13)
-            </button>
+            {showAdminControls && onSimulateWin && (
+              <button
+                onClick={() => onSimulateWin('teamB')}
+                className="px-2.5 py-1 bg-orange text-black font-mono text-[10px] font-black uppercase hover:bg-orange/90 transition-colors"
+              >
+                SIM WIN (+13)
+              </button>
+            )}
           </div>
         </div>
 

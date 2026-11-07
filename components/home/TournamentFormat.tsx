@@ -114,7 +114,7 @@ export default function TournamentFormat() {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 text-center font-mono">
             <div className="p-3 bg-card border border-tactical-border/50">
               <span className="block text-[10px] text-secondaryText uppercase mb-1">TEAM ROSTER</span>
-              <span className="text-sm font-bold text-white">5 + 1 SUB</span>
+              <span className="text-sm font-bold text-white">5</span>
             </div>
             <div className="p-3 bg-card border border-tactical-border/50">
               <span className="block text-[10px] text-secondaryText uppercase mb-1">ROUND TIME</span>
