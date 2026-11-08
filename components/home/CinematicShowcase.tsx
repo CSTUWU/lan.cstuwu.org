@@ -83,7 +83,7 @@ export default function CinematicShowcase() {
 
     // Instant load Frame 1
     const firstImg = new Image();
-    firstImg.src = '/frames/home/frame_0001.webp';
+    firstImg.src = '/frames/home/frame_0001.webp?v=3';
     firstImg.onload = () => {
       if (isCancelled) return;
       images[0] = firstImg;
@@ -99,7 +99,7 @@ export default function CinematicShowcase() {
     for (let i = 1; i < TOTAL_FRAMES; i++) {
       const img = new Image();
       const frameNum = String(i + 1).padStart(4, '0');
-      img.src = `/frames/home/frame_${frameNum}.webp`;
+      img.src = `/frames/home/frame_${frameNum}.webp?v=3`;
       img.onload = () => {
         if (isCancelled) return;
         images[i] = img;
@@ -267,7 +267,7 @@ export default function CinematicShowcase() {
       className="relative w-full h-screen bg-[#080B10] overflow-hidden select-none border-b border-tactical-border"
     >
       <img
-        src="/frames/home/frame_0001.webp"
+        src="/frames/home/frame_0001.webp?v=3"
         alt="CS2 Cinematic Preview"
         className="absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
         style={{ filter: 'contrast(1.08) brightness(0.92)' }}

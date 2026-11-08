@@ -111,7 +111,7 @@ export default function Hero() {
 
     // Load Frame 1 immediately for instant paint
     const firstImg = new Image();
-    firstImg.src = '/frames/hero/frame_0001.webp';
+    firstImg.src = '/frames/hero/frame_0001.webp?v=3';
     firstImg.onload = () => {
       if (isCancelled) return;
       images[0] = firstImg;
@@ -128,7 +128,7 @@ export default function Hero() {
     for (let i = 1; i < TOTAL_FRAMES; i++) {
       const img = new Image();
       const frameNum = String(i + 1).padStart(4, '0');
-      img.src = `/frames/hero/frame_${frameNum}.webp`;
+      img.src = `/frames/hero/frame_${frameNum}.webp?v=3`;
       img.onload = () => {
         if (isCancelled) return;
         images[i] = img;
@@ -332,7 +332,7 @@ export default function Hero() {
       className="relative w-full h-screen bg-[#080B10] overflow-hidden select-none"
     >
       <img
-        src="/frames/hero/frame_0001.webp"
+        src="/frames/hero/frame_0001.webp?v=3"
         alt="CS2 Standoff Preview"
         className="absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
         style={{ filter: 'contrast(1.08) brightness(0.92)' }}
