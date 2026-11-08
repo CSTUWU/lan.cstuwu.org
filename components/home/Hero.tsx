@@ -1,367 +1,578 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
-import Image from 'next/image';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { gsap } from '@/lib/gsap';
-import { Shield, Crosshair, ChevronDown, Zap, Terminal, Trophy } from 'lucide-react';
+import { gsap, ScrollTrigger } from '@/lib/gsap';
+import { Shield, Crosshair, Trophy, Clock, ChevronDown, Activity, Mouse, Sparkles } from 'lucide-react';
 import Button from '../ui/Button';
+import { getStoredCountdown } from '@/lib/storage';
+import { api } from '@/lib/api';
+import { useRegistrationStatus } from '@/hooks/useRegistrationStatus';
+
+const TOTAL_FRAMES = 199;
 
 export default function Hero() {
-  const heroRef = useRef<HTMLDivElement>(null);
-  const vectorRef = useRef<HTMLDivElement>(null);
-  const reaperRef = useRef<HTMLDivElement>(null);
-  const titleRef = useRef<HTMLDivElement>(null);
-  const subtitleRef = useRef<HTMLDivElement>(null);
-  const ctaRef = useRef<HTMLDivElement>(null);
+  const { isOpen } = useRegistrationStatus();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const contentWrapperRef = useRef<HTMLDivElement>(null);
+  const scrollHintRef = useRef<HTMLDivElement>(null);
+  const topStandoffBadgeRef = useRef<HTMLDivElement>(null);
+  const frameRef = useRef<HTMLDivElement>(null);
   const hudRef = useRef<HTMLDivElement>(null);
-  const bgGlowRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLDivElement>(null);
+  const countdownBlockRef = useRef<HTMLDivElement>(null);
+  const ctaBlockRef = useRef<HTMLDivElement>(null);
+  const scrubBarRef = useRef<HTMLDivElement>(null);
+  const progressTextRef = useRef<HTMLSpanElement>(null);
+
+  const imagesRef = useRef<HTMLImageElement[]>([]);
+  const currentFrameRef = useRef<number>(0);
+  const [isReady, setIsReady] = useState<boolean>(false);
+
+  const [timeLeft, setTimeLeft] = useState({
+    days: 17,
+    hours: 8,
+    minutes: 45,
+    seconds: 0,
+  });
 
   useEffect(() => {
-    // Check prefers-reduced-motion
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReducedMotion) return;
+    api.public.getSettings().then(() => {}).catch(() => {});
 
-    const ctx = gsap.context(() => {
-      // 1. Initial Timeline
-      const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+    const updateCountdown = () => {
+      const active = getStoredCountdown();
+      const target = new Date(active.tournamentDate).getTime();
+      const now = new Date().getTime();
+      const diff = target - now;
 
-      // Animate background glow
-      tl.fromTo(
-        bgGlowRef.current,
-        { opacity: 0, scale: 0.8 },
-        { opacity: 1, scale: 1, duration: 2 }
-      );
+      if (diff <= 0) {
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        return;
+      }
 
-      // Vector slide from left
-      tl.fromTo(
-        vectorRef.current,
-        { x: -80, opacity: 0, filter: 'brightness(0.3)' },
-        { x: 0, opacity: 1, filter: 'brightness(1)', duration: 1.2 },
-        '-=1.5'
-      );
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
-      // Reaper slide from right
-      tl.fromTo(
-        reaperRef.current,
-        { x: 80, opacity: 0, filter: 'brightness(0.3)' },
-        { x: 0, opacity: 1, filter: 'brightness(1)', duration: 1.2 },
-        '-=1.2'
-      );
+      setTimeLeft({ days, hours, minutes, seconds });
+    };
 
-      // Stagger center elements
-      tl.fromTo(
-        titleRef.current?.querySelectorAll('.char-reveal') || [],
-        { y: 35, opacity: 0 },
-        { y: 0, opacity: 1, stagger: 0.08, duration: 0.8 },
-        '-=1.0'
-      );
-
-      tl.fromTo(
-        subtitleRef.current,
-        { y: 20, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.8 },
-        '-=0.6'
-      );
-
-      tl.fromTo(
-        ctaRef.current,
-        { y: 20, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.8 },
-        '-=0.6'
-      );
-
-      tl.fromTo(
-        hudRef.current?.children || [],
-        { opacity: 0, scale: 0.95 },
-        { opacity: 1, scale: 1, stagger: 0.1, duration: 0.8 },
-        '-=0.5'
-      );
-
-      // Mouse Parallax on Desktop
-      const handleMouseMove = (e: MouseEvent) => {
-        if (!heroRef.current || window.innerWidth < 1024) return;
-        const { clientX, clientY } = e;
-        const xPos = clientX / window.innerWidth - 0.5;
-        const yPos = clientY / window.innerHeight - 0.5;
-
-        gsap.to(vectorRef.current, {
-          x: xPos * -25,
-          y: yPos * -15,
-          duration: 1.2,
-          ease: 'power2.out',
-        });
-
-        gsap.to(reaperRef.current, {
-          x: xPos * 25,
-          y: yPos * -15,
-          duration: 1.2,
-          ease: 'power2.out',
-        });
-
-        gsap.to(titleRef.current, {
-          x: xPos * 12,
-          y: yPos * 8,
-          duration: 1.5,
-          ease: 'power2.out',
-        });
-      };
-
-      window.addEventListener('mousemove', handleMouseMove);
-      return () => window.removeEventListener('mousemove', handleMouseMove);
-    }, heroRef);
-
-    return () => ctx.revert();
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    return () => clearInterval(interval);
   }, []);
 
-  return (
-    <section
-      ref={heroRef}
-      className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20 sm:pt-24 pb-12 sm:pb-16 bg-[#080B10]"
-    >
-      {/* Tactical Grid Background */}
-      <div className="absolute inset-0 tactical-grid-bg opacity-30 pointer-events-none" />
+  const drawFrame = useCallback((frameIndex: number) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
-      {/* Dual Lighting Effects */}
-      <div
-        ref={bgGlowRef}
-        className="absolute inset-0 pointer-events-none overflow-hidden"
-      >
-        {/* Cyan Ambient Left (Vector) */}
-        <div className="absolute -left-20 top-1/4 w-[500px] h-[500px] bg-cyan/15 rounded-full blur-[140px]" />
-        {/* Orange Ambient Right (Reaper) */}
-        <div className="absolute -right-20 top-1/4 w-[500px] h-[500px] bg-orange/15 rounded-full blur-[140px]" />
-        {/* Center Spotlight */}
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[350px] bg-white/[0.02] rounded-full blur-[100px]" />
+    const img = imagesRef.current[frameIndex];
+    if (!img || !img.complete || img.naturalWidth === 0) return;
+
+    const canvasWidth = canvas.width;
+    const canvasHeight = canvas.height;
+
+    const hRatio = canvasWidth / img.naturalWidth;
+    const vRatio = canvasHeight / img.naturalHeight;
+    const ratio = Math.max(hRatio, vRatio);
+
+    const drawWidth = img.naturalWidth * ratio;
+    const drawHeight = img.naturalHeight * ratio;
+    const offsetX = (canvasWidth - drawWidth) / 2;
+    const offsetY = (canvasHeight - drawHeight) / 2;
+
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+    ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+    currentFrameRef.current = frameIndex;
+  }, []);
+
+  const handleResize = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const rect = canvas.getBoundingClientRect();
+    const width = rect.width || (typeof window !== 'undefined' ? window.innerWidth : 1920);
+    const height = rect.height || (typeof window !== 'undefined' ? window.innerHeight : 1080);
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+
+    drawFrame(currentFrameRef.current);
+  }, [drawFrame]);
+
+  // 4. Preload frame sequence
+  useEffect(() => {
+    let isCancelled = false;
+    const images: HTMLImageElement[] = new Array(TOTAL_FRAMES);
+
+    // Load Frame 1 immediately for instant paint
+    const firstImg = new Image();
+    firstImg.src = '/frames/hero/frame_0001.webp';
+    firstImg.onload = () => {
+      if (isCancelled) return;
+      images[0] = firstImg;
+      imagesRef.current = images;
+      handleResize();
+      drawFrame(0);
+      setIsReady(true);
+      try {
+        ScrollTrigger.refresh();
+      } catch (e) {}
+    };
+
+    // Load remaining frames progressively
+    for (let i = 1; i < TOTAL_FRAMES; i++) {
+      const img = new Image();
+      const frameNum = String(i + 1).padStart(4, '0');
+      img.src = `/frames/hero/frame_${frameNum}.webp`;
+      img.onload = () => {
+        if (isCancelled) return;
+        images[i] = img;
+      };
+      img.onerror = () => {
+        if (isCancelled) return;
+      };
+    }
+
+    imagesRef.current = images;
+
+    window.addEventListener('resize', handleResize);
+    return () => {
+      isCancelled = true;
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [handleResize, drawFrame]);
+
+  // 5. GSAP ScrollTrigger Sequence & Choreography
+  useEffect(() => {
+    if (!containerRef.current || !canvasRef.current) return;
+
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) {
+      if (contentWrapperRef.current) {
+        contentWrapperRef.current.style.opacity = '1';
+        contentWrapperRef.current.style.pointerEvents = 'auto';
+      }
+      window.dispatchEvent(new CustomEvent('cst_hero_text_visible', { detail: { visible: true } }));
+      return;
+    }
+
+    const ctx = gsap.context(() => {
+      const frameObj = { frame: 0 };
+      let lastNotifiedVisible: boolean | null = null;
+
+      const scrubTimeline = gsap.timeline({
+        scrollTrigger: {
+          trigger: containerRef.current,
+          start: 'top top',
+          end: '+=1800',
+          pin: true,
+          scrub: 0.35,
+          anticipatePin: 1,
+          onUpdate: (self) => {
+            const currentFrame = Math.min(
+              TOTAL_FRAMES - 1,
+              Math.floor(self.progress * (TOTAL_FRAMES - 1))
+            );
+            drawFrame(currentFrame);
+
+            // Update scrub HUD telemetry
+            if (scrubBarRef.current) {
+              scrubBarRef.current.style.width = `${Math.round(self.progress * 100)}%`;
+            }
+            if (progressTextRef.current) {
+              const sec = (self.progress * 9.96).toFixed(1);
+              progressTextRef.current.innerText = `00:0${sec}s // ${(self.progress * 100).toFixed(0)}%`;
+            }
+
+            const isTextVisible = self.progress >= 0.40;
+            if (lastNotifiedVisible !== isTextVisible) {
+              lastNotifiedVisible = isTextVisible;
+              window.dispatchEvent(
+                new CustomEvent('cst_hero_text_visible', { detail: { visible: isTextVisible } })
+              );
+            }
+          },
+        },
+      });
+
+      scrubTimeline.to(
+        frameObj,
+        {
+          frame: TOTAL_FRAMES - 1,
+          ease: 'none',
+          duration: 10,
+        },
+        0
+      );
+
+      scrubTimeline.to(
+        [scrollHintRef.current, topStandoffBadgeRef.current],
+        {
+          opacity: 0,
+          y: -20,
+          duration: 1.4,
+          ease: 'power2.in',
+        },
+        0.4
+      );
+
+      scrubTimeline.fromTo(
+        contentWrapperRef.current,
+        {
+          opacity: 0,
+          scale: 0.9,
+          y: 35,
+          filter: 'blur(8px)',
+        },
+        {
+          opacity: 1,
+          scale: 1,
+          y: 0,
+          filter: 'blur(0px)',
+          ease: 'power3.out',
+          duration: 2.4,
+          onStart: () => {
+            if (contentWrapperRef.current) {
+              contentWrapperRef.current.style.pointerEvents = 'auto';
+            }
+          },
+          onReverseComplete: () => {
+            if (contentWrapperRef.current) {
+              contentWrapperRef.current.style.pointerEvents = 'none';
+            }
+          },
+        },
+        3.8
+      );
+
+      scrubTimeline.fromTo(
+        countdownBlockRef.current,
+        {
+          y: 25,
+          opacity: 0,
+          scale: 0.95,
+        },
+        {
+          y: 0,
+          opacity: 1,
+          scale: 1,
+          duration: 2.0,
+          ease: 'back.out(1.4)',
+        },
+        4.6
+      );
+
+      scrubTimeline.fromTo(
+        ctaBlockRef.current,
+        {
+          y: 20,
+          opacity: 0,
+          scale: 0.95,
+        },
+        {
+          y: 0,
+          opacity: 1,
+          scale: 1,
+          duration: 1.6,
+          ease: 'power3.out',
+        },
+        5.2
+      );
+
+      const enterTl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+
+      enterTl.fromTo(
+        frameRef.current,
+        { opacity: 0, scale: 0.98 },
+        { opacity: 1, scale: 1, duration: 1.2 }
+      );
+
+      enterTl.fromTo(
+        hudRef.current?.children || [],
+        { opacity: 0, y: -10 },
+        { opacity: 1, y: 0, stagger: 0.08, duration: 0.7 },
+        '-=0.8'
+      );
+
+      enterTl.fromTo(
+        topStandoffBadgeRef.current,
+        { opacity: 0, y: -15 },
+        { opacity: 1, y: 0, duration: 0.8 },
+        '-=0.6'
+      );
+
+      enterTl.fromTo(
+        scrollHintRef.current,
+        { opacity: 0, y: 25, scale: 0.95 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.9 },
+        '-=0.5'
+      );
+    }, containerRef);
+
+    return () => ctx.revert();
+  }, [drawFrame]);
+
+  const handleScrollToContent = () => {
+    if (typeof window !== 'undefined') {
+      window.scrollTo({
+        top: 1550,
+        behavior: 'smooth',
+      });
+    }
+  };
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative w-full h-screen bg-[#080B10] overflow-hidden select-none"
+    >
+      <img
+        src="/frames/hero/frame_0001.webp"
+        alt="CS2 Standoff Preview"
+        className="absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
+        style={{ filter: 'contrast(1.08) brightness(0.92)' }}
+      />
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
+        style={{ filter: 'contrast(1.08) brightness(0.92)' }}
+      />
+
+      <div className="absolute inset-0 pointer-events-none z-[1]">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(8,11,16,0.15)_0%,rgba(8,11,16,0.85)_100%)]" />
+
+        <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-[#080B10] via-[#080B10]/60 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-36 bg-gradient-to-t from-[#080B10] via-[#080B10]/80 to-transparent" />
+
+        <div className="absolute inset-0 tactical-grid-bg opacity-15" />
       </div>
 
-      {/* Military HUD corner coordinates */}
+      <div
+        ref={frameRef}
+        className="absolute inset-3 sm:inset-5 lg:inset-8 pointer-events-none border border-tactical-border/60 rounded-sm z-10"
+      >
+        <span className="absolute -top-[2px] -left-[2px] w-5 sm:w-7 h-5 sm:h-7 border-t-2 border-l-2 border-cyan shadow-[0_0_15px_rgba(0,213,255,0.8)]" />
+        <span className="absolute -top-[2px] -right-[2px] w-5 sm:w-7 h-5 sm:h-7 border-t-2 border-r-2 border-orange shadow-[0_0_15px_rgba(255,116,56,0.8)]" />
+        <span className="absolute -bottom-[2px] -left-[2px] w-5 sm:w-7 h-5 sm:h-7 border-b-2 border-l-2 border-cyan shadow-[0_0_15px_rgba(0,213,255,0.8)]" />
+        <span className="absolute -bottom-[2px] -right-[2px] w-5 sm:w-7 h-5 sm:h-7 border-b-2 border-r-2 border-orange shadow-[0_0_15px_rgba(255,116,56,0.8)]" />
+
+        <div className="absolute -bottom-[5px] left-1/2 -translate-x-1/2 px-3 py-0.5 bg-[#080B10]/95 border border-tactical-border text-[9px] font-mono text-secondaryText tracking-widest flex items-center gap-2.5 backdrop-blur-md">
+          <Activity className="w-3 h-3 text-cyan" />
+          <div className="w-16 sm:w-28 h-1 bg-surface border border-tactical-border rounded-full overflow-hidden">
+            <div
+              ref={scrubBarRef}
+              className="h-full bg-gradient-to-r from-cyan via-white to-orange transition-all duration-75"
+              style={{ width: '0%' }}
+            />
+          </div>
+          <span ref={progressTextRef} className="text-cyan font-bold">
+            00:00.0s // 0%
+          </span>
+        </div>
+      </div>
+
       <div
         ref={hudRef}
-        className="absolute inset-0 pointer-events-none max-w-7xl mx-auto px-6 py-28 hidden lg:flex flex-col justify-between"
+        className="absolute inset-0 pointer-events-none max-w-7xl mx-auto px-6 lg:px-12 pt-24 pb-16 hidden lg:flex flex-col justify-between z-20"
       >
-        <div className="flex justify-between items-start text-[11px] font-mono text-secondaryText/70 tracking-widest">
-          <div className="flex items-center gap-2 border-l-2 border-cyan pl-2">
+        <div className="flex justify-between items-start text-[11px] font-mono tracking-widest">
+          <div className="flex items-center gap-2 border-l-2 border-cyan pl-3 py-1 bg-surface/60 backdrop-blur-md border-t border-cyan/20">
             <span className="w-2 h-2 rounded-full bg-cyan animate-pulse" />
-            <span>{"TAC_OP // SECTOR_01 [CT_COMMAND]"}</span>
+            <span className="text-white font-bold">TAC_OP // SECTOR_01 [VECTOR]</span>
           </div>
-          <div className="flex items-center gap-2 border-r-2 border-orange pr-2 text-right">
-            <span>{"TAC_OP // SECTOR_02 [T_COMMAND]"}</span>
+          <div className="flex items-center gap-2 border-r-2 border-orange pr-3 py-1 bg-surface/60 backdrop-blur-md border-t border-orange/20 text-right">
+            <span className="text-white font-bold">TAC_OP // SECTOR_02 [RAPTOR]</span>
             <span className="w-2 h-2 rounded-full bg-orange animate-pulse" />
           </div>
         </div>
 
-        <div className="flex justify-between items-end text-[10px] font-mono text-secondaryText/60">
-          <div>
-            <p>LAT: 6.9934° N, LON: 81.0550° E</p>
-            <p className="text-cyan">{"BADULLA // UVA WELLASSA UNIVERSITY"}</p>
+        <div className="flex justify-between items-end text-[10px] font-mono">
+          <div className="bg-surface/60 backdrop-blur-md px-3 py-1.5 border-l-2 border-b border-cyan/40 border-l-cyan">
+            <p className="text-secondaryText">LAT: 6.9934° N, LON: 81.0550° E</p>
+            <p className="text-cyan font-bold">BADULLA // UVA WELLASSA UNIVERSITY</p>
           </div>
-          <div className="text-right">
-            <p>{"ENGINE: SOURCE 2 // SUB-TICK 128"}</p>
-            <p className="text-orange">STATUS: TOURNAMENT DEPLOYMENT READY</p>
+          <div className="text-right bg-surface/60 backdrop-blur-md px-3 py-1.5 border-r-2 border-b border-orange/40 border-r-orange">
+            <p className="text-secondaryText">ENGINE: SOURCE 2 // SUB-TICK 128</p>
+            <p className="text-orange font-bold">STATUS: 5v5 MR12 TOURNAMENT READY</p>
           </div>
         </div>
       </div>
 
-      {/* Main Container */}
-      <div className="relative z-10 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 lg:grid-cols-12 gap-3 sm:gap-6 lg:gap-8 items-center min-h-[620px] lg:min-h-[720px]">
-          
-          {/* LEFT: COMMANDER VECTOR (CT) */}
-          <div
-            ref={vectorRef}
-            className="col-span-1 lg:col-span-3 order-2 lg:order-1 flex flex-col items-center lg:items-start group w-full"
-          >
-            <div className="relative w-full max-w-[280px] lg:max-w-none h-[280px] sm:h-[380px] lg:h-[500px] overflow-hidden rounded-md border border-cyan/40 bg-surface/40 backdrop-blur-sm shadow-[0_0_35px_rgba(0,213,255,0.25)] transition-all duration-500 hover:border-cyan hover:shadow-[0_0_50px_rgba(0,213,255,0.4)]">
-              {/* Corner tactical brackets */}
-              <span className="absolute top-2 left-2 w-3 sm:w-4 h-3 sm:h-4 border-t-2 border-l-2 border-cyan z-20" />
-              <span className="absolute top-2 right-2 w-3 sm:w-4 h-3 sm:h-4 border-t-2 border-r-2 border-cyan z-20" />
-              <span className="absolute bottom-2 left-2 w-3 sm:w-4 h-3 sm:h-4 border-b-2 border-l-2 border-cyan z-20" />
-              <span className="absolute bottom-2 right-2 w-3 sm:w-4 h-3 sm:h-4 border-b-2 border-r-2 border-cyan z-20" />
+      <div
+        ref={topStandoffBadgeRef}
+        className="absolute top-8 sm:top-10 left-1/2 -translate-x-1/2 z-20 pointer-events-none"
+      >
+        <div className="inline-flex items-center gap-2.5 px-4 py-1.5 bg-[#080B10]/90 border border-tactical-border clip-badge backdrop-blur-md shadow-2xl">
+          <Shield className="w-4 h-4 text-cyan shrink-0" />
+          <span className="text-xs sm:text-sm font-display font-black text-white tracking-wider uppercase">
+            CST LAN CHALLENGE 2026
+          </span>
+          <span className="text-tactical-border font-mono text-[10px]">|</span>
+          <span className="text-[10px] sm:text-xs font-mono text-cyan font-bold tracking-wider">
+            COUNTER-STRIKE 2
+          </span>
+        </div>
+      </div>
 
-              {/* Tag Header */}
-              <div className="absolute top-2 sm:top-3 left-2 sm:left-4 right-2 sm:right-4 z-20 flex justify-between items-center text-[9px] sm:text-[10px] font-mono tracking-wider">
-                <span className="px-1.5 sm:px-2 py-0.5 bg-cyan/20 text-cyan border border-cyan/40 font-bold truncate">
-                  CT COMMANDER
-                </span>
-                <span className="text-cyan/80 hidden sm:inline">#01_TACTICAL</span>
-              </div>
+      <div
+        ref={scrollHintRef}
+        onClick={handleScrollToContent}
+        className="absolute bottom-10 sm:bottom-14 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-3 text-center cursor-pointer group"
+      >
+        <div className="relative px-5 sm:px-7 py-3 bg-[#080B10]/95 border border-cyan/50 backdrop-blur-xl rounded-md shadow-[0_0_35px_rgba(0,213,255,0.35)] transition-all duration-300 group-hover:border-cyan group-hover:shadow-[0_0_50px_rgba(0,213,255,0.6)] group-hover:scale-105 flex items-center gap-3.5">
+          <span className="absolute -top-1 -left-1 w-2.5 h-2.5 border-t-2 border-l-2 border-cyan" />
+          <span className="absolute -top-1 -right-1 w-2.5 h-2.5 border-t-2 border-r-2 border-orange" />
+          <span className="absolute -bottom-1 -left-1 w-2.5 h-2.5 border-b-2 border-l-2 border-cyan" />
+          <span className="absolute -bottom-1 -right-1 w-2.5 h-2.5 border-b-2 border-r-2 border-orange" />
 
-              {/* Character Poster */}
-              <Image
-                src="/images/commanders/vector.jpeg"
-                alt="Commander Vector - CT Team Commander"
-                fill
-                priority
-                className="object-cover object-top filter brightness-95 contrast-105 group-hover:scale-105 transition-transform duration-700"
-                sizes="(max-width: 640px) 160px, (max-width: 1024px) 280px, 320px"
-              />
-
-              {/* Gradient Scrim */}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#080B10] via-transparent to-transparent opacity-90 z-10" />
-
-              {/* Bottom Character Info */}
-              <div className="absolute bottom-2 sm:bottom-4 left-2 sm:left-4 right-2 sm:right-4 z-20">
-                <div className="text-[9px] sm:text-[10px] font-mono text-cyan uppercase tracking-widest flex items-center gap-1.5 mb-0.5 sm:mb-1">
-                  <span className="w-1.5 h-1.5 bg-cyan animate-pulse" />
-                  <span className="truncate">CYAN OPERATOR</span>
-                </div>
-                <h3 className="font-display font-black text-lg sm:text-2xl text-white tracking-wider">
-                  VECTOR
-                </h3>
-                <p className="text-[10px] sm:text-[11px] text-secondaryText leading-tight mt-0.5 sm:mt-1 hidden sm:block">
-                  Tactical Recon & In-Game Command specialist. Holographic defense deployment.
-                </p>
-              </div>
-            </div>
+          <div className="w-5 h-8 rounded-full border-2 border-cyan/80 flex items-start justify-center p-1 bg-surface/80 shrink-0">
+            <div className="w-1.5 h-2.5 rounded-full bg-cyan animate-bounce" />
           </div>
 
-          {/* CENTER: TOURNAMENT IDENTITY & ACTIONS */}
-          <div className="col-span-2 lg:col-span-6 order-1 lg:order-2 text-center flex flex-col items-center justify-center py-4 lg:py-6">
-            {/* University & Degree Programme Badge */}
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-surface/80 border border-tactical-border clip-badge mb-3 sm:mb-4 backdrop-blur-md">
-              <Shield className="w-3.5 h-3.5 text-cyan shrink-0" />
-              <span className="text-[10px] sm:text-xs font-mono font-medium tracking-wider text-secondaryText truncate max-w-[280px] sm:max-w-none">
-                UVA WELLASSA UNIVERSITY OF SRI LANKA
-              </span>
+          <div className="text-left font-mono">
+            <div className="text-xs sm:text-sm font-black tracking-widest uppercase text-white flex items-center gap-1.5 group-hover:text-cyan transition-colors">
+              <span>SCROLL DOWN TO REVEAL</span>
+              <ChevronDown className="w-4 h-4 text-cyan animate-bounce" />
             </div>
+            <p className="text-[10px] text-secondaryText tracking-wide mt-0.5">
+              Watch standoff &amp; unlock tournament details
+            </p>
+          </div>
+        </div>
 
-            {/* Game Badge */}
-            <div className="flex items-center justify-center gap-2 sm:gap-3 mb-2 sm:mb-3">
-              <span className="h-[1px] w-6 sm:w-8 bg-cyan" />
-              <span className="text-[11px] sm:text-sm font-mono font-bold tracking-[0.2em] sm:tracking-[0.25em] text-cyan uppercase">
-                COUNTER-STRIKE 2 ESPORTS
-              </span>
-              <span className="h-[1px] w-6 sm:w-8 bg-orange" />
+        <span className="text-[10px] font-mono text-cyan/80 tracking-widest uppercase flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-cyan animate-ping" />
+          SCROLL WHEEL • SWIPE • OR CLICK TO ENTER
+        </span>
+      </div>
+
+      <div
+        ref={contentWrapperRef}
+        className="relative z-20 h-full max-w-4xl w-full mx-auto px-4 sm:px-6 flex flex-col items-center justify-center text-center pt-24 sm:pt-28 lg:pt-32 pb-8 opacity-0 pointer-events-none will-change-transform"
+      >
+        <div className="inline-flex items-center gap-2 px-3 py-1 bg-surface/90 border border-tactical-border text-[11px] sm:text-xs font-mono text-cyan uppercase tracking-wider mb-3 backdrop-blur-md shadow-xl">
+          <Shield className="w-3.5 h-3.5 text-cyan shrink-0" />
+          <span>UVA WELLASSA UNIVERSITY // COUNTER-STRIKE 2</span>
+        </div>
+
+        <div ref={titleRef} className="mb-2 sm:mb-3 select-none">
+          <h1 className="font-display font-black text-3xl sm:text-5xl md:text-6xl lg:text-7xl tracking-tight uppercase leading-[0.92] text-white drop-shadow-[0_4px_35px_rgba(0,0,0,0.95)]">
+            <span className="inline-block">CST</span>{' '}
+            <span className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-cyan via-white to-cyan drop-shadow-[0_0_30px_rgba(0,213,255,0.7)]">
+              LAN
+            </span>{' '}
+            <br />
+            <span className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-white via-orange to-orange drop-shadow-[0_0_30px_rgba(255,116,56,0.7)]">
+              CHALLENGE
+            </span>{' '}
+            <span className="inline-block text-white">2026</span>
+          </h1>
+
+          <div className="max-w-xl mx-auto space-y-0.5 mt-2.5 sm:mt-3">
+            <p className="text-xs sm:text-base font-display font-bold tracking-wide text-white uppercase drop-shadow-md">
+              ENTER THE BATTLEFIELD. PROVE YOUR SKILL.
+            </p>
+            <p className="text-[11px] sm:text-xs font-mono text-secondaryText drop-shadow">
+              Organized by the Computer Science &amp; Technology Degree Programme
+            </p>
+          </div>
+        </div>
+
+        <div
+          ref={countdownBlockRef}
+          className="mb-4 sm:mb-5 w-full max-w-sm sm:max-w-md bg-card/95 border border-tactical-border backdrop-blur-xl p-2.5 sm:p-3.5 clip-tactical shadow-[0_0_35px_rgba(0,213,255,0.2)]"
+        >
+          <div className="flex items-center justify-between text-[9px] sm:text-[10px] font-mono uppercase tracking-widest font-bold mb-2 px-1 border-b border-tactical-border/60 pb-1">
+            <div className="flex items-center gap-1.5 text-cyan">
+              <Clock className="w-3.5 h-3.5 text-cyan" />
+              <span>TOURNAMENT COUNTDOWN</span>
             </div>
+            <span className="text-orange flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-orange animate-ping" />
+              LIVE
+            </span>
+          </div>
 
-            {/* Main Title */}
-            <div ref={titleRef} className="mb-3 sm:mb-4">
-              <h1 className="font-display font-black text-3xl sm:text-5xl md:text-6xl lg:text-7xl tracking-tighter uppercase leading-[0.95] text-white">
-                <span className="char-reveal inline-block">CST</span>{' '}
-                <span className="char-reveal inline-block text-transparent bg-clip-text bg-gradient-to-r from-cyan via-white to-cyan">
-                  LAN
-                </span>{' '}
-                <br className="hidden sm:inline" />
-                <span className="char-reveal inline-block text-transparent bg-clip-text bg-gradient-to-r from-white via-orange to-orange">
-                  CHALLENGE
-                </span>{' '}
-                <span className="char-reveal inline-block text-white">2026</span>
-              </h1>
+          <div className="grid grid-cols-4 gap-1.5 sm:gap-2 text-center font-mono">
+            <div className="bg-surface/90 border border-tactical-border p-1.5 sm:p-2">
+              <div className="font-display font-black text-xl sm:text-2xl md:text-3xl text-white">
+                {String(timeLeft.days).padStart(2, '0')}
+              </div>
+              <div className="text-[8px] sm:text-[9px] text-secondaryText uppercase tracking-wider mt-0.5">DAYS</div>
             </div>
-
-            {/* Subtitle & Official Organizer hierarchy */}
-            <div ref={subtitleRef} className="max-w-xl mx-auto space-y-1.5 sm:space-y-2 mb-6 sm:mb-8 px-2">
-              <p className="text-sm sm:text-lg md:text-xl font-display font-bold tracking-wider sm:tracking-widest text-primaryText uppercase">
-                ENTER THE BATTLEFIELD. PROVE YOUR SKILL.
-              </p>
-              <p className="text-[11px] sm:text-sm font-mono text-cyan/90 uppercase tracking-wider">
-                &ldquo;POWERED BY COMPETITION. UNITED BY TECHNOLOGY.&rdquo;
-              </p>
-              <p className="text-[11px] sm:text-xs text-secondaryText font-mono">
-                Organized by the <span className="text-white font-medium">Computer Science and Technology Degree Programme</span>
-                <br className="hidden sm:inline" /> Uva Wellassa University of Sri Lanka
-              </p>
+            <div className="bg-surface/90 border border-tactical-border p-1.5 sm:p-2">
+              <div className="font-display font-black text-xl sm:text-2xl md:text-3xl text-cyan">
+                {String(timeLeft.hours).padStart(2, '0')}
+              </div>
+              <div className="text-[8px] sm:text-[9px] text-secondaryText uppercase tracking-wider mt-0.5">HOURS</div>
             </div>
+            <div className="bg-surface/90 border border-tactical-border p-1.5 sm:p-2">
+              <div className="font-display font-black text-xl sm:text-2xl md:text-3xl text-white">
+                {String(timeLeft.minutes).padStart(2, '0')}
+              </div>
+              <div className="text-[8px] sm:text-[9px] text-secondaryText uppercase tracking-wider mt-0.5">MINS</div>
+            </div>
+            <div className="bg-surface/90 border border-orange/50 p-1.5 sm:p-2">
+              <div className="font-display font-black text-xl sm:text-2xl md:text-3xl text-orange">
+                {String(timeLeft.seconds).padStart(2, '0')}
+              </div>
+              <div className="text-[8px] sm:text-[9px] text-secondaryText uppercase tracking-wider mt-0.5">SECS</div>
+            </div>
+          </div>
+        </div>
 
-            {/* Action Buttons */}
-            <div
-              ref={ctaRef}
-              className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 w-full sm:w-auto px-4 sm:px-0"
+        <div
+          ref={ctaBlockRef}
+          className="flex flex-col sm:flex-row items-center justify-center gap-2.5 sm:gap-3 w-full sm:w-auto"
+        >
+          {isOpen && (
+            <Button
+              href="/register"
+              variant="cyan"
+              size="md"
+              icon={<Crosshair className="w-4 h-4" />}
+              className="w-full sm:w-auto font-black shadow-[0_0_25px_rgba(0,213,255,0.45)] hover:scale-105 transition-transform text-xs sm:text-sm"
             >
-              <Button
-                href="/register"
-                variant="cyan"
-                size="lg"
-                icon={<Crosshair className="w-5 h-5" />}
-                className="w-full sm:w-auto text-xs sm:text-sm lg:text-base font-extrabold"
-              >
-                REGISTER YOUR TEAM
-              </Button>
+              REGISTER YOUR TEAM
+            </Button>
+          )}
 
-              <Button
-                href="/#commanders"
-                variant="outline"
-                size="lg"
-                icon={<Trophy className="w-4 h-4" />}
-                className="w-full sm:w-auto text-xs sm:text-sm lg:text-base"
-              >
-                EXPLORE TOURNAMENT
-              </Button>
-            </div>
-
-            {/* Quick Live Preview Banner */}
-            <div className="mt-6 sm:mt-8 flex items-center gap-3 sm:gap-4 text-[11px] sm:text-xs font-mono text-secondaryText border border-tactical-border/70 bg-surface/50 px-3 sm:px-4 py-2 clip-tactical">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping shrink-0" />
-                <span className="text-white font-bold">STATUS:</span>
-                <span className="text-cyan">REGISTRATION ACTIVE</span>
-              </div>
-              <span className="text-tactical-border hidden sm:inline">|</span>
-              <div className="hidden sm:flex items-center gap-1.5">
-                <Terminal className="w-3.5 h-3.5 text-orange shrink-0" />
-                <span>FORMAT: 5v5 COMPETITIVE CS2</span>
-              </div>
-            </div>
-          </div>
-
-          {/* RIGHT: COMMANDER REAPER (T) */}
-          <div
-            ref={reaperRef}
-            className="col-span-1 lg:col-span-3 order-3 flex flex-col items-center lg:items-end group w-full"
+          <Button
+            href="/#prizepool"
+            variant="outline"
+            size="md"
+            icon={<Trophy className="w-4 h-4 text-tactical-gold" />}
+            className="w-full sm:w-auto hover:border-tactical-gold hover:text-tactical-gold bg-surface/70 backdrop-blur-md text-xs sm:text-sm"
           >
-            <div className="relative w-full max-w-[280px] lg:max-w-none h-[280px] sm:h-[380px] lg:h-[500px] overflow-hidden rounded-md border border-orange/40 bg-surface/40 backdrop-blur-sm shadow-[0_0_35px_rgba(255,116,56,0.25)] transition-all duration-500 hover:border-orange hover:shadow-[0_0_50px_rgba(255,116,56,0.4)]">
-              {/* Corner tactical brackets */}
-              <span className="absolute top-2 left-2 w-3 sm:w-4 h-3 sm:h-4 border-t-2 border-l-2 border-orange z-20" />
-              <span className="absolute top-2 right-2 w-3 sm:w-4 h-3 sm:h-4 border-t-2 border-r-2 border-orange z-20" />
-              <span className="absolute bottom-2 left-2 w-3 sm:w-4 h-3 sm:h-4 border-b-2 border-l-2 border-orange z-20" />
-              <span className="absolute bottom-2 right-2 w-3 sm:w-4 h-3 sm:h-4 border-b-2 border-r-2 border-orange z-20" />
-
-              {/* Tag Header */}
-              <div className="absolute top-2 sm:top-3 left-2 sm:left-4 right-2 sm:right-4 z-20 flex justify-between items-center text-[9px] sm:text-[10px] font-mono tracking-wider">
-                <span className="px-1.5 sm:px-2 py-0.5 bg-orange/20 text-orange border border-orange/40 font-bold truncate">
-                  T COMMANDER
-                </span>
-                <span className="text-orange/80 hidden sm:inline">#02_TACTICAL</span>
-              </div>
-
-              {/* Character Poster */}
-              <Image
-                src="/images/commanders/reaper.jpeg"
-                alt="Commander Reaper - T Team Commander"
-                fill
-                priority
-                className="object-cover object-top filter brightness-95 contrast-105 group-hover:scale-105 transition-transform duration-700"
-                sizes="(max-width: 640px) 160px, (max-width: 1024px) 280px, 320px"
-              />
-
-              {/* Gradient Scrim */}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#080B10] via-transparent to-transparent opacity-90 z-10" />
-
-              {/* Bottom Character Info */}
-              <div className="absolute bottom-2 sm:bottom-4 left-2 sm:left-4 right-2 sm:right-4 z-20">
-                <div className="text-[9px] sm:text-[10px] font-mono text-orange uppercase tracking-widest flex items-center gap-1.5 mb-0.5 sm:mb-1">
-                  <span className="w-1.5 h-1.5 bg-orange animate-pulse" />
-                  <span className="truncate">ORANGE OPERATOR</span>
-                </div>
-                <h3 className="font-display font-black text-lg sm:text-2xl text-white tracking-wider">
-                  REAPER
-                </h3>
-                <p className="text-[10px] sm:text-[11px] text-secondaryText leading-tight mt-0.5 sm:mt-1 hidden sm:block">
-                  High-caliber frontline assault leader. Master of site entry, rifle dominance, and territory disruption.
-                </p>
-              </div>
-            </div>
-          </div>
-
+            VIEW PRIZE POOL
+          </Button>
         </div>
-      </div>
 
-      {/* Scroll indicator */}
-      <div className="absolute bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 text-[10px] font-mono tracking-widest text-secondaryText/70 animate-bounce pointer-events-none">
-        <span>SCROLL DOWN</span>
-        <ChevronDown className="w-4 h-4 text-cyan" />
+        <div
+          onClick={() => {
+            if (typeof window !== 'undefined') {
+              const el = document.getElementById('prizepool');
+              if (el) {
+                el.scrollIntoView({ behavior: 'smooth' });
+              } else {
+                window.scrollTo({ top: 3500, behavior: 'smooth' });
+              }
+            }
+          }}
+          className="mt-4 sm:mt-5 flex flex-col items-center gap-1 text-[9px] sm:text-[10px] font-mono tracking-widest text-secondaryText/80 cursor-pointer hover:text-cyan transition-colors"
+        >
+          <span className="flex items-center gap-1.5 text-cyan">
+            <span>SCROLL DOWN FOR PRIZE POOL</span>
+            <ChevronDown className="w-3 h-3 text-cyan animate-bounce" />
+          </span>
+        </div>
+
       </div>
-    </section>
+    </div>
   );
 }

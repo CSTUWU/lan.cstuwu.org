@@ -4,11 +4,12 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
-import { getStoredMatches, getLiveBroadcastChannel, getActiveLiveMatch } from '@/lib/storage';
-import { INITIAL_MATCHES } from '@/lib/mockData';
+import { getStoredMatches, getLiveBroadcastChannel, getActiveLiveMatch, getStoredTeams } from '@/lib/storage';
+import { INITIAL_MATCHES, INITIAL_TEAMS } from '@/lib/mockData';
 import { api } from '@/lib/api';
 import { transformBackendMatch } from '@/lib/transformers';
-import { Match } from '@/lib/types';
+import { Match, Team } from '@/lib/types';
+import PlayoffBracketTree from '@/components/scoreboard/PlayoffBracketTree';
 import {
   Shield,
   Maximize2,
@@ -22,6 +23,7 @@ import {
   ChevronLeft,
   Crosshair,
   Sparkles,
+  Trophy,
 } from 'lucide-react';
 
 function StageProjectorScoreboardContent() {
@@ -29,9 +31,11 @@ function StageProjectorScoreboardContent() {
   const queryMatchId = searchParams.get('matchId');
 
   const [matches, setMatches] = useState<Match[]>(INITIAL_MATCHES);
-  const [activeMatch, setActiveMatch] = useState<Match>(() => {
+  const [teams, setTeams] = useState<Team[]>(INITIAL_TEAMS);
+  const [activeMatch, setActiveMatch] = useState<Match | undefined>(() => {
     return INITIAL_MATCHES.find((m) => m.status === 'live') || INITIAL_MATCHES[0];
   });
+  const [displayMode, setDisplayMode] = useState<'match' | 'bracket'>('match');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [cleanMode, setCleanMode] = useState(false);
   const [lastUpdateEffect, setLastUpdateEffect] = useState(false);
@@ -60,6 +64,7 @@ function StageProjectorScoreboardContent() {
   const syncMatchState = useCallback(() => {
     const allMatches = getStoredMatches();
     setMatches(allMatches);
+    setTeams(getStoredTeams());
 
     let current: Match | undefined;
     if (queryMatchId) {
@@ -80,7 +85,6 @@ function StageProjectorScoreboardContent() {
       });
     }
 
-    // Network poll for remote referee updates
     api.public.getScoreboard().then((res) => {
       if (res?.success && res.data?.liveMatches && res.data.liveMatches.length > 0) {
         const liveBackend = transformBackendMatch(res.data.liveMatches[0]);
@@ -101,27 +105,26 @@ function StageProjectorScoreboardContent() {
   useEffect(() => {
     syncMatchState();
 
-    // 1. Cross-tab BroadcastChannel listener (instant sync from referee)
     const channel = getLiveBroadcastChannel();
     const handleBroadcast = (event: MessageEvent) => {
-      if (event.data?.type === 'CST_LIVE_MATCH_UPDATE') {
+      if (event.data?.type === 'CST_LIVE_MATCH_UPDATE' || event.data?.type === 'CST_16_MATCHES_UPDATE') {
         syncMatchState();
       }
     };
     channel?.addEventListener('message', handleBroadcast);
 
-    // 2. Window storage & custom events
     const handleStorage = () => syncMatchState();
     window.addEventListener('storage', handleStorage);
     window.addEventListener('cst_matches_updated', handleStorage);
+    window.addEventListener('cst_16_matches_updated', handleStorage);
 
-    // 3. Fallback polling every 2 seconds for projector reliability
     const interval = setInterval(syncMatchState, 2000);
 
     return () => {
       channel?.removeEventListener('message', handleBroadcast);
       window.removeEventListener('storage', handleStorage);
       window.removeEventListener('cst_matches_updated', handleStorage);
+      window.removeEventListener('cst_16_matches_updated', handleStorage);
       clearInterval(interval);
     };
   }, [syncMatchState]);
@@ -136,36 +139,31 @@ function StageProjectorScoreboardContent() {
     }
   };
 
-  const teamASide = activeMatch.teamASide || 'CT';
-  const teamBSide = activeMatch.teamBSide || 'T';
-  const isC4Active = !!activeMatch.c4Planted;
-  const currentRound = activeMatch.currentRound ?? (activeMatch.scoreA + activeMatch.scoreB);
-  const roundHistory = activeMatch.roundHistory || [];
+  const teamASide = activeMatch?.teamASide || 'CT';
+  const teamBSide = activeMatch?.teamBSide || 'T';
+  const isC4Active = !!activeMatch?.c4Planted;
+  const currentRound = activeMatch ? (activeMatch.currentRound ?? (activeMatch.scoreA + activeMatch.scoreB)) : 0;
+  const roundHistory = activeMatch?.roundHistory || [];
 
   return (
     <div className={`min-h-screen bg-[#05070B] text-primaryText relative overflow-hidden select-none flex flex-col justify-between ${
       isC4Active ? 'ring-8 ring-rose-600/70' : ''
     }`}>
       
-      {/* Dynamic Background Atmospheric Lighting */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Left Team (CT Cyan or T Orange) */}
         <div
           className={`absolute -top-32 -left-32 w-[600px] h-[600px] rounded-full blur-[140px] opacity-25 transition-all duration-700 ${
             teamASide === 'CT' ? 'bg-[#00D5FF]' : 'bg-[#FF7438]'
           }`}
         />
-        {/* Right Team (CT Cyan or T Orange) */}
         <div
           className={`absolute -bottom-32 -right-32 w-[600px] h-[600px] rounded-full blur-[140px] opacity-25 transition-all duration-700 ${
             teamBSide === 'CT' ? 'bg-[#00D5FF]' : 'bg-[#FF7438]'
           }`}
         />
-        {/* Center Grid */}
         <div className="absolute inset-0 tactical-grid-bg opacity-20" />
       </div>
 
-      {/* TOP STAGE HUD BAR */}
       {!cleanMode && (
         <header className="relative z-30 px-6 py-4 flex items-center justify-between border-b border-tactical-border/70 bg-[#090D14]/90 backdrop-blur-md">
           <div className="flex items-center gap-4">
@@ -190,8 +188,31 @@ function StageProjectorScoreboardContent() {
             <span>CST LAN CHALLENGE 2026 • UVA WELLASSA UNIVERSITY OF SRI LANKA</span>
           </div>
 
-          {/* Projector Controls */}
           <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 bg-surface p-0.5 border border-tactical-border mr-2">
+              <button
+                onClick={() => setDisplayMode('match')}
+                className={`px-2.5 py-1 font-mono text-[11px] uppercase font-bold transition-all ${
+                  displayMode === 'match'
+                    ? 'bg-cyan text-black shadow-[0_0_10px_rgba(0,213,255,0.4)]'
+                    : 'text-secondaryText hover:text-white'
+                }`}
+              >
+                🔴 ARENA HUD
+              </button>
+              <button
+                onClick={() => setDisplayMode('bracket')}
+                className={`px-2.5 py-1 font-mono text-[11px] uppercase font-bold transition-all flex items-center gap-1 ${
+                  displayMode === 'bracket'
+                    ? 'bg-gradient-to-r from-tactical-gold to-yellow-500 text-black font-black shadow-[0_0_10px_rgba(255,184,0,0.4)]'
+                    : 'text-secondaryText hover:text-white'
+                }`}
+              >
+                <Trophy className="w-3 h-3" />
+                <span>BRACKET HUD</span>
+              </button>
+            </div>
+
             <button
               onClick={() => setSoundEnabled(!soundEnabled)}
               className={`p-2 border text-xs font-mono transition-colors ${
@@ -223,7 +244,6 @@ function StageProjectorScoreboardContent() {
         </header>
       )}
 
-      {/* C4 BOMB PLANTED EMERGENCY BANNER */}
       {isC4Active && (
         <div className="relative z-40 bg-gradient-to-r from-rose-950 via-rose-600 to-rose-950 text-white py-2.5 px-6 border-y-2 border-rose-400 shadow-[0_0_35px_rgba(244,63,94,0.8)] animate-pulse flex items-center justify-center gap-3 font-mono font-black text-sm sm:text-base tracking-widest uppercase">
           <Bomb className="w-5 h-5 animate-bounce" />
@@ -232,37 +252,75 @@ function StageProjectorScoreboardContent() {
         </div>
       )}
 
-      {/* MAIN STAGE ARENA DISPLAY */}
       <main className="relative z-20 flex-1 flex flex-col justify-center max-w-7xl w-full mx-auto px-4 sm:px-8 py-6">
         
-        {/* Tournament Phase Badge */}
-        <div className="flex flex-col items-center justify-center mb-6 text-center">
-          <div className="inline-flex items-center gap-2 bg-surface/90 border border-tactical-border px-4 py-1 mb-2 shadow-lg">
-            <Radio className="w-3.5 h-3.5 text-rose-500 animate-pulse" />
-            <span className="font-mono text-xs uppercase font-bold text-white tracking-widest">
-              {activeMatch.stage}
-            </span>
-            <span className="text-secondaryText font-mono text-xs">{"//"}</span>
-            <span className="font-mono text-xs uppercase font-bold text-cyan tracking-widest">
-              MAP: {activeMatch.map}
-            </span>
+        {displayMode === 'bracket' ? (
+          <div className="py-4">
+            <PlayoffBracketTree
+              matches={matches}
+              teams={teams}
+              onRefresh={syncMatchState}
+            />
           </div>
-
-          <div className="text-xs font-mono text-secondaryText tracking-wider uppercase">
-            REGULATION MR12 FORMAT • FIRST SQUAD TO 13 ROUNDS WINS
+        ) : !activeMatch ? (
+          <div className="max-w-2xl mx-auto text-center px-4 py-20 relative z-20">
+            <div className="w-20 h-20 mx-auto mb-6 bg-cyan/10 border-2 border-cyan/40 flex items-center justify-center clip-tactical shadow-[0_0_30px_rgba(0,213,255,0.2)]">
+              <Radio className="w-10 h-10 text-cyan animate-pulse" />
+            </div>
+            <div className="inline-flex items-center gap-2 bg-surface/90 border border-tactical-border px-4 py-1.5 mb-4">
+              <span className="w-2 h-2 rounded-full bg-cyan animate-ping" />
+              <span className="text-xs font-mono uppercase tracking-widest text-cyan font-bold">
+                AUDITORIUM STAGE PROJECTOR // STANDBY
+              </span>
+            </div>
+            <h2 className="font-display font-black text-3xl sm:text-4xl uppercase text-white tracking-wider mb-4">
+              AWAITING NEXT FIXTURE
+            </h2>
+            <p className="text-xs sm:text-sm font-mono text-secondaryText mb-8 leading-relaxed">
+              Auditorium live projector feed is online. When a tournament match begins or is launched by the referee desk, live round telemetry, bomb timers, and round streaks will broadcast here automatically in real time.
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-4">
+              <button
+                onClick={() => setDisplayMode('bracket')}
+                className="px-5 py-2.5 bg-cyan text-black font-mono text-xs font-bold uppercase tracking-wider hover:bg-cyan/90 transition-all flex items-center gap-2"
+              >
+                <Trophy className="w-4 h-4" />
+                <span>VIEW PLAYOFF BRACKET</span>
+              </button>
+              <Link
+                href="/scoreboard"
+                className="px-5 py-2.5 bg-surface border border-tactical-border text-white font-mono text-xs font-bold uppercase tracking-wider hover:border-cyan transition-all"
+              >
+                BACK TO SCOREBOARD
+              </Link>
+            </div>
           </div>
-        </div>
+        ) : (
+          <>
+            <div className="flex flex-col items-center justify-center mb-6 text-center">
+              <div className="inline-flex items-center gap-2 bg-surface/90 border border-tactical-border px-4 py-1 mb-2 shadow-lg">
+                <Radio className="w-3.5 h-3.5 text-rose-500 animate-pulse" />
+                <span className="font-mono text-xs uppercase font-bold text-white tracking-widest">
+                  {activeMatch.stage}
+                </span>
+                <span className="text-secondaryText font-mono text-xs">{"//"}</span>
+                <span className="font-mono text-xs uppercase font-bold text-cyan tracking-widest">
+                  MAP: {activeMatch.map}
+                </span>
+              </div>
 
-        {/* GIANT SCOREBOARD VERSUS SECTION */}
+              <div className="text-xs font-mono text-secondaryText tracking-wider uppercase">
+                REGULATION MR12 FORMAT • FIRST SQUAD TO 13 ROUNDS WINS
+              </div>
+            </div>
+
         <div className="grid grid-cols-12 items-center gap-4 sm:gap-6">
           
-          {/* TEAM A CARD (LEFT) */}
           <div className={`col-span-12 lg:col-span-5 p-6 sm:p-8 bg-card/90 border-2 backdrop-blur-xl transition-all duration-300 relative overflow-hidden ${
             teamASide === 'CT'
               ? 'border-cyan/50 shadow-[0_0_40px_rgba(0,213,255,0.15)]'
               : 'border-orange/50 shadow-[0_0_40px_rgba(255,116,56,0.15)]'
           }`}>
-            {/* Top Side Badge */}
             <div className="flex items-center justify-between mb-4">
               <span className={`px-3 py-1 font-mono font-black text-xs uppercase tracking-widest border clip-tactical ${
                 teamASide === 'CT'
@@ -274,7 +332,6 @@ function StageProjectorScoreboardContent() {
               <span className="text-[11px] font-mono text-secondaryText">TEAM ALPHA</span>
             </div>
 
-            {/* Team Identity */}
             <div className="flex items-center gap-5 mb-4">
               <div className="relative w-20 h-20 sm:w-24 sm:h-24 bg-surface border-2 border-tactical-border shrink-0 overflow-hidden clip-tactical">
                 <Image src={activeMatch.teamALogo} alt={activeMatch.teamAName} fill className="object-cover" sizes="96px" priority />
@@ -292,17 +349,14 @@ function StageProjectorScoreboardContent() {
               </div>
             </div>
 
-            {/* Round Streak Callout */}
             <div className="pt-3 border-t border-tactical-border/70 flex items-center justify-between text-xs font-mono text-secondaryText">
               <span>MOMENTUM: {activeMatch.scoreA > activeMatch.scoreB ? 'ROUND LEAD' : 'CHASING'}</span>
               <span className="text-white font-bold">STATUS: {activeMatch.status.toUpperCase()}</span>
             </div>
           </div>
 
-          {/* CENTER GIANT ROUND SCORE HUB */}
           <div className="col-span-12 lg:col-span-2 flex flex-col items-center justify-center text-center p-4">
             
-            {/* Round Counter */}
             <div className="text-[11px] font-mono uppercase tracking-widest text-secondaryText mb-1">
               CURRENT ROUND
             </div>
@@ -310,7 +364,6 @@ function StageProjectorScoreboardContent() {
               ROUND {currentRound}
             </div>
 
-            {/* GIANT NUMBERS (11 : 9) */}
             <div className={`flex items-center justify-center gap-3 sm:gap-4 font-display font-black text-6xl sm:text-8xl tracking-tight transition-transform duration-300 ${
               lastUpdateEffect ? 'scale-110' : 'scale-100'
             }`}>
@@ -323,7 +376,6 @@ function StageProjectorScoreboardContent() {
               </span>
             </div>
 
-            {/* Half-Time Status Indicator */}
             <div className="mt-3">
               <span className="px-3 py-1 bg-surface border border-tactical-border text-[11px] font-mono text-secondaryText uppercase tracking-wider">
                 {currentRound <= 12 ? 'FIRST HALF (ROUND 1-12)' : currentRound <= 24 ? 'SECOND HALF (ROUND 13-24)' : 'OVERTIME EXTENSION'}
@@ -376,7 +428,6 @@ function StageProjectorScoreboardContent() {
 
         </div>
 
-        {/* CHRONOLOGICAL ROUND MOMENTUM HISTORY TIMELINE */}
         <div className="mt-8 p-4 bg-card/70 border border-tactical-border backdrop-blur-md">
           <div className="flex items-center justify-between mb-3 text-xs font-mono">
             <span className="text-secondaryText uppercase tracking-wider flex items-center gap-1.5">
@@ -395,7 +446,6 @@ function StageProjectorScoreboardContent() {
             </div>
           </div>
 
-          {/* Timeline Dots */}
           <div className="grid grid-cols-24 gap-1 sm:gap-2">
             {Array.from({ length: 24 }).map((_, index) => {
               const roundWinner = roundHistory[index];
@@ -426,7 +476,6 @@ function StageProjectorScoreboardContent() {
           </div>
         </div>
 
-        {/* MVP HIGHLIGHT (IF AVAILABLE) */}
         {activeMatch.mvp && (
           <div className="mt-4 p-3 bg-tactical-gold/10 border border-tactical-gold/30 flex items-center justify-between text-xs font-mono">
             <div className="flex items-center gap-2 text-tactical-gold">
@@ -439,10 +488,11 @@ function StageProjectorScoreboardContent() {
             </span>
           </div>
         )}
+          </>
+        )}
 
       </main>
 
-      {/* BOTTOM FOOTER BAR */}
       {!cleanMode && (
         <footer className="relative z-30 px-6 py-3 border-t border-tactical-border/70 bg-[#090D14]/90 backdrop-blur-md flex items-center justify-between text-[11px] font-mono text-secondaryText">
           <div className="flex items-center gap-2">
@@ -460,7 +510,6 @@ function StageProjectorScoreboardContent() {
         </footer>
       )}
 
-      {/* Floating Exit Clean Mode Button */}
       {cleanMode && (
         <button
           onClick={() => setCleanMode(false)}

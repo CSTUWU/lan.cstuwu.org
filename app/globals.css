@@ -19,7 +19,6 @@
 }
 
 html {
-  scroll-behavior: smooth;
   background-color: var(--background);
   color: var(--text-primary);
   color-scheme: dark;

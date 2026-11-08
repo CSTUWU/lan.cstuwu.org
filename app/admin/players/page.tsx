@@ -28,7 +28,6 @@ export default function AdminPlayersPage() {
     setTimeout(() => setCopiedSteamId(null), 2000);
   };
 
-  // Filter teams and their players
   const filteredTeams = teams.map((team) => {
     const query = searchQuery.toLowerCase();
     const teamMatches =
@@ -39,42 +38,32 @@ export default function AdminPlayersPage() {
     const matchingPlayers = team.players.filter(
       (p) =>
         teamMatches ||
-        p.ign.toLowerCase().includes(query) ||
+        (p.ign || '').toLowerCase().includes(query) ||
         p.name.toLowerCase().includes(query) ||
-        p.steamId.toLowerCase().includes(query)
+        (p.faculty || '').toLowerCase().includes(query) ||
+        (p.steamId || '').toLowerCase().includes(query)
     );
-
-    const subMatches =
-      team.substitute &&
-      (teamMatches ||
-        team.substitute.ign.toLowerCase().includes(query) ||
-        team.substitute.name.toLowerCase().includes(query) ||
-        team.substitute.steamId.toLowerCase().includes(query));
 
     return {
       team,
       matchingPlayers,
-      matchingSub: subMatches ? team.substitute : null,
-      isRelevant: teamMatches || matchingPlayers.length > 0 || !!subMatches,
+      isRelevant: teamMatches || matchingPlayers.length > 0,
     };
   }).filter((item) => (searchQuery ? item.isRelevant : true));
 
-  // Flat list for alternate view
-  const allFlatPlayers: { player: Player; team: Team; isSub: boolean }[] = [];
+  const allFlatPlayers: { player: Player; team: Team }[] = [];
   teams.forEach((t) => {
     t.players.forEach((p) => {
-      allFlatPlayers.push({ player: p, team: t, isSub: false });
+      allFlatPlayers.push({ player: p, team: t });
     });
-    if (t.substitute) {
-      allFlatPlayers.push({ player: t.substitute, team: t, isSub: true });
-    }
   });
 
   const filteredFlatPlayers = allFlatPlayers.filter(
     ({ player, team }) =>
-      player.ign.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (player.ign || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       player.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      player.steamId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (player.faculty && player.faculty.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (player.steamId || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       team.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       team.tag.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -83,7 +72,6 @@ export default function AdminPlayersPage() {
     <AdminLayout>
       <div className="space-y-6 max-w-7xl">
         
-        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-tactical-border">
           <div>
             <div className="inline-flex items-center gap-2 mb-1">
@@ -144,15 +132,13 @@ export default function AdminPlayersPage() {
           </div>
         </div>
 
-        {/* VIEW MODE 1: TEAM-WISE (USER REQUIREMENT) */}
         {viewMode === 'team-wise' ? (
           <div className="space-y-6">
-            {filteredTeams.map(({ team, matchingPlayers, matchingSub }) => (
+            {filteredTeams.map(({ team, matchingPlayers }) => (
               <div
                 key={team.id}
                 className="bg-card/90 border border-tactical-border p-5 backdrop-blur-md"
               >
-                {/* Team Sub-Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-tactical-border/70 gap-3 mb-4">
                   <div className="flex items-center gap-3">
                     <div className="relative w-10 h-10 bg-surface border border-tactical-border shrink-0 overflow-hidden">
@@ -181,7 +167,6 @@ export default function AdminPlayersPage() {
                   </div>
                 </div>
 
-                {/* Team's Athletes Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
                   {matchingPlayers.map((player, idx) => (
                     <div
@@ -196,72 +181,39 @@ export default function AdminPlayersPage() {
                           </span>
                         </div>
                         <div className="font-display font-black text-sm text-white truncate mb-0.5">
-                          {player.ign}
+                          {player.name || player.ign}
                         </div>
-                        <div className="text-[11px] font-mono text-secondaryText truncate mb-2">
-                          {player.name}
+                        <div className="text-[11px] font-mono text-cyan truncate mb-2">
+                          {player.faculty || (player.ign ? player.name : '')}
                         </div>
                       </div>
 
                       <div className="pt-2 border-t border-tactical-border/60">
-                        <div className="flex items-center justify-between gap-1 bg-card px-1.5 py-1 border border-tactical-border">
-                          <span className="text-[9px] font-mono text-cyan truncate select-all">
-                            {player.steamId}
-                          </span>
-                          <button
-                            onClick={() => copyToClipboard(player.steamId)}
-                            className="text-secondaryText hover:text-white shrink-0"
-                            title="Copy Steam ID"
-                          >
-                            {copiedSteamId === player.steamId ? (
-                              <Check className="w-2.5 h-2.5 text-emerald-400" />
-                            ) : (
-                              <Copy className="w-2.5 h-2.5" />
-                            )}
-                          </button>
-                        </div>
+                        {player.steamId ? (
+                          <div className="flex items-center justify-between gap-1 bg-card px-1.5 py-1 border border-tactical-border">
+                            <span className="text-[9px] font-mono text-cyan truncate select-all">
+                              {player.steamId}
+                            </span>
+                            <button
+                              onClick={() => copyToClipboard(player.steamId!)}
+                              className="text-secondaryText hover:text-white shrink-0"
+                              title="Copy Steam ID"
+                            >
+                              {copiedSteamId === player.steamId ? (
+                                <Check className="w-2.5 h-2.5 text-emerald-400" />
+                              ) : (
+                                <Copy className="w-2.5 h-2.5" />
+                              )}
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="text-[9px] font-mono text-secondaryText truncate">
+                            {player.faculty}
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
-
-                  {/* Substitute card if present */}
-                  {matchingSub && (
-                    <div className="bg-surface/80 border border-orange/40 p-3 flex flex-col justify-between">
-                      <div>
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-[9px] font-mono text-orange font-bold uppercase">6TH SUB</span>
-                          <span className="text-[9px] font-mono text-orange bg-orange/10 px-1 py-0.5 border border-orange/30">
-                            SUBSTITUTE
-                          </span>
-                        </div>
-                        <div className="font-display font-black text-sm text-white truncate mb-0.5">
-                          {matchingSub.ign}
-                        </div>
-                        <div className="text-[11px] font-mono text-secondaryText truncate mb-2">
-                          {matchingSub.name}
-                        </div>
-                      </div>
-
-                      <div className="pt-2 border-t border-tactical-border/60">
-                        <div className="flex items-center justify-between gap-1 bg-card px-1.5 py-1 border border-orange/30">
-                          <span className="text-[9px] font-mono text-orange truncate select-all">
-                            {matchingSub.steamId}
-                          </span>
-                          <button
-                            onClick={() => copyToClipboard(matchingSub.steamId)}
-                            className="text-secondaryText hover:text-white shrink-0"
-                            title="Copy Steam ID"
-                          >
-                            {copiedSteamId === matchingSub.steamId ? (
-                              <Check className="w-2.5 h-2.5 text-emerald-400" />
-                            ) : (
-                              <Copy className="w-2.5 h-2.5" />
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             ))}
@@ -273,38 +225,32 @@ export default function AdminPlayersPage() {
             )}
           </div>
         ) : (
-          /* FLAT TABLE VIEW (ALTERNATIVE) */
           <div className="bg-card/90 border border-tactical-border overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left font-mono text-xs">
                 <thead>
                   <tr className="bg-surface/80 border-b border-tactical-border text-secondaryText text-[10px] uppercase">
-                    <th className="py-3 px-4">IGN</th>
-                    <th className="py-3 px-4">LEGAL NAME</th>
-                    <th className="py-3 px-4">STEAM ID</th>
+                    <th className="py-3 px-4">PLAYER NAME</th>
+                    <th className="py-3 px-4">FACULTY</th>
+                    <th className="py-3 px-4">STEAM / IGN</th>
                     <th className="py-3 px-4">SQUAD</th>
                     <th className="py-3 px-4">ROLE</th>
                     <th className="py-3 px-4">STUDENT EMAIL</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-tactical-border/60">
-                  {filteredFlatPlayers.map(({ player, team, isSub }, idx) => (
+                  {filteredFlatPlayers.map(({ player, team }, idx) => (
                     <tr key={`${player.id}-${idx}`} className="hover:bg-surface/40 transition-colors">
                       <td className="py-3 px-4">
-                        <span className="font-bold text-white text-sm">{player.ign}</span>
-                        {isSub && (
-                          <span className="ml-2 text-[10px] text-orange bg-orange/10 border border-orange/30 px-1 py-0.5">
-                            SUB
-                          </span>
-                        )}
+                        <span className="font-bold text-white text-sm">{player.name || player.ign}</span>
                       </td>
-                      <td className="py-3 px-4 text-secondaryText">{player.name}</td>
-                      <td className="py-3 px-4 text-cyan">{player.steamId}</td>
+                      <td className="py-3 px-4 text-cyan">{player.faculty || '—'}</td>
+                      <td className="py-3 px-4 text-secondaryText">{player.steamId || player.ign || '—'}</td>
                       <td className="py-3 px-4">
                         <span className="text-[10px] text-cyan">[{team.tag}]</span> {team.name}
                       </td>
                       <td className="py-3 px-4 text-secondaryText">{player.role || 'Player'}</td>
-                      <td className="py-3 px-4 text-secondaryText">{player.email}</td>
+                      <td className="py-3 px-4 text-secondaryText">{player.email || '—'}</td>
                     </tr>
                   ))}
                 </tbody>

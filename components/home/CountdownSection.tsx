@@ -8,8 +8,10 @@ import { api } from '@/lib/api';
 import { transformBackendSettings } from '@/lib/transformers';
 import { Timer, Radio, AlertCircle, Calendar, Clock, MapPin } from 'lucide-react';
 import Button from '../ui/Button';
+import { useRegistrationStatus } from '@/hooks/useRegistrationStatus';
 
 export default function CountdownSection() {
+  const { isOpen } = useRegistrationStatus();
   const [mounted, setMounted] = useState(false);
   const [settings, setSettings] = useState<CountdownSettings>(INITIAL_COUNTDOWN);
   const [timeLeft, setTimeLeft] = useState({
@@ -75,21 +77,17 @@ export default function CountdownSection() {
 
   return (
     <section className="relative py-16 sm:py-20 bg-surface/80 border-t border-b border-tactical-border overflow-hidden">
-      {/* Background accents */}
       <div className="absolute inset-0 tactical-grid-bg opacity-15 pointer-events-none" />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[250px] bg-cyan/5 rounded-full blur-[120px] pointer-events-none" />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
-        {/* Tactical Control Panel Box */}
         <div className="relative bg-[#080B10]/90 border border-tactical-border/80 backdrop-blur-xl p-5 sm:p-8 md:p-10 shadow-2xl">
-          {/* Outer corner marks */}
           <span className="absolute -top-1.5 -left-1.5 w-3 h-3 border-t-2 border-l-2 border-cyan" />
           <span className="absolute -top-1.5 -right-1.5 w-3 h-3 border-t-2 border-r-2 border-orange" />
           <span className="absolute -bottom-1.5 -left-1.5 w-3 h-3 border-b-2 border-l-2 border-cyan" />
           <span className="absolute -bottom-1.5 -right-1.5 w-3 h-3 border-b-2 border-r-2 border-orange" />
 
-          {/* Top Panel Ticker */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-5 sm:pb-6 mb-6 sm:mb-8 border-b border-tactical-border/70 gap-3">
             <div className="flex items-center gap-3">
               <span className="flex h-3 w-3 relative">
@@ -115,14 +113,12 @@ export default function CountdownSection() {
             </div>
           </div>
 
-          {/* Countdown Numerals Display */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
             {timeBlocks.map((block) => (
               <div
                 key={block.label}
                 className="relative bg-card/70 border border-tactical-border/70 p-4 sm:p-6 text-center group hover:border-cyan/40 transition-colors"
               >
-                {/* Micro tech indicators */}
                 <div className="text-[9px] font-mono text-secondaryText/60 tracking-widest text-left mb-1">
                   SYS_CLOCK //{block.label}
                 </div>
@@ -138,7 +134,6 @@ export default function CountdownSection() {
             ))}
           </div>
 
-          {/* Bottom Alert / Location bar */}
           <div className="flex flex-col md:flex-row md:items-center justify-between pt-5 sm:pt-6 border-t border-tactical-border/70 gap-4">
             <div className="flex items-start gap-3">
               <MapPin className="w-4 h-4 text-cyan shrink-0 mt-0.5" />
@@ -150,11 +145,13 @@ export default function CountdownSection() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3 self-end md:self-center">
-              <Button href="/register" variant="cyan" size="sm">
-                ENLIST NOW
-              </Button>
-            </div>
+            {isOpen && (
+              <div className="flex items-center gap-3 self-end md:self-center">
+                <Button href="/register" variant="cyan" size="sm">
+                  ENLIST NOW
+                </Button>
+              </div>
+            )}
           </div>
 
         </div>

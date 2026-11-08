@@ -38,7 +38,6 @@ export default function AdminLoginView() {
     }
 
     try {
-      // 1. Authenticate with real Express backend API
       const res = await api.auth.login(user, pass);
       if (res.success) {
         setAdminAuth(true);
@@ -50,7 +49,6 @@ export default function AdminLoginView() {
       }
     } catch (err: any) {
       console.warn('Backend login notice:', err);
-      // Fallback for offline mode if user/pass is default
       if (
         (user.toLowerCase() === 'admin' && (pass === 'admin12345' || pass === 'cst2026')) ||
         user.toLowerCase() === 'admin@cst.uwu.ac.lk'
@@ -84,13 +82,11 @@ export default function AdminLoginView() {
 
   return (
     <div className="min-h-screen bg-[#070A0F] flex items-center justify-center p-4 relative overflow-hidden font-sans">
-      {/* Tactical Grid Background */}
       <div className="absolute inset-0 tactical-grid-bg opacity-20 pointer-events-none" />
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[350px] bg-cyan/10 rounded-full blur-[140px] pointer-events-none" />
 
       <div className="max-w-md w-full relative z-10">
         
-        {/* Brand Header */}
         <div className="text-center mb-6">
           <div className="inline-flex items-center justify-center w-14 h-14 bg-surface border border-cyan/50 text-cyan clip-tactical shadow-[0_0_25px_rgba(0,213,255,0.35)] mb-3">
             <Shield className="w-7 h-7" />
@@ -106,15 +102,12 @@ export default function AdminLoginView() {
           </p>
         </div>
 
-        {/* Login Panel */}
         <div className="bg-card/95 border border-tactical-border p-6 sm:p-8 backdrop-blur-md shadow-2xl relative">
-          {/* Corner brackets */}
           <span className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-cyan" />
           <span className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-cyan" />
           <span className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-cyan" />
           <span className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-cyan" />
 
-          {/* Status Alert if success */}
           {isSuccess && (
             <div className="p-3 bg-emerald-500/20 border border-emerald-500/60 mb-5 flex items-center gap-2.5 text-xs font-mono text-emerald-300">
               <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
@@ -122,7 +115,6 @@ export default function AdminLoginView() {
             </div>
           )}
 
-          {/* Quick Instant Login Button */}
           <div className="mb-6 pb-5 border-b border-tactical-border text-center">
             <button
               type="button"
@@ -130,14 +122,13 @@ export default function AdminLoginView() {
               className="w-full py-3.5 px-4 bg-cyan text-background font-mono font-black text-xs uppercase tracking-wider hover:bg-white transition-all shadow-[0_0_25px_rgba(0,213,255,0.45)] clip-tactical flex items-center justify-center gap-2 group cursor-pointer"
             >
               <Zap className="w-4 h-4 text-background group-hover:scale-125 transition-transform" />
-              <span>⚡ 1-CLICK INSTANT DEMO LOGIN</span>
+              <span>⚡ 1-CLICK INSTANT ADMIN LOGIN</span>
             </button>
             <p className="text-[10px] font-mono text-secondaryText mt-2">
               Pre-authorized for competition organizers & referees.
             </p>
           </div>
 
-          {/* Standard Login Form */}
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="block text-[11px] font-mono text-secondaryText uppercase tracking-wider mb-1.5 flex items-center justify-between">
@@ -192,7 +183,6 @@ export default function AdminLoginView() {
             </button>
           </form>
 
-          {/* Direct Link to Dashboard */}
           <div className="mt-5 pt-4 border-t border-tactical-border text-center">
             <button
               type="button"

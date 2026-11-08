@@ -1,16 +1,29 @@
+export const UWU_FACULTIES = [
+  'Faculty of Applied Sciences',
+  'Faculty of Management',
+  'Faculty of Technological Studies',
+  'Faculty of Animal Science and Export Agriculture',
+  'Faculty of Medicine',
+] as const;
+
+export type UWUFaculty = (typeof UWU_FACULTIES)[number];
+
 export interface Player {
   id: string;
   name: string;
-  ign: string; // in-game name
-  steamId: string;
-  email: string;
+  faculty: string;
+  ign?: string; // in-game name (optional)
+  steamId?: string; // steam ID (optional)
+  email?: string;
   role?: string;
 }
 
 export interface Captain {
   name: string;
-  email: string;
-  phone: string;
+  whatsappNumber: string;
+  faculty?: string;
+  email?: string;
+  phone?: string;
 }
 
 export type ApprovalStatus = 'approved' | 'pending' | 'rejected';
@@ -25,7 +38,7 @@ export interface Team {
   createdAt: string;
   captain: Captain;
   players: Player[]; // exactly 5 players
-  substitute?: Player;
+  faculty?: string;
   matchesPlayed?: number;
   wins?: number;
   losses?: number;
@@ -43,6 +56,7 @@ export type CS2Map = 'Mirage' | 'Dust II' | 'Inferno' | 'Ancient' | 'Nuke' | 'An
 
 export interface Match {
   id: string;
+  matchNumber?: number;
   teamAId: string;
   teamBId: string;
   teamAName: string;
@@ -56,9 +70,14 @@ export interface Match {
   status: MatchStatus;
   scoreA: number;
   scoreB: number;
-  stage: string; // e.g. "Upper Bracket Semifinal", "Grand Final"
+  stage: string; // e.g. "Quarterfinal 1", "Semifinal 1", "Grand Final"
   streamUrl?: string;
   mvp?: string;
+  bracketRound?: 'round_of_16' | 'quarterfinals' | 'semifinals' | 'final' | 'third_place' | 'groups';
+  bracketPosition?: number;
+  nextMatchId?: string;
+  nextMatchSlot?: 'teamA' | 'teamB';
+  winnerId?: string;
   // Real-time projector live metrics
   currentRound?: number;
   half?: 1 | 2 | 'OT';
@@ -68,9 +87,19 @@ export interface Match {
   teamBSide?: 'CT' | 'T';
 }
 
+export interface PlayoffBracket {
+  roundOf16?: Match[];
+  quarterfinals: Match[];
+  semifinals: Match[];
+  final: Match | null;
+  thirdPlace?: Match | null;
+  champion?: Team | null;
+}
+
 export interface CountdownSettings {
   tournamentDate: string; // ISO string e.g. "2026-11-20T09:00:00"
   registrationDeadline: string; // ISO string
   eventStatus: 'REGISTRATIONS OPEN' | 'CHECK-IN PHASE' | 'BATTLEFIELD ACTIVE' | 'CHAMPIONS CROWNED';
   announcementText: string;
+  isRegistrationOpen?: boolean;
 }

@@ -23,7 +23,6 @@ export default function AdminRegistrationsPage() {
     // 1. Initial local render
     setTeams(getStoredTeams());
 
-    // 2. Fetch from backend API
     try {
       const res = await api.admin.getRegistrations();
       if (res.success && Array.isArray(res.data) && res.data.length > 0) {
@@ -61,7 +60,6 @@ export default function AdminRegistrationsPage() {
       showNotice(`Status updated to ${status.toUpperCase()} locally.`);
     }
 
-    // Synchronize local storage & state
     updateTeamStatus(teamId, status);
     if (selectedTeam && selectedTeam.id === teamId) {
       setSelectedTeam({ ...selectedTeam, status });
@@ -84,7 +82,6 @@ export default function AdminRegistrationsPage() {
     <AdminLayout>
       <div className="space-y-6">
         
-        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-tactical-border">
           <div>
             <div className="inline-flex items-center gap-2 mb-1">
@@ -111,7 +108,6 @@ export default function AdminRegistrationsPage() {
           </button>
         </div>
 
-        {/* Action Notice */}
         {actionNotice && (
           <div className="p-3 bg-cyan/10 border border-cyan/40 text-xs font-mono text-cyan flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-cyan" />
@@ -119,7 +115,6 @@ export default function AdminRegistrationsPage() {
           </div>
         )}
 
-        {/* Search & Filters */}
         <div className="bg-card/90 border border-tactical-border p-4 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="relative w-full md:w-80">
             <Search className="w-4 h-4 text-secondaryText absolute left-3 top-1/2 -translate-y-1/2" />
@@ -149,7 +144,6 @@ export default function AdminRegistrationsPage() {
           </div>
         </div>
 
-        {/* Registrations Table */}
         <div className="bg-card/90 border border-tactical-border overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left font-mono text-xs">
@@ -248,7 +242,6 @@ export default function AdminRegistrationsPage() {
 
       </div>
 
-      {/* Roster Inspection Modal */}
       {selectedTeam && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/85 backdrop-blur-md">
           <div className="relative bg-card border border-cyan/50 max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 shadow-2xl">
@@ -259,7 +252,6 @@ export default function AdminRegistrationsPage() {
               <X className="w-5 h-5" />
             </button>
 
-            {/* Header */}
             <div className="flex items-center gap-4 border-b border-tactical-border pb-6 mb-6">
               <div className="relative w-16 h-16 bg-surface border border-cyan/40 shrink-0 overflow-hidden">
                 <Image src={selectedTeam.logo} alt={selectedTeam.name} fill className="object-cover" sizes="64px" />
@@ -277,22 +269,33 @@ export default function AdminRegistrationsPage() {
               </div>
             </div>
 
-            {/* Captain details */}
             <div className="bg-surface/80 border border-tactical-border p-4 mb-6 text-xs font-mono">
-              <div className="text-cyan font-bold uppercase mb-2 flex items-center gap-2">
-                <Shield className="w-3.5 h-3.5" /> CAPTAIN LIAISON
+              <div className="text-cyan font-bold uppercase mb-2 flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Shield className="w-3.5 h-3.5" /> TEAM LEADER
+                </span>
+                {selectedTeam.captain.whatsappNumber && (
+                  <a
+                    href={`https://wa.me/${selectedTeam.captain.whatsappNumber.replace(/[^0-9]/g, '')}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-500 hover:text-black transition-colors"
+                  >
+                    <Phone className="w-3 h-3" />
+                    <span>CHAT ON WHATSAPP</span>
+                  </a>
+                )}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-secondaryText">
                 <div>NAME: <span className="text-white font-medium">{selectedTeam.captain.name}</span></div>
-                <div>EMAIL: <span className="text-white font-medium">{selectedTeam.captain.email}</span></div>
-                <div>PHONE: <span className="text-white font-medium">{selectedTeam.captain.phone}</span></div>
+                <div>WHATSAPP: <span className="text-emerald-400 font-bold">{selectedTeam.captain.whatsappNumber || selectedTeam.captain.phone}</span></div>
+                <div>FACULTY: <span className="text-white font-medium">{selectedTeam.captain.faculty || 'Applied Sciences'}</span></div>
               </div>
             </div>
 
-            {/* 5 Main Players */}
             <div className="mb-6">
               <h3 className="font-display font-bold text-sm text-white uppercase tracking-wider mb-3">
-                STARTING 5 PLAYERS (REQUIRED)
+                STARTING 5 PLAYERS
               </h3>
               <div className="space-y-2">
                 {selectedTeam.players.map((p, idx) => (
@@ -302,36 +305,22 @@ export default function AdminRegistrationsPage() {
                   >
                     <div>
                       <span className="text-cyan font-bold mr-2">0{idx + 1}.</span>
-                      <span className="text-white font-bold">{p.ign}</span>{' '}
-                      <span className="text-secondaryText">({p.name})</span>
+                      <span className="text-white font-bold">{p.name || p.ign}</span>
+                      {p.ign && p.ign !== p.name && (
+                        <span className="text-secondaryText"> ({p.ign})</span>
+                      )}
                     </div>
-                    <div className="flex items-center gap-4 text-secondaryText text-[11px]">
-                      <span>STEAM: <strong className="text-white">{p.steamId}</strong></span>
-                      <span>EMAIL: {p.email}</span>
+                    <div className="flex flex-wrap items-center gap-3 text-secondaryText text-[11px]">
+                      <span className="text-cyan font-medium">{p.faculty}</span>
+                      {p.steamId && (
+                        <span>STEAM: <strong className="text-white">{p.steamId}</strong></span>
+                      )}
                     </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Substitute */}
-            {selectedTeam.substitute && (
-              <div className="mb-6">
-                <h3 className="font-display font-bold text-sm text-secondaryText uppercase tracking-wider mb-2">
-                  DESIGNATED SUBSTITUTE
-                </h3>
-                <div className="p-3 bg-surface/30 border border-dashed border-tactical-border flex justify-between items-center text-xs font-mono">
-                  <div>
-                    <span className="text-orange font-bold mr-2">[SUB]</span>
-                    <span className="text-white font-bold">{selectedTeam.substitute.ign}</span>{' '}
-                    <span className="text-secondaryText">({selectedTeam.substitute.name})</span>
-                  </div>
-                  <span className="text-[11px] text-secondaryText">{selectedTeam.substitute.steamId}</span>
-                </div>
-              </div>
-            )}
-
-            {/* Approval Controls */}
             <div className="pt-6 border-t border-tactical-border flex items-center justify-between">
               <div className="text-xs font-mono text-secondaryText">
                 Update Status:

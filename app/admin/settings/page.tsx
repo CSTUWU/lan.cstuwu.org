@@ -11,7 +11,7 @@ export default function AdminSettingsPage() {
   const [resetDone, setResetDone] = useState(false);
 
   const handleResetData = () => {
-    if (confirm('Are you sure you want to restore default demonstration teams, matches, and countdown settings? Any newly created local registrations will be reset.')) {
+    if (confirm('Are you sure you want to purge local tournament storage and initialize a clean production state?')) {
       resetAllData();
       setResetDone(true);
       setTimeout(() => setResetDone(false), 3000);
@@ -55,11 +55,10 @@ export default function AdminSettingsPage() {
         {resetDone && (
           <div className="p-4 bg-emerald-500/10 border border-emerald-500/50 flex items-center gap-3 text-xs font-mono text-emerald-400">
             <CheckCircle2 className="w-5 h-5 shrink-0" />
-            <span>Demonstration dataset reset to defaults! All test registries have been refreshed.</span>
+            <span>Local tournament dataset purged and initialized to clean production state!</span>
           </div>
         )}
 
-        {/* Reset Box */}
         <div className="bg-card/90 border border-tactical-border p-6 sm:p-8 backdrop-blur-md">
           <div className="flex items-start gap-4 mb-6">
             <div className="p-3 bg-surface border border-tactical-border shrink-0">
@@ -67,10 +66,10 @@ export default function AdminSettingsPage() {
             </div>
             <div>
               <h3 className="font-display font-bold text-base text-white uppercase tracking-wider">
-                RESTORE DEMONSTRATION DEFAULTS
+                PURGE LOCAL STORAGE & INITIALIZE CLEAN STATE
               </h3>
               <p className="text-xs font-mono text-secondaryText mt-1 leading-relaxed">
-                Re-seeds the application with original collegiate teams (UWU Tactical Vanguard, Moratuwa Titans, Colombo Apex, etc.), official matches, and default countdown schedules.
+                Clears all client-side cached registrations, matches, and restores clean production database synchronization for live university publishing.
               </p>
             </div>
           </div>
@@ -79,11 +78,10 @@ export default function AdminSettingsPage() {
             onClick={handleResetData}
             className="px-4 py-2.5 bg-surface border border-orange/50 hover:bg-orange hover:text-black font-mono text-xs text-orange font-bold uppercase transition-colors"
           >
-            RESTORE DEFAULT DEMO DATA
+            RESET TO CLEAN PRODUCTION STATE
           </button>
         </div>
 
-        {/* Export Data */}
         <div className="bg-card/90 border border-tactical-border p-6 sm:p-8 backdrop-blur-md">
           <div className="flex items-start gap-4 mb-6">
             <div className="p-3 bg-surface border border-tactical-border shrink-0">
@@ -109,7 +107,6 @@ export default function AdminSettingsPage() {
           </Button>
         </div>
 
-        {/* University Institutional Information */}
         <div className="bg-surface/60 border border-tactical-border p-6 text-xs font-mono text-secondaryText space-y-2">
           <div className="text-white font-bold uppercase flex items-center gap-2">
             <Shield className="w-4 h-4 text-cyan" /> OFFICIAL INSTITUTION METADATA

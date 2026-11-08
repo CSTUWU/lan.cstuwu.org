@@ -52,14 +52,12 @@ export default function CommanderShowcase() {
       ref={containerRef}
       className="relative py-28 bg-[#090D14] border-t border-b border-tactical-border overflow-hidden"
     >
-      {/* Background ambient lighting */}
       <div className="absolute top-1/4 -left-32 w-96 h-96 bg-cyan/10 rounded-full blur-[140px] pointer-events-none" />
       <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-orange/10 rounded-full blur-[140px] pointer-events-none" />
       <div className="absolute inset-0 tactical-grid-bg opacity-20 pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
-        {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
           <div className="inline-flex items-center gap-2 mb-3">
             <span className="w-8 h-[2px] bg-cyan" />
@@ -73,7 +71,6 @@ export default function CommanderShowcase() {
             Every round in Counter-Strike 2 is decided by decisive leadership, flawless communication, and calculated execution. Meet the two battlefield commanders of CST LAN Challenge 2026.
           </p>
 
-          {/* Mobile Faction Switcher */}
           <div className="flex md:hidden justify-center gap-3 mt-6">
             <button
               onClick={() => setActiveTab('vector')}
@@ -98,22 +95,18 @@ export default function CommanderShowcase() {
           </div>
         </div>
 
-        {/* Dual Commander Showcase Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
 
-          {/* CARD 1: COMMANDER VECTOR (CT) */}
           <div
             className={`commander-card relative bg-[#0C131B] border border-cyan/40 p-6 lg:p-8 backdrop-blur-md rounded-none transition-all duration-500 hover:border-cyan hover:shadow-[0_0_40px_rgba(0,213,255,0.25)] ${
               activeTab === 'vector' ? 'block' : 'hidden md:block'
             }`}
           >
-            {/* Corner Bracket Accents */}
             <span className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-cyan" />
             <span className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-cyan" />
             <span className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-cyan" />
             <span className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-cyan" />
 
-            {/* Header info */}
             <div className="flex items-center justify-between border-b border-cyan/20 pb-4 mb-6">
               <div className="flex items-center gap-2.5">
                 <Shield className="w-5 h-5 text-cyan" />
@@ -126,7 +119,6 @@ export default function CommanderShowcase() {
               </span>
             </div>
 
-            {/* Poster Image Container */}
             <div className="relative w-full h-[400px] sm:h-[460px] lg:h-[500px] overflow-hidden mb-6 border border-cyan/30 bg-surface">
               <Image
                 src="/images/commanders/vector.jpeg"
@@ -137,7 +129,6 @@ export default function CommanderShowcase() {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#0C131B] via-transparent to-transparent opacity-90" />
               
-              {/* Overlay HUD stats */}
               <div className="absolute top-4 right-4 bg-background/80 backdrop-blur-md border border-cyan/40 p-2.5 text-[10px] font-mono text-secondaryText space-y-1">
                 <div className="text-cyan font-bold">TACTICAL HUD V4.8</div>
                 <div>OPTICS: QUANTUM HUD</div>
@@ -155,12 +146,10 @@ export default function CommanderShowcase() {
               </div>
             </div>
 
-            {/* Description & Tactical Breakdown */}
             <p className="text-xs sm:text-sm text-secondaryText leading-relaxed mb-6 font-mono">
               Vector anchors the Counter-Terrorist defensive matrix with calm precision. Utilizing real-time drone reconnaissance, sub-tick synchronized utility lineups, and holographic site fortifications, Vector transforms every bomb site into an impenetrable tactical stronghold.
             </p>
 
-            {/* Tactical Metrics */}
             <div className="space-y-3 font-mono text-xs border-t border-tactical-border pt-4">
               <div>
                 <div className="flex justify-between text-secondaryText mb-1">
@@ -193,7 +182,6 @@ export default function CommanderShowcase() {
               </div>
             </div>
 
-            {/* Signature Arsenal */}
             <div className="mt-6 pt-4 border-t border-tactical-border flex items-center justify-between text-[11px] font-mono text-secondaryText">
               <span className="text-white font-semibold">PREFERRED ARSENAL:</span>
               <span className="text-cyan">M4A1-S • USP-S • INCENDIARY • DEFUSAL KIT</span>
@@ -201,19 +189,16 @@ export default function CommanderShowcase() {
           </div>
 
 
-          {/* CARD 2: COMMANDER REAPER (T) */}
           <div
             className={`commander-card relative bg-[#130E0D] border border-orange/40 p-6 lg:p-8 backdrop-blur-md rounded-none transition-all duration-500 hover:border-orange hover:shadow-[0_0_40px_rgba(255,116,56,0.25)] ${
               activeTab === 'reaper' ? 'block' : 'hidden md:block'
             }`}
           >
-            {/* Corner Bracket Accents */}
             <span className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-orange" />
             <span className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-orange" />
             <span className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-orange" />
             <span className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-orange" />
 
-            {/* Header info */}
             <div className="flex items-center justify-between border-b border-orange/20 pb-4 mb-6">
               <div className="flex items-center gap-2.5">
                 <Target className="w-5 h-5 text-orange" />
@@ -226,7 +211,6 @@ export default function CommanderShowcase() {
               </span>
             </div>
 
-            {/* Poster Image Container */}
             <div className="relative w-full h-[400px] sm:h-[460px] lg:h-[500px] overflow-hidden mb-6 border border-orange/30 bg-surface">
               <Image
                 src="/images/commanders/reaper.jpeg"
@@ -237,7 +221,6 @@ export default function CommanderShowcase() {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#130E0D] via-transparent to-transparent opacity-90" />
               
-              {/* Overlay HUD stats */}
               <div className="absolute top-4 right-4 bg-background/80 backdrop-blur-md border border-orange/40 p-2.5 text-[10px] font-mono text-secondaryText space-y-1">
                 <div className="text-orange font-bold">TACTICAL HUD V4.8</div>
                 <div>AGGRESSION INDEX: MAX</div>
@@ -255,12 +238,10 @@ export default function CommanderShowcase() {
               </div>
             </div>
 
-            {/* Description & Tactical Breakdown */}
             <p className="text-xs sm:text-sm text-secondaryText leading-relaxed mb-6 font-mono">
               Reaper commands the frontline with explosive aggression and unyielding trigger discipline. A veteran of brutal urban close-quarters warfare, Reaper is renowned for cracking defensive chokepoints, executing synchronized smoke walls, and delivering cold-blooded clutch victories.
             </p>
 
-            {/* Tactical Metrics */}
             <div className="space-y-3 font-mono text-xs border-t border-tactical-border pt-4">
               <div>
                 <div className="flex justify-between text-secondaryText mb-1">
@@ -293,7 +274,6 @@ export default function CommanderShowcase() {
               </div>
             </div>
 
-            {/* Signature Arsenal */}
             <div className="mt-6 pt-4 border-t border-tactical-border flex items-center justify-between text-[11px] font-mono text-secondaryText">
               <span className="text-white font-semibold">PREFERRED ARSENAL:</span>
               <span className="text-orange">AK-47 • GLOCK-18 • MOLOTOV • C4 CHARGE</span>

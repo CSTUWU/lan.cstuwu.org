@@ -3,11 +3,17 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { getStoredTeams, getStoredMatches, createMatch } from '@/lib/storage';
+import {
+  getStoredTeams,
+  getStoredMatches,
+  createMatch,
+  generateAndStorePlayoffBracket,
+  createAndSeedPlayoffTree,
+} from '@/lib/storage';
 import { api } from '@/lib/api';
 import { transformBackendMatch, transformBackendTeam } from '@/lib/transformers';
 import { Team, Match, CS2Map, MatchStatus } from '@/lib/types';
-import { Swords, Plus, Calendar, Clock, MapPin, CheckCircle2, Shield, RefreshCw } from 'lucide-react';
+import { Swords, Plus, Calendar, Clock, MapPin, CheckCircle2, Shield, RefreshCw, Trophy, GitBranch } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 
@@ -27,11 +33,9 @@ export default function AdminMatchesPage() {
   const [status, setStatus] = useState<MatchStatus>('upcoming');
 
   const loadData = async () => {
-    // 1. Initial local render
     setTeams(getStoredTeams());
     setMatches(getStoredMatches());
 
-    // 2. Fetch from backend API
     try {
       const [resTeams, resMatches] = await Promise.all([
         api.admin.getTeams().catch(() => null),
@@ -132,11 +136,51 @@ export default function AdminMatchesPage() {
     loadData();
   };
 
+  const handleAutoGeneratePlayoffs = async () => {
+    const candidateTeams = approvedTeams.length > 0 ? approvedTeams : teams.filter(t => (t.status || '').toLowerCase() !== 'rejected');
+    if (candidateTeams.length < 2) {
+      alert(`At least 2 teams are required to create the playoff bracket (Currently: ${candidateTeams.length} squads). Please enlist or approve squads first.`);
+      return;
+    }
+    const isEightSquad = candidateTeams.length <= 8;
+    const confirmSeed = window.confirm(
+      `CREATE PLAYOFF TREE from ${candidateTeams.length} registered squads?\n\n` +
+      (isEightSquad
+        ? `• 8-TEAM DUAL-WING BRACKET:\n` +
+          `  - Left Wing: 4 squads (2 Quarterfinal matches)\n` +
+          `  - Right Wing: 4 squads (2 Quarterfinal matches)\n` +
+          `  - Round 2 (Semifinals) and Grand Final will be completely free.\n`
+        : `• 16-TEAM DUAL-WING BRACKET:\n` +
+          `  - Left Wing: 8 squads (4 Round of 16 matches)\n` +
+          `  - Right Wing: 8 squads (4 Round of 16 matches)\n` +
+          `  - Round 2 (Quarterfinals), Semifinals & Grand Final will be completely free.\n`) +
+      `• Match wins will automatically advance winners down the tree to the trophy!`
+    );
+    if (!confirmSeed) return;
+
+    setLoading(true);
+    try {
+      createAndSeedPlayoffTree(candidateTeams);
+      setNotice(
+        `✓ ${isEightSquad ? '8-Squad Dual-Wing' : '16-Squad Major'} Playoff Tree created! Seeded with ${candidateTeams.length} squads; downstream rounds are free.`
+      );
+      try {
+        await api.admin.generatePlayoffs().catch(() => null);
+      } catch (e) {}
+    } catch (e) {
+      createAndSeedPlayoffTree(candidateTeams);
+      setNotice('✓ Playoff tree created locally.');
+    } finally {
+      await loadData();
+      setLoading(false);
+      setTimeout(() => setNotice(null), 5000);
+    }
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
         
-        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-tactical-border">
           <div>
             <div className="inline-flex items-center gap-2 mb-1">
@@ -151,7 +195,7 @@ export default function AdminMatchesPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={() => {
                 setLoading(true);
@@ -163,6 +207,14 @@ export default function AdminMatchesPage() {
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             </button>
             <Button
+              onClick={handleAutoGeneratePlayoffs}
+              variant="orange"
+              size="md"
+              icon={<Trophy className="w-4 h-4 text-background" />}
+            >
+              CREATE PLAYOFF TREE
+            </Button>
+            <Button
               onClick={() => setShowCreateModal(true)}
               variant="cyan"
               size="md"
@@ -173,7 +225,6 @@ export default function AdminMatchesPage() {
           </div>
         </div>
 
-        {/* Notice */}
         {notice && (
           <div className="p-3 bg-cyan/10 border border-cyan/40 text-xs font-mono text-cyan flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-cyan" />
@@ -181,7 +232,6 @@ export default function AdminMatchesPage() {
           </div>
         )}
 
-        {/* Existing Matches List */}
         <div className="space-y-4">
           {matches.map((m) => (
             <div
@@ -201,7 +251,6 @@ export default function AdminMatchesPage() {
                 </div>
               </div>
 
-              {/* Matchup Center */}
               <div className="flex items-center gap-6">
                 <div className="flex items-center gap-2.5 text-right">
                   <div>
@@ -228,7 +277,6 @@ export default function AdminMatchesPage() {
                 </div>
               </div>
 
-              {/* Status & Quick link to score */}
               <div className="text-right flex items-center gap-3">
                 <span className={`text-[10px] font-mono uppercase font-bold px-2.5 py-1 border ${
                   m.status === 'completed'
@@ -250,7 +298,6 @@ export default function AdminMatchesPage() {
 
       </div>
 
-      {/* Create Match Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/85 backdrop-blur-md">
           <div className="relative bg-card border border-cyan/50 max-w-lg w-full p-6 sm:p-8 shadow-2xl">

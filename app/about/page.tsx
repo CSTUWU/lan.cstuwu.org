@@ -6,23 +6,22 @@ import Image from 'next/image';
 import { Shield, Trophy, Users, Cpu, Award, CheckCircle2, ChevronRight, Terminal, Globe, Crosshair } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
+import { useRegistrationStatus } from '@/hooks/useRegistrationStatus';
 
 export default function AboutPage() {
+  const { isOpen } = useRegistrationStatus();
   return (
     <div className="pt-28 pb-24 bg-[#080B10] min-h-screen">
-      {/* Background grids */}
       <div className="absolute inset-0 tactical-grid-bg opacity-15 pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
-        {/* Breadcrumb / Top Bar */}
         <div className="flex items-center gap-2 text-xs font-mono text-secondaryText mb-8">
           <Link href="/" className="hover:text-cyan transition-colors">HOME</Link>
           <span>/</span>
           <span className="text-white">ABOUT THE TOURNAMENT</span>
         </div>
 
-        {/* Hero Header */}
         <div className="border-b border-tactical-border pb-12 mb-16">
           <Badge variant="cyan" size="sm" className="mb-3">
             OFFICIAL TOURNAMENT COMPENDIUM
@@ -43,7 +42,6 @@ export default function AboutPage() {
           </div>
         </div>
 
-        {/* Mission Statement Box */}
         <div className="bg-gradient-to-r from-card via-[#0F1722] to-card border-l-4 border-cyan border-y border-r border-tactical-border p-8 mb-16 shadow-2xl">
           <div className="flex items-center gap-3 text-cyan text-xs font-mono uppercase tracking-widest mb-2">
             <Shield className="w-4 h-4" /> OFFICIAL DECREE & PURPOSE
@@ -53,7 +51,6 @@ export default function AboutPage() {
           </blockquote>
         </div>
 
-        {/* Section 1: University Identity */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center mb-20">
           <div className="lg:col-span-7 space-y-6 text-secondaryText font-mono text-sm leading-relaxed">
             <h2 className="font-display font-black text-2xl sm:text-3xl uppercase text-white tracking-wider flex items-center gap-3">
@@ -116,7 +113,6 @@ export default function AboutPage() {
           </div>
         </div>
 
-        {/* Section 2: Why Counter-Strike 2 */}
         <div className="bg-surface/50 border border-tactical-border p-8 lg:p-12 mb-20">
           <div className="max-w-3xl mb-10">
             <Badge variant="orange" size="sm" className="mb-2">DISCIPLINE SHIFT</Badge>
@@ -155,18 +151,19 @@ export default function AboutPage() {
           </div>
         </div>
 
-        {/* CTA */}
         <div className="text-center py-12 border-t border-tactical-border">
           <h3 className="font-display font-black text-2xl sm:text-3xl text-white uppercase tracking-wider mb-4">
             READY TO WRITE YOUR UNIVERSITY&apos;S LEGEND?
           </h3>
           <p className="text-xs sm:text-sm text-secondaryText font-mono mb-8 max-w-xl mx-auto">
-            Assemble your five-man roster and designate your substitute. Registration is free for all verified university students.
+            Assemble your 5-man roster representing your faculty. Registration is open exclusively for verified students of Uva Wellassa University of Sri Lanka.
           </p>
           <div className="flex justify-center gap-4">
-            <Button href="/register" variant="cyan" size="lg">
-              REGISTER YOUR TEAM
-            </Button>
+            {isOpen && (
+              <Button href="/register" variant="cyan" size="lg">
+                REGISTER YOUR TEAM
+              </Button>
+            )}
             <Button href="/teams" variant="outline" size="lg">
               VIEW SQUADS
             </Button>
