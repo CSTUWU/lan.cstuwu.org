@@ -104,6 +104,9 @@ export default function AdminTeamsPage() {
     if (!confirmSeed) return;
 
     createAndSeedPlayoffTree(candidateTeams);
+    try {
+      api.admin.generatePlayoffs().catch(() => null);
+    } catch (e) {}
     setNotice(
       `✓ ${isEightSquad ? '8-Squad Dual-Wing' : '16-Squad Major'} Playoff Tree created! Seeded with ${candidateTeams.length} squads; downstream rounds are free.`
     );

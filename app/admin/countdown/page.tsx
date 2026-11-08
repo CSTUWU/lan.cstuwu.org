@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { getStoredCountdown, saveCountdown, setRegistrationOpen, generateAndStorePlayoffBracket } from '@/lib/storage';
+import { getStoredCountdown, saveCountdown, setRegistrationOpen, createAndSeedPlayoffTree } from '@/lib/storage';
 import { api } from '@/lib/api';
 import { transformBackendSettings } from '@/lib/transformers';
 import { CountdownSettings } from '@/lib/types';
@@ -18,15 +18,15 @@ export default function AdminCountdownPage() {
 
   const handleSeedPlayoffsNow = async () => {
     try {
+      createAndSeedPlayoffTree();
       const res = await api.admin.generatePlayoffs().catch(() => null);
       if (res?.success) {
-        setPlayoffNotice('Playoff bracket tree automatically seeded on backend database!');
+        setPlayoffNotice('Playoff bracket tree automatically seeded on backend database & live scoreboard!');
       } else {
-        generateAndStorePlayoffBracket();
         setPlayoffNotice('Playoff bracket tree generated & synchronized across live scoreboard!');
       }
     } catch (e) {
-      generateAndStorePlayoffBracket();
+      createAndSeedPlayoffTree();
       setPlayoffNotice('Playoff bracket tree generated locally.');
     }
     setTimeout(() => setPlayoffNotice(null), 5000);

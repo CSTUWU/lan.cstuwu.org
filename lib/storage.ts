@@ -28,8 +28,7 @@ export const getActiveBracketMode = (): ActiveBracketMode => {
     // Auto-detect based on registered teams count
     const rawTeams = localStorage.getItem(TEAMS_KEY);
     const teams: Team[] = rawTeams ? JSON.parse(rawTeams) : [];
-    const approved = teams.filter((t) => (t.status || '').toLowerCase() === 'approved');
-    const sourceTeams = approved.length > 0 ? approved : teams.filter((t) => (t.status || '').toLowerCase() !== 'rejected');
+    const sourceTeams = teams.filter((t) => (t.status || '').toLowerCase() !== 'rejected');
     const mode: ActiveBracketMode = sourceTeams.length > 8 ? '16-squad' : '8-squad';
     localStorage.setItem(ACTIVE_BRACKET_MODE_KEY, mode);
     return mode;
@@ -254,11 +253,17 @@ export const reset16Matches = (): Match[] => {
  */
 export const refresh16PlayoffTreeFromApprovedTeams = (providedTeams?: Team[]): Match[] => {
   const currentTeams = providedTeams || getStoredTeams();
-  const approvedTeams = currentTeams.filter((t) => t.status === 'approved');
+  const nonRejected = currentTeams.filter((t) => (t.status || '').toLowerCase() !== 'rejected');
+  const sourceTeams = [...nonRejected].sort((a, b) => {
+    const aApp = (a.status || '').toLowerCase() === 'approved' ? 1 : 0;
+    const bApp = (b.status || '').toLowerCase() === 'approved' ? 1 : 0;
+    if (bApp !== aApp) return bApp - aApp;
+    return (b.points || 0) - (a.points || 0);
+  });
   let currentMatches = getStored16Matches();
 
   if (!Array.isArray(currentMatches) || currentMatches.length === 0) {
-    const fresh = generate16TeamPlayoffTree(approvedTeams);
+    const fresh = generate16TeamPlayoffTree(sourceTeams);
     notify16MatchesUpdated(fresh);
     return fresh;
   }
@@ -275,21 +280,21 @@ export const refresh16PlayoffTreeFromApprovedTeams = (providedTeams?: Team[]): M
     const slotANum = String(teamASlotIdx + 1).padStart(2, '0');
     const slotBNum = String(teamBSlotIdx + 1).padStart(2, '0');
 
-    const teamA = approvedTeams[teamASlotIdx] || {
+    const teamA = sourceTeams[teamASlotIdx] || {
       id: `tbd-slot-${teamASlotIdx + 1}`,
       name: `TBD (Slot ${slotANum})`,
       tag: `SLOT${slotANum}`,
       logo: '/images/team-placeholder.svg',
     };
 
-    const teamB = approvedTeams[teamBSlotIdx] || {
+    const teamB = sourceTeams[teamBSlotIdx] || {
       id: `tbd-slot-${teamBSlotIdx + 1}`,
       name: `TBD (Slot ${slotBNum})`,
       tag: `SLOT${slotBNum}`,
       logo: '/images/team-placeholder.svg',
     };
 
-    // If match hasn't finished, update with real approved squad
+    // If match hasn't finished, update with real registered squad
     if (m.status !== 'completed') {
       m.teamAId = teamA.id;
       m.teamAName = teamA.name;
@@ -319,9 +324,14 @@ export const refresh16PlayoffTreeFromApprovedTeams = (providedTeams?: Team[]): M
  */
 export const createAndSeedPlayoffTree = (teams?: Team[]): Match[] => {
   const currentTeams = teams && teams.length > 0 ? teams : getStoredTeams();
-  // Prefer approved teams; if none explicitly approved, use all registered non-rejected teams
-  const approved = currentTeams.filter((t) => (t.status || '').toLowerCase() === 'approved');
-  const sourceTeams = approved.length > 0 ? approved : currentTeams.filter((t) => (t.status || '').toLowerCase() !== 'rejected');
+  // Include all registered non-rejected teams, prioritizing approved then pending
+  const nonRejected = currentTeams.filter((t) => (t.status || '').toLowerCase() !== 'rejected');
+  const sourceTeams = [...nonRejected].sort((a, b) => {
+    const aApp = (a.status || '').toLowerCase() === 'approved' ? 1 : 0;
+    const bApp = (b.status || '').toLowerCase() === 'approved' ? 1 : 0;
+    if (bApp !== aApp) return bApp - aApp;
+    return (b.points || 0) - (a.points || 0);
+  });
 
   const count = sourceTeams.length;
   const isEightSquad = count <= 8;
@@ -468,6 +478,13 @@ export const getStoredTeams = (): Team[] => {
   } catch (e) {
     console.error('Failed reading teams from localStorage', e);
     return INITIAL_TEAMS;
+  }
+};
+
+export const setStoredTeams = (newTeams: Team[]): void => {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(TEAMS_KEY, JSON.stringify(newTeams));
+    window.dispatchEvent(new Event('cst_teams_updated'));
   }
 };
 

@@ -137,7 +137,7 @@ export default function AdminMatchesPage() {
   };
 
   const handleAutoGeneratePlayoffs = async () => {
-    const candidateTeams = approvedTeams.length > 0 ? approvedTeams : teams.filter(t => (t.status || '').toLowerCase() !== 'rejected');
+    const candidateTeams = teams.filter((t) => (t.status || '').toLowerCase() !== 'rejected');
     if (candidateTeams.length < 2) {
       alert(`At least 2 teams are required to create the playoff bracket (Currently: ${candidateTeams.length} squads). Please enlist or approve squads first.`);
       return;

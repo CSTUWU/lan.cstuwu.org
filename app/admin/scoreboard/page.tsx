@@ -8,6 +8,7 @@ import {
   getStoredMatches,
   getStored16Matches,
   getStoredTeams,
+  setStoredTeams,
   updateMatchScore,
   incrementMatchScore,
   switchMatchSides,
@@ -17,7 +18,7 @@ import {
   createAndSeedPlayoffTree,
 } from '@/lib/storage';
 import { api } from '@/lib/api';
-import { transformBackendMatch } from '@/lib/transformers';
+import { transformBackendMatch, transformBackendTeam } from '@/lib/transformers';
 import { Match, MatchStatus } from '@/lib/types';
 import {
   Trophy,
@@ -61,9 +62,17 @@ export default function AdminScoreboardPage() {
     setMatches(combined);
 
     try {
-      const res = await api.admin.getMatches();
-      if (res.success && Array.isArray(res.data) && res.data.length > 0) {
-        const transformed = res.data.map(transformBackendMatch);
+      const [resMatches, resTeams] = await Promise.all([
+        api.admin.getMatches().catch(() => null),
+        api.admin.getTeams().catch(() => null),
+      ]);
+
+      if (resTeams?.success && Array.isArray(resTeams.data) && resTeams.data.length > 0) {
+        setStoredTeams(resTeams.data.map(transformBackendTeam));
+      }
+
+      if (resMatches?.success && Array.isArray(resMatches.data) && resMatches.data.length > 0) {
+        const transformed = resMatches.data.map(transformBackendMatch);
         if (bracketFilter === '8-squad' || bracketFilter === 'all') {
           setMatches(bracketFilter === '8-squad' ? transformed : [...getStored16Matches(), ...transformed]);
         }
@@ -221,10 +230,18 @@ export default function AdminScoreboardPage() {
     }
   };
 
-  const handleCreatePlayoffTree = () => {
-    const currentTeams = getStoredTeams();
-    const approved = currentTeams.filter((t) => (t.status || '').toLowerCase() === 'approved');
-    const sourceTeams = approved.length > 0 ? approved : currentTeams.filter((t) => (t.status || '').toLowerCase() !== 'rejected');
+  const handleCreatePlayoffTree = async () => {
+    let currentTeams = getStoredTeams();
+    try {
+      const resTeams = await api.admin.getTeams().catch(() => null);
+      if (resTeams?.success && Array.isArray(resTeams.data) && resTeams.data.length > 0) {
+        const fetchedTeams = resTeams.data.map(transformBackendTeam);
+        setStoredTeams(fetchedTeams);
+        currentTeams = fetchedTeams;
+      }
+    } catch (e) {}
+
+    const sourceTeams = currentTeams.filter((t) => (t.status || '').toLowerCase() !== 'rejected');
     const isEightSquad = sourceTeams.length <= 8;
 
     const confirmSeed = window.confirm(
@@ -242,7 +259,11 @@ export default function AdminScoreboardPage() {
     );
     if (!confirmSeed) return;
 
-    createAndSeedPlayoffTree();
+    createAndSeedPlayoffTree(sourceTeams);
+    try {
+      await api.admin.generatePlayoffs().catch(() => null);
+    } catch (e) {}
+
     const updated = getCombinedMatches(bracketFilter);
     setMatches(updated);
     showNotice(

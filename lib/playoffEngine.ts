@@ -7,8 +7,14 @@ const PLAYOFF_MAPS: CS2Map[] = ['Mirage', 'Inferno', 'Dust II', 'Ancient', 'Nuke
 
 export function generatePlayoffTreeFromTeams(teams?: Team[]): Match[] {
   const currentTeams = teams || [];
-  const approved = currentTeams.filter((t) => (t.status || '').toLowerCase() === 'approved');
-  const sourceTeams = approved.length > 0 ? approved : currentTeams.filter((t) => (t.status || '').toLowerCase() !== 'rejected');
+  // Include all registered squads that are not rejected, prioritizing approved then pending
+  const nonRejected = currentTeams.filter((t) => (t.status || '').toLowerCase() !== 'rejected');
+  const sourceTeams = [...nonRejected].sort((a, b) => {
+    const aApp = (a.status || '').toLowerCase() === 'approved' ? 1 : 0;
+    const bApp = (b.status || '').toLowerCase() === 'approved' ? 1 : 0;
+    if (bApp !== aApp) return bApp - aApp;
+    return (b.points || 0) - (a.points || 0);
+  });
 
   // Symmetrical 8-squad dual-wing bracket seeding:
   // Left Wing (4 teams): QF 1 (Slots 0, 1) & QF 2 (Slots 2, 3)
@@ -477,8 +483,14 @@ export const SIXTEEN_BRACKET_TEAMS: Team[] = DEFAULT_TBD_TEAMS;
  * matching the exact structure from the reference tournament bracket
  */
 export function generate16TeamPlayoffTree(customTeams?: Team[]): Match[] {
-  const approved = customTeams ? customTeams.filter((team) => (team.status || '').toLowerCase() === 'approved') : [];
-  const sourceTeams = approved.length > 0 ? approved : (customTeams ? customTeams.filter((t) => (t.status || '').toLowerCase() !== 'rejected') : []);
+  // Include all registered squads that are not rejected, prioritizing approved then pending
+  const nonRejected = customTeams ? customTeams.filter((t) => (t.status || '').toLowerCase() !== 'rejected') : [];
+  const sourceTeams = [...nonRejected].sort((a, b) => {
+    const aApp = (a.status || '').toLowerCase() === 'approved' ? 1 : 0;
+    const bApp = (b.status || '').toLowerCase() === 'approved' ? 1 : 0;
+    if (bApp !== aApp) return bApp - aApp;
+    return (b.points || 0) - (a.points || 0);
+  });
 
   const t = Array.from({ length: 16 }, (_, idx) => {
     if (sourceTeams[idx]) {

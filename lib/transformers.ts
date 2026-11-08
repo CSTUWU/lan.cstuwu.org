@@ -7,7 +7,7 @@ export function transformBackendTeam(raw: any): Team {
   const name = raw.teamName || raw.name || 'Unknown Squad';
   const tag = raw.teamTag || raw.tag || 'CS2';
   const university = raw.university || 'University of Sri Lanka';
-  const logo = raw.teamLogo || raw.logo || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200&auto=format&fit=crop&q=80';
+  const logo = raw.teamLogo || raw.logo || '/images/team-placeholder.svg';
 
   let status: ApprovalStatus = 'approved';
   if (raw.status) {
@@ -70,11 +70,11 @@ export function transformBackendMatch(raw: any): Match {
   const teamBId = raw.teamB?._id || raw.teamB || raw.teamBId || 'teamB';
   const teamAName = raw.teamAName || raw.teamA?.teamName || raw.teamA?.name || 'Team Alpha';
   const teamATag = raw.teamATag || raw.teamA?.teamTag || raw.teamA?.tag || 'TMA';
-  const teamALogo = raw.teamALogo || raw.teamA?.teamLogo || raw.teamA?.logo || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200&auto=format&fit=crop&q=80';
+  const teamALogo = raw.teamALogo || raw.teamA?.teamLogo || raw.teamA?.logo || '/images/team-placeholder.svg';
 
   const teamBName = raw.teamBName || raw.teamB?.teamName || raw.teamB?.name || 'Team Bravo';
   const teamBTag = raw.teamBTag || raw.teamB?.teamTag || raw.teamB?.tag || 'TMB';
-  const teamBLogo = raw.teamBLogo || raw.teamB?.teamLogo || raw.teamB?.logo || 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=200&auto=format&fit=crop&q=80';
+  const teamBLogo = raw.teamBLogo || raw.teamB?.teamLogo || raw.teamB?.logo || '/images/team-placeholder.svg';
 
   const map = (raw.mapName || raw.map || 'Mirage') as CS2Map;
   const dateTime = raw.scheduledAt ? new Date(raw.scheduledAt).toISOString() : raw.dateTime || new Date().toISOString();

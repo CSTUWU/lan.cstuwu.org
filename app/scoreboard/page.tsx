@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { getStoredTeams, getStoredMatches, getActiveLiveMatch } from '@/lib/storage';
+import { getStoredTeams, setStoredTeams, getStoredMatches, getActiveLiveMatch } from '@/lib/storage';
 import { INITIAL_TEAMS, INITIAL_MATCHES } from '@/lib/mockData';
 import { api } from '@/lib/api';
 import { transformBackendTeam, transformBackendMatch } from '@/lib/transformers';
@@ -38,6 +38,15 @@ export default function ScoreboardPage() {
   const reloadData = () => {
     setTeams(getStoredTeams());
     setMatches(getStoredMatches());
+
+    // Fetch all registered collegiate squads from API
+    api.public.getTeams().then((res) => {
+      if (res?.success && Array.isArray(res.data) && res.data.length > 0) {
+        const fetchedTeams = res.data.map(transformBackendTeam);
+        setTeams(fetchedTeams);
+        setStoredTeams(fetchedTeams);
+      }
+    }).catch(() => {});
 
     // Fetch live scoreboard & standings from API
     api.public.getScoreboard().then((res) => {

@@ -187,12 +187,12 @@ export default function PlayoffBracketTree({
   }, []);
 
   useEffect(() => {
-    // Synchronize 1st layer of 16-squad playoff tree with approved teams
-    if (teams && teams.length > 0) {
+    // Only initialize 16-squad tree if empty and currently in 16-squad mode
+    if (layoutMode === '16-squad' && sixteenMatches.length === 0 && teams && teams.length > 0) {
       const refreshed = refresh16PlayoffTreeFromApprovedTeams(teams);
       setSixteenMatches(refreshed);
     }
-  }, [teams]);
+  }, [teams, layoutMode]);
 
   useEffect(() => {
     const sync16 = () => {
@@ -453,18 +453,18 @@ export default function PlayoffBracketTree({
             </div>
 
             {showAdminControls && (
-              <>
-                {layoutMode === '16-squad' ? (
-                  <div className="flex flex-wrap items-center gap-2">
-                    <button
-                      onClick={handleCreatePlayoffTree}
-                      className="px-3.5 py-2 bg-gradient-to-r from-purple-600 to-cyan hover:brightness-110 text-white font-mono text-xs uppercase font-black flex items-center gap-1.5 border border-cyan/60 shadow-[0_0_20px_rgba(0,213,255,0.3)] transition-all"
-                      title="Seed 1st layer with registered squads; Round 2, Semifinals & Finals start free and advance automatically on win"
-                    >
-                      <Trophy className="w-3.5 h-3.5 text-cyan" />
-                      <span>CREATE PLAYOFF TREE</span>
-                    </button>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={handleCreatePlayoffTree}
+                  className="px-3.5 py-2 bg-gradient-to-r from-purple-600 to-cyan hover:brightness-110 text-white font-mono text-xs uppercase font-black flex items-center gap-1.5 border border-cyan/60 shadow-[0_0_20px_rgba(0,213,255,0.3)] transition-all"
+                  title="Seed 1st layer with registered squads; Round 2, Semifinals & Finals start free and advance automatically on win"
+                >
+                  <Trophy className="w-3.5 h-3.5 text-cyan" />
+                  <span>CREATE PLAYOFF TREE</span>
+                </button>
 
+                {layoutMode === '16-squad' ? (
+                  <>
                     <button
                       onClick={handleAutoSimulateChampionship}
                       disabled={isSimulatingAll}
@@ -483,22 +483,22 @@ export default function PlayoffBracketTree({
                       <RotateCcw className="w-3.5 h-3.5" />
                       <span>RESET BRACKET</span>
                     </button>
-                  </div>
+                  </>
                 ) : (
                   <button
                     onClick={() => {
-                      generateAndStorePlayoffBracket(teams);
+                      createAndSeedPlayoffTree(teams);
                       if (onRefresh) onRefresh();
                       triggerNotice('✓ Re-seeded official 8-squad UWU bracket!');
                     }}
                     className="px-3 py-2 bg-surface border border-tactical-border hover:border-cyan text-secondaryText hover:text-white font-mono text-xs uppercase flex items-center gap-1.5 transition-colors"
-                    title="Re-seed 8-squad bracket from approved teams"
+                    title="Re-seed 8-squad bracket from registered teams"
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
                     <span>RE-SEED UWU</span>
                   </button>
                 )}
-              </>
+              </div>
             )}
 
             <Link
