@@ -96,28 +96,28 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#070A0F] text-primaryText flex flex-col font-sans">
+    <div className="min-h-screen bg-military-black text-tacticalWhite flex flex-col font-sans">
       
-      <header className="h-16 bg-[#0B1017] border-b border-tactical-border px-4 sm:px-6 flex items-center justify-between sticky top-0 z-40">
+      <header className="h-16 bg-surface border-b border-gunmetal px-4 sm:px-6 flex items-center justify-between sticky top-0 z-40">
         <div className="flex items-center gap-4">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="lg:hidden p-2 text-secondaryText hover:text-white border border-tactical-border bg-surface"
+            className="lg:hidden p-2 text-mutedText hover:text-tacticalWhite border border-gunmetal bg-card"
             aria-label="Toggle Navigation"
           >
-            {sidebarOpen ? <X className="w-5 h-5 text-cyan" /> : <Menu className="w-5 h-5" />}
+            {sidebarOpen ? <X className="w-5 h-5 text-sand" /> : <Menu className="w-5 h-5" />}
           </button>
 
           <Link href="/admin/dashboard" className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-surface border border-cyan/40 flex items-center justify-center text-cyan clip-tactical shadow-[0_0_10px_rgba(0,213,255,0.3)]">
+            <div className="w-8 h-8 bg-card border border-olive/50 flex items-center justify-center text-sand clip-tactical shadow-[0_2px_8px_rgba(24,30,24,0.6)]">
               <Shield className="w-4 h-4" />
             </div>
             <div>
-              <div className="font-display font-black text-sm tracking-wider text-white">
-                CST LAN 2026 <span className="text-cyan">{"// ADMIN CONSOLE"}</span>
+              <div className="font-display font-black text-sm tracking-wider text-tacticalWhite">
+                CST LAN 2026 <span className="text-sand">{"// TAC-OPS COMMAND"}</span>
               </div>
-              <div className="text-[10px] font-mono text-secondaryText tracking-tight hidden sm:block">
-                Computer Science & Technology • Uva Wellassa University of Sri Lanka
+              <div className="text-[10px] font-mono text-mutedText tracking-tight hidden sm:block">
+                Computer Science &amp; Technology • Uva Wellassa University of Sri Lanka
               </div>
             </div>
           </Link>
@@ -130,8 +130,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             disabled={regToggling}
             className={`px-2.5 sm:px-3 py-1.5 text-xs font-mono font-bold flex items-center gap-1.5 sm:gap-2 border transition-all cursor-pointer ${
               isRegOpen
-                ? 'bg-emerald-950/50 border-emerald-500/80 text-emerald-400 hover:bg-emerald-900/60 shadow-[0_0_12px_rgba(16,185,129,0.3)]'
-                : 'bg-rose-950/50 border-rose-500/80 text-rose-400 hover:bg-rose-900/60 shadow-[0_0_12px_rgba(244,63,94,0.3)]'
+                ? 'bg-emerald-950/60 border-emerald-600/80 text-emerald-400 hover:bg-emerald-900/60 shadow-[0_0_12px_rgba(16,185,129,0.3)]'
+                : 'bg-rose-950/60 border-rose-600/80 text-rose-400 hover:bg-rose-900/60 shadow-[0_0_12px_rgba(244,63,94,0.3)]'
             }`}
             title={isRegOpen ? 'Click to CLOSE registration across entire site' : 'Click to OPEN registration across entire site'}
           >
@@ -143,7 +143,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           <Link
             href="/"
             target="_blank"
-            className="hidden sm:inline-flex items-center gap-1.5 text-xs font-mono text-cyan hover:text-white px-3 py-1.5 bg-surface border border-tactical-border hover:border-cyan transition-colors"
+            className="hidden sm:inline-flex items-center gap-1.5 text-xs font-mono text-sand hover:text-tacticalWhite px-3 py-1.5 bg-card border border-gunmetal hover:border-sand transition-colors"
           >
             <span>PUBLIC SITE</span>
             <ExternalLink className="w-3.5 h-3.5" />
@@ -151,7 +151,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
           <button
             onClick={handleLogout}
-            className="flex items-center gap-1.5 text-xs font-mono text-rose-400 hover:text-white px-3 py-1.5 bg-surface border border-tactical-border hover:border-rose-500 transition-colors"
+            className="flex items-center gap-1.5 text-xs font-mono text-rose-400 hover:text-tacticalWhite px-3 py-1.5 bg-card border border-gunmetal hover:border-rose-500 transition-colors"
           >
             <LogOut className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">LOGOUT</span>
@@ -162,12 +162,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       <div className="flex-1 flex overflow-hidden">
         
         <aside
-          className={`fixed lg:static top-16 bottom-0 lg:top-0 left-0 z-30 w-64 bg-[#090D14] border-r border-tactical-border flex flex-col justify-between transition-transform duration-300 lg:translate-x-0 ${
+          className={`fixed lg:static top-16 bottom-0 lg:top-0 left-0 z-30 w-64 bg-surface border-r border-gunmetal flex flex-col justify-between transition-transform duration-300 lg:translate-x-0 ${
             sidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
           }`}
         >
           <div className="p-4 space-y-1">
-            <div className="text-[10px] font-mono text-secondaryText uppercase tracking-widest px-3 py-2">
+            <div className="text-[10px] font-mono text-mutedText uppercase tracking-widest px-3 py-2">
               ADMINISTRATION DIRECTORY
             </div>
 
@@ -180,8 +180,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   onClick={() => setSidebarOpen(false)}
                   className={`flex items-center gap-3 px-3 py-2.5 text-xs font-mono uppercase tracking-wider transition-colors border-l-2 ${
                     active
-                      ? 'bg-surface border-cyan text-cyan font-bold shadow-[inset_0_0_10px_rgba(0,213,255,0.1)]'
-                      : 'border-transparent text-secondaryText hover:text-white hover:bg-surface/50'
+                      ? 'bg-olive/20 border-olive text-sand font-bold shadow-[inset_0_0_10px_rgba(89,99,74,0.3)]'
+                      : 'border-transparent text-mutedText hover:text-tacticalWhite hover:bg-card/50'
                   }`}
                 >
                   {item.icon}
@@ -191,24 +191,24 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             })}
           </div>
 
-          <div className="p-4 border-t border-tactical-border text-[10px] font-mono text-secondaryText space-y-1">
-            <div className="flex items-center gap-1.5 text-white">
+          <div className="p-4 border-t border-gunmetal text-[10px] font-mono text-mutedText space-y-1">
+            <div className="flex items-center gap-1.5 text-tacticalWhite">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>SYSTEM: ONLINE (LIVE)</span>
+              <span>TAC-NET: ONLINE (SECURE)</span>
             </div>
-            <div>VER: 2026.1.0-CS2</div>
-            <div className="text-secondaryText/70">Uva Wellassa University</div>
+            <div>SECTOR: COD4.1.0-UWU</div>
+            <div className="text-mutedText/70">Uva Wellassa University</div>
           </div>
         </aside>
 
         {sidebarOpen && (
           <div
             onClick={() => setSidebarOpen(false)}
-            className="fixed inset-0 bg-black/60 z-20 lg:hidden backdrop-blur-sm"
+            className="fixed inset-0 bg-black/70 z-20 lg:hidden backdrop-blur-sm"
           />
         )}
 
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#080B10]">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-military-black">
           {children}
         </main>
 

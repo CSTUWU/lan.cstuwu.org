@@ -329,48 +329,48 @@ export default function Hero() {
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-screen bg-[#080B10] overflow-hidden select-none"
+      className="relative w-full h-screen bg-military-black overflow-hidden select-none"
     >
       <img
         src="/frames/hero/frame_0001.webp?v=3"
-        alt="CS2 Standoff Preview"
+        alt="Battlefield Standoff Preview"
         className="absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
-        style={{ filter: 'contrast(1.08) brightness(0.92)' }}
+        style={{ filter: 'contrast(1.08) brightness(0.90)' }}
       />
       <canvas
         ref={canvasRef}
         className="absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
-        style={{ filter: 'contrast(1.08) brightness(0.92)' }}
+        style={{ filter: 'contrast(1.08) brightness(0.90)' }}
       />
 
       <div className="absolute inset-0 pointer-events-none z-[1]">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(8,11,16,0.15)_0%,rgba(8,11,16,0.85)_100%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(17,20,17,0.15)_0%,rgba(17,20,17,0.88)_100%)]" />
 
-        <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-[#080B10] via-[#080B10]/60 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 h-36 bg-gradient-to-t from-[#080B10] via-[#080B10]/80 to-transparent" />
+        <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-military-black via-military-black/60 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-36 bg-gradient-to-t from-military-black via-military-black/80 to-transparent" />
 
         <div className="absolute inset-0 tactical-grid-bg opacity-15" />
       </div>
 
       <div
         ref={frameRef}
-        className="absolute inset-3 sm:inset-5 lg:inset-8 pointer-events-none border border-tactical-border/60 rounded-sm z-10"
+        className="absolute inset-3 sm:inset-5 lg:inset-8 pointer-events-none border border-gunmetal/60 rounded-sm z-10"
       >
-        <span className="absolute -top-[2px] -left-[2px] w-5 sm:w-7 h-5 sm:h-7 border-t-2 border-l-2 border-cyan shadow-[0_0_15px_rgba(0,213,255,0.8)]" />
-        <span className="absolute -top-[2px] -right-[2px] w-5 sm:w-7 h-5 sm:h-7 border-t-2 border-r-2 border-orange shadow-[0_0_15px_rgba(255,116,56,0.8)]" />
-        <span className="absolute -bottom-[2px] -left-[2px] w-5 sm:w-7 h-5 sm:h-7 border-b-2 border-l-2 border-cyan shadow-[0_0_15px_rgba(0,213,255,0.8)]" />
-        <span className="absolute -bottom-[2px] -right-[2px] w-5 sm:w-7 h-5 sm:h-7 border-b-2 border-r-2 border-orange shadow-[0_0_15px_rgba(255,116,56,0.8)]" />
+        <span className="absolute -top-[2px] -left-[2px] w-5 sm:w-7 h-5 sm:h-7 border-t-2 border-l-2 border-olive shadow-[0_0_8px_rgba(89,99,74,0.6)]" />
+        <span className="absolute -top-[2px] -right-[2px] w-5 sm:w-7 h-5 sm:h-7 border-t-2 border-r-2 border-sand shadow-[0_0_8px_rgba(194,178,138,0.6)]" />
+        <span className="absolute -bottom-[2px] -left-[2px] w-5 sm:w-7 h-5 sm:h-7 border-b-2 border-l-2 border-olive shadow-[0_0_8px_rgba(89,99,74,0.6)]" />
+        <span className="absolute -bottom-[2px] -right-[2px] w-5 sm:w-7 h-5 sm:h-7 border-b-2 border-r-2 border-sand shadow-[0_0_8px_rgba(194,178,138,0.6)]" />
 
-        <div className="absolute -bottom-[5px] left-1/2 -translate-x-1/2 px-3 py-0.5 bg-[#080B10]/95 border border-tactical-border text-[9px] font-mono text-secondaryText tracking-widest flex items-center gap-2.5 backdrop-blur-md">
-          <Activity className="w-3 h-3 text-cyan" />
-          <div className="w-16 sm:w-28 h-1 bg-surface border border-tactical-border rounded-full overflow-hidden">
+        <div className="absolute -bottom-[5px] left-1/2 -translate-x-1/2 px-3 py-0.5 bg-military-black/95 border border-gunmetal text-[9px] font-mono text-mutedText tracking-widest flex items-center gap-2.5 backdrop-blur-md">
+          <Activity className="w-3 h-3 text-sand" />
+          <div className="w-16 sm:w-28 h-1 bg-surface border border-gunmetal rounded-full overflow-hidden">
             <div
               ref={scrubBarRef}
-              className="h-full bg-gradient-to-r from-cyan via-white to-orange transition-all duration-75"
+              className="h-full bg-gradient-to-r from-olive via-sand to-olive-light transition-all duration-75"
               style={{ width: '0%' }}
             />
           </div>
-          <span ref={progressTextRef} className="text-cyan font-bold">
+          <span ref={progressTextRef} className="text-sand font-bold">
             00:00.0s // 0%
           </span>
         </div>
@@ -381,24 +381,24 @@ export default function Hero() {
         className="absolute inset-0 pointer-events-none max-w-7xl mx-auto px-6 lg:px-12 pt-24 pb-16 hidden lg:flex flex-col justify-between z-20"
       >
         <div className="flex justify-between items-start text-[11px] font-mono tracking-widest">
-          <div className="flex items-center gap-2 border-l-2 border-cyan pl-3 py-1 bg-surface/60 backdrop-blur-md border-t border-cyan/20">
-            <span className="w-2 h-2 rounded-full bg-cyan animate-pulse" />
-            <span className="text-white font-bold">TAC_OP // SECTOR_01 [VECTOR]</span>
+          <div className="flex items-center gap-2 border-l-2 border-olive pl-3 py-1 bg-surface/80 backdrop-blur-md border-t border-olive/30">
+            <span className="w-2 h-2 rounded-full bg-olive-light animate-pulse" />
+            <span className="text-tacticalWhite font-bold">TAC_OP // SECTOR_01 [TASK FORCE]</span>
           </div>
-          <div className="flex items-center gap-2 border-r-2 border-orange pr-3 py-1 bg-surface/60 backdrop-blur-md border-t border-orange/20 text-right">
-            <span className="text-white font-bold">TAC_OP // SECTOR_02 [RAPTOR]</span>
-            <span className="w-2 h-2 rounded-full bg-orange animate-pulse" />
+          <div className="flex items-center gap-2 border-r-2 border-sand pr-3 py-1 bg-surface/80 backdrop-blur-md border-t border-sand/30 text-right">
+            <span className="text-tacticalWhite font-bold">TAC_OP // SECTOR_02 [OPFOR ASSAULT]</span>
+            <span className="w-2 h-2 rounded-full bg-sand animate-pulse" />
           </div>
         </div>
 
         <div className="flex justify-between items-end text-[10px] font-mono">
-          <div className="bg-surface/60 backdrop-blur-md px-3 py-1.5 border-l-2 border-b border-cyan/40 border-l-cyan">
-            <p className="text-secondaryText">LAT: 6.9934° N, LON: 81.0550° E</p>
-            <p className="text-cyan font-bold">BADULLA // UVA WELLASSA UNIVERSITY</p>
+          <div className="bg-surface/80 backdrop-blur-md px-3 py-1.5 border-l-2 border-b border-gunmetal border-l-olive">
+            <p className="text-mutedText">LAT: 6.9934° N, LON: 81.0550° E</p>
+            <p className="text-sand font-bold">BADULLA // UVA WELLASSA UNIVERSITY</p>
           </div>
-          <div className="text-right bg-surface/60 backdrop-blur-md px-3 py-1.5 border-r-2 border-b border-orange/40 border-r-orange">
-            <p className="text-secondaryText">ENGINE: SOURCE 2 // SUB-TICK 128</p>
-            <p className="text-orange font-bold">STATUS: 5v5 MR12 TOURNAMENT READY</p>
+          <div className="text-right bg-surface/80 backdrop-blur-md px-3 py-1.5 border-r-2 border-b border-gunmetal border-r-sand">
+            <p className="text-mutedText">THEATER: MODERN WARFARE PROTOCOL</p>
+            <p className="text-sand font-bold">STATUS: 5v5 COMPETITIVE TOURNAMENT READY</p>
           </div>
         </div>
       </div>
@@ -407,14 +407,14 @@ export default function Hero() {
         ref={topStandoffBadgeRef}
         className="absolute top-8 sm:top-10 left-1/2 -translate-x-1/2 z-20 pointer-events-none"
       >
-        <div className="inline-flex items-center gap-2.5 px-4 py-1.5 bg-[#080B10]/90 border border-tactical-border clip-badge backdrop-blur-md shadow-2xl">
-          <Shield className="w-4 h-4 text-cyan shrink-0" />
-          <span className="text-xs sm:text-sm font-display font-black text-white tracking-wider uppercase">
+        <div className="inline-flex items-center gap-2.5 px-4 py-1.5 bg-military-black/90 border border-gunmetal clip-badge backdrop-blur-md shadow-2xl">
+          <Shield className="w-4 h-4 text-sand shrink-0" />
+          <span className="text-xs sm:text-sm font-display font-black text-tacticalWhite tracking-wider uppercase">
             CST LAN CHALLENGE 2026
           </span>
-          <span className="text-tactical-border font-mono text-[10px]">|</span>
-          <span className="text-[10px] sm:text-xs font-mono text-cyan font-bold tracking-wider">
-            COUNTER-STRIKE 2
+          <span className="text-gunmetal font-mono text-[10px]">|</span>
+          <span className="text-[10px] sm:text-xs font-mono text-sand font-bold tracking-wider">
+            COD4 MODERN WARFARE
           </span>
         </div>
       </div>
@@ -424,29 +424,29 @@ export default function Hero() {
         onClick={handleScrollToContent}
         className="absolute bottom-10 sm:bottom-14 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-3 text-center cursor-pointer group"
       >
-        <div className="relative px-5 sm:px-7 py-3 bg-[#080B10]/95 border border-cyan/50 backdrop-blur-xl rounded-md shadow-[0_0_35px_rgba(0,213,255,0.35)] transition-all duration-300 group-hover:border-cyan group-hover:shadow-[0_0_50px_rgba(0,213,255,0.6)] group-hover:scale-105 flex items-center gap-3.5">
-          <span className="absolute -top-1 -left-1 w-2.5 h-2.5 border-t-2 border-l-2 border-cyan" />
-          <span className="absolute -top-1 -right-1 w-2.5 h-2.5 border-t-2 border-r-2 border-orange" />
-          <span className="absolute -bottom-1 -left-1 w-2.5 h-2.5 border-b-2 border-l-2 border-cyan" />
-          <span className="absolute -bottom-1 -right-1 w-2.5 h-2.5 border-b-2 border-r-2 border-orange" />
+        <div className="relative px-5 sm:px-7 py-3 bg-military-black/95 border border-olive/50 backdrop-blur-xl rounded-md shadow-[0_4px_24px_rgba(0,0,0,0.8)] transition-all duration-300 group-hover:border-sand group-hover:scale-105 flex items-center gap-3.5">
+          <span className="absolute -top-1 -left-1 w-2.5 h-2.5 border-t-2 border-l-2 border-olive" />
+          <span className="absolute -top-1 -right-1 w-2.5 h-2.5 border-t-2 border-r-2 border-sand" />
+          <span className="absolute -bottom-1 -left-1 w-2.5 h-2.5 border-b-2 border-l-2 border-olive" />
+          <span className="absolute -bottom-1 -right-1 w-2.5 h-2.5 border-b-2 border-r-2 border-sand" />
 
-          <div className="w-5 h-8 rounded-full border-2 border-cyan/80 flex items-start justify-center p-1 bg-surface/80 shrink-0">
-            <div className="w-1.5 h-2.5 rounded-full bg-cyan animate-bounce" />
+          <div className="w-5 h-8 rounded-full border-2 border-olive-light/80 flex items-start justify-center p-1 bg-surface/80 shrink-0">
+            <div className="w-1.5 h-2.5 rounded-full bg-sand animate-bounce" />
           </div>
 
           <div className="text-left font-mono">
-            <div className="text-xs sm:text-sm font-black tracking-widest uppercase text-white flex items-center gap-1.5 group-hover:text-cyan transition-colors">
+            <div className="text-xs sm:text-sm font-black tracking-widest uppercase text-tacticalWhite flex items-center gap-1.5 group-hover:text-sand transition-colors">
               <span>SCROLL DOWN TO REVEAL</span>
-              <ChevronDown className="w-4 h-4 text-cyan animate-bounce" />
+              <ChevronDown className="w-4 h-4 text-sand animate-bounce" />
             </div>
-            <p className="text-[10px] text-secondaryText tracking-wide mt-0.5">
-              Watch standoff &amp; unlock tournament details
+            <p className="text-[10px] text-mutedText tracking-wide mt-0.5">
+              Engage tactical reconnaissance &amp; unlock intel
             </p>
           </div>
         </div>
 
-        <span className="text-[10px] font-mono text-cyan/80 tracking-widest uppercase flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-cyan animate-ping" />
+        <span className="text-[10px] font-mono text-sand/80 tracking-widest uppercase flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-sand animate-ping" />
           SCROLL WHEEL • SWIPE • OR CLICK TO ENTER
         </span>
       </div>
@@ -455,29 +455,29 @@ export default function Hero() {
         ref={contentWrapperRef}
         className="relative z-20 h-full max-w-4xl w-full mx-auto px-4 sm:px-6 flex flex-col items-center justify-center text-center pt-24 sm:pt-28 lg:pt-32 pb-8 opacity-0 pointer-events-none will-change-transform"
       >
-        <div className="inline-flex items-center gap-2 px-3 py-1 bg-surface/90 border border-tactical-border text-[11px] sm:text-xs font-mono text-cyan uppercase tracking-wider mb-3 backdrop-blur-md shadow-xl">
-          <Shield className="w-3.5 h-3.5 text-cyan shrink-0" />
-          <span>UVA WELLASSA UNIVERSITY // COUNTER-STRIKE 2</span>
+        <div className="inline-flex items-center gap-2 px-3 py-1 bg-surface/90 border border-gunmetal text-[11px] sm:text-xs font-mono text-sand uppercase tracking-wider mb-3 backdrop-blur-md shadow-xl">
+          <Shield className="w-3.5 h-3.5 text-sand shrink-0" />
+          <span>UVA WELLASSA UNIVERSITY // COD4 MODERN WARFARE</span>
         </div>
 
         <div ref={titleRef} className="mb-2 sm:mb-3 select-none">
-          <h1 className="font-display font-black text-3xl sm:text-5xl md:text-6xl lg:text-7xl tracking-tight uppercase leading-[0.92] text-white drop-shadow-[0_4px_35px_rgba(0,0,0,0.95)]">
-            <span className="inline-block">CST</span>{' '}
-            <span className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-cyan via-white to-cyan drop-shadow-[0_0_30px_rgba(0,213,255,0.7)]">
+          <h1 className="font-display font-black text-3xl sm:text-5xl md:text-6xl lg:text-7xl tracking-tight uppercase leading-[0.92] text-tacticalWhite drop-shadow-[0_4px_35px_rgba(0,0,0,0.95)]">
+            <span className="inline-block text-tacticalWhite">CST</span>{' '}
+            <span className="inline-block text-sand">
               LAN
             </span>{' '}
             <br />
-            <span className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-white via-orange to-orange drop-shadow-[0_0_30px_rgba(255,116,56,0.7)]">
+            <span className="inline-block text-olive-light">
               CHALLENGE
             </span>{' '}
-            <span className="inline-block text-white">2026</span>
+            <span className="inline-block text-tacticalWhite">2026</span>
           </h1>
 
           <div className="max-w-xl mx-auto space-y-0.5 mt-2.5 sm:mt-3">
-            <p className="text-xs sm:text-base font-display font-bold tracking-wide text-white uppercase drop-shadow-md">
+            <p className="text-xs sm:text-base font-display font-bold tracking-wide text-tacticalWhite uppercase drop-shadow-md">
               ENTER THE BATTLEFIELD. PROVE YOUR SKILL.
             </p>
-            <p className="text-[11px] sm:text-xs font-mono text-secondaryText drop-shadow">
+            <p className="text-[11px] sm:text-xs font-mono text-mutedText drop-shadow">
               Organized by the Computer Science &amp; Technology Degree Programme
             </p>
           </div>
@@ -485,43 +485,43 @@ export default function Hero() {
 
         <div
           ref={countdownBlockRef}
-          className="mb-4 sm:mb-5 w-full max-w-sm sm:max-w-md bg-card/95 border border-tactical-border backdrop-blur-xl p-2.5 sm:p-3.5 clip-tactical shadow-[0_0_35px_rgba(0,213,255,0.2)]"
+          className="mb-4 sm:mb-5 w-full max-w-sm sm:max-w-md bg-card/95 border border-gunmetal backdrop-blur-xl p-2.5 sm:p-3.5 clip-tactical shadow-[0_4px_24px_rgba(0,0,0,0.8)]"
         >
-          <div className="flex items-center justify-between text-[9px] sm:text-[10px] font-mono uppercase tracking-widest font-bold mb-2 px-1 border-b border-tactical-border/60 pb-1">
-            <div className="flex items-center gap-1.5 text-cyan">
-              <Clock className="w-3.5 h-3.5 text-cyan" />
+          <div className="flex items-center justify-between text-[9px] sm:text-[10px] font-mono uppercase tracking-widest font-bold mb-2 px-1 border-b border-gunmetal pb-1">
+            <div className="flex items-center gap-1.5 text-sand">
+              <Clock className="w-3.5 h-3.5 text-sand" />
               <span>TOURNAMENT COUNTDOWN</span>
             </div>
-            <span className="text-orange flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-orange animate-ping" />
-              LIVE
+            <span className="text-olive-light flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-olive-light animate-ping" />
+              LIVE TELEMETRY
             </span>
           </div>
 
           <div className="grid grid-cols-4 gap-1.5 sm:gap-2 text-center font-mono">
-            <div className="bg-surface/90 border border-tactical-border p-1.5 sm:p-2">
-              <div className="font-display font-black text-xl sm:text-2xl md:text-3xl text-white">
+            <div className="bg-surface/90 border border-gunmetal p-1.5 sm:p-2">
+              <div className="font-display font-black text-xl sm:text-2xl md:text-3xl text-tacticalWhite">
                 {String(timeLeft.days).padStart(2, '0')}
               </div>
-              <div className="text-[8px] sm:text-[9px] text-secondaryText uppercase tracking-wider mt-0.5">DAYS</div>
+              <div className="text-[8px] sm:text-[9px] text-mutedText uppercase tracking-wider mt-0.5">DAYS</div>
             </div>
-            <div className="bg-surface/90 border border-tactical-border p-1.5 sm:p-2">
-              <div className="font-display font-black text-xl sm:text-2xl md:text-3xl text-cyan">
+            <div className="bg-surface/90 border border-gunmetal p-1.5 sm:p-2">
+              <div className="font-display font-black text-xl sm:text-2xl md:text-3xl text-sand">
                 {String(timeLeft.hours).padStart(2, '0')}
               </div>
-              <div className="text-[8px] sm:text-[9px] text-secondaryText uppercase tracking-wider mt-0.5">HOURS</div>
+              <div className="text-[8px] sm:text-[9px] text-mutedText uppercase tracking-wider mt-0.5">HOURS</div>
             </div>
-            <div className="bg-surface/90 border border-tactical-border p-1.5 sm:p-2">
-              <div className="font-display font-black text-xl sm:text-2xl md:text-3xl text-white">
+            <div className="bg-surface/90 border border-gunmetal p-1.5 sm:p-2">
+              <div className="font-display font-black text-xl sm:text-2xl md:text-3xl text-tacticalWhite">
                 {String(timeLeft.minutes).padStart(2, '0')}
               </div>
-              <div className="text-[8px] sm:text-[9px] text-secondaryText uppercase tracking-wider mt-0.5">MINS</div>
+              <div className="text-[8px] sm:text-[9px] text-mutedText uppercase tracking-wider mt-0.5">MINS</div>
             </div>
-            <div className="bg-surface/90 border border-orange/50 p-1.5 sm:p-2">
-              <div className="font-display font-black text-xl sm:text-2xl md:text-3xl text-orange">
+            <div className="bg-surface/90 border border-olive/50 p-1.5 sm:p-2">
+              <div className="font-display font-black text-xl sm:text-2xl md:text-3xl text-sand">
                 {String(timeLeft.seconds).padStart(2, '0')}
               </div>
-              <div className="text-[8px] sm:text-[9px] text-secondaryText uppercase tracking-wider mt-0.5">SECS</div>
+              <div className="text-[8px] sm:text-[9px] text-mutedText uppercase tracking-wider mt-0.5">SECS</div>
             </div>
           </div>
         </div>
@@ -536,7 +536,7 @@ export default function Hero() {
               variant="cyan"
               size="md"
               icon={<Crosshair className="w-4 h-4" />}
-              className="w-full sm:w-auto font-black shadow-[0_0_25px_rgba(0,213,255,0.45)] hover:scale-105 transition-transform text-xs sm:text-sm"
+              className="w-full sm:w-auto font-black shadow-[0_2px_12px_rgba(37,44,36,0.8)] hover:scale-105 transition-transform text-xs sm:text-sm"
             >
               REGISTER YOUR TEAM
             </Button>
@@ -546,8 +546,8 @@ export default function Hero() {
             href="/#prizepool"
             variant="outline"
             size="md"
-            icon={<Trophy className="w-4 h-4 text-tactical-gold" />}
-            className="w-full sm:w-auto hover:border-tactical-gold hover:text-tactical-gold bg-surface/70 backdrop-blur-md text-xs sm:text-sm"
+            icon={<Trophy className="w-4 h-4 text-sand" />}
+            className="w-full sm:w-auto hover:border-sand hover:text-tacticalWhite bg-surface/70 backdrop-blur-md text-xs sm:text-sm"
           >
             VIEW PRIZE POOL
           </Button>
@@ -564,11 +564,11 @@ export default function Hero() {
               }
             }
           }}
-          className="mt-4 sm:mt-5 flex flex-col items-center gap-1 text-[9px] sm:text-[10px] font-mono tracking-widest text-secondaryText/80 cursor-pointer hover:text-cyan transition-colors"
+          className="mt-4 sm:mt-5 flex flex-col items-center gap-1 text-[9px] sm:text-[10px] font-mono tracking-widest text-mutedText cursor-pointer hover:text-sand transition-colors"
         >
-          <span className="flex items-center gap-1.5 text-cyan">
+          <span className="flex items-center gap-1.5 text-sand">
             <span>SCROLL DOWN FOR PRIZE POOL</span>
-            <ChevronDown className="w-3 h-3 text-cyan animate-bounce" />
+            <ChevronDown className="w-3 h-3 text-sand animate-bounce" />
           </span>
         </div>
 

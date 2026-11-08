@@ -80,22 +80,22 @@ export default function TeamsPreview() {
   const displayTeams = teams.slice(0, 4);
 
   return (
-    <section className="relative py-24 bg-[#090D14] border-t border-tactical-border overflow-hidden">
+    <section className="relative py-24 bg-military-black border-t border-gunmetal overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 pb-6 border-b border-tactical-border">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 pb-6 border-b border-gunmetal">
           <div>
             <div className="inline-flex items-center gap-2 mb-2">
-              <Badge variant="cyan" size="sm">ROSTER WATCH // OFFICIAL TEAMS</Badge>
+              <Badge variant="cyan" size="sm">ROSTER WATCH // DEPLOYED SQUADS</Badge>
             </div>
-            <h2 className="font-display font-black text-3xl sm:text-4xl uppercase text-white tracking-tight">
-              REGISTERED <span className="text-cyan">UNIVERSITY</span> TEAMS
+            <h2 className="font-display font-black text-3xl sm:text-4xl uppercase text-tacticalWhite tracking-tight">
+              REGISTERED <span className="text-sand">UNIVERSITY</span> SQUADS
             </h2>
           </div>
 
           <Link
             href="/teams"
-            className="inline-flex items-center gap-2 text-xs font-mono text-cyan hover:text-white uppercase tracking-wider group transition-colors"
+            className="inline-flex items-center gap-2 text-xs font-mono text-sand hover:text-tacticalWhite uppercase tracking-wider group transition-colors"
           >
             <span>VIEW ALL SQUADS ({teams.length})</span>
             <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -105,16 +105,16 @@ export default function TeamsPreview() {
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12 animate-pulse">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-36 bg-card/60 border border-tactical-border/50 p-5 rounded" />
+              <div key={i} className="h-36 bg-card/60 border border-gunmetal p-5 rounded" />
             ))}
           </div>
         ) : displayTeams.length === 0 ? (
-          <div className="border border-dashed border-tactical-border bg-card/40 p-10 text-center mb-12">
-            <Users className="w-10 h-10 text-cyan/40 mx-auto mb-3" />
-            <h3 className="font-display font-black text-xl text-white uppercase tracking-wider mb-2">
+          <div className="border border-dashed border-gunmetal bg-card/40 p-10 text-center mb-12">
+            <Users className="w-10 h-10 text-sand/40 mx-auto mb-3" />
+            <h3 className="font-display font-black text-xl text-tacticalWhite uppercase tracking-wider mb-2">
               {isOpen ? 'REGISTRATIONS OPEN // ROSTER STANDBY' : 'REGISTRATIONS CLOSED // ROSTER STANDBY'}
             </h3>
-            <p className="text-xs font-mono text-secondaryText max-w-md mx-auto mb-6">
+            <p className="text-xs font-mono text-mutedText max-w-md mx-auto mb-6">
               {isOpen
                 ? 'Squad registrations are open for all Uva Wellassa University faculties. Enlist your 5-player squad to enter the official tournament brackets.'
                 : 'Squad registrations are currently closed by administration. Stay tuned for official tournament bracket announcements.'}
@@ -139,13 +139,13 @@ export default function TeamsPreview() {
               return (
                 <div
                   key={team.id}
-                  className="relative bg-card/80 border border-tactical-border p-5 backdrop-blur-sm transition-all duration-300 hover:border-cyan/50 hover:-translate-y-1 group"
+                  className="relative bg-card/80 border border-gunmetal p-5 backdrop-blur-sm transition-all duration-300 hover:border-olive hover:-translate-y-1 group"
                 >
                   {/* Corner accent */}
-                  <span className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-cyan opacity-40 group-hover:opacity-100" />
+                  <span className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-sand opacity-40 group-hover:opacity-100" />
 
                   <div className="flex items-center gap-3.5 mb-4">
-                    <div className="relative w-12 h-12 bg-surface border border-tactical-border/80 overflow-hidden shrink-0 flex items-center justify-center">
+                    <div className="relative w-12 h-12 bg-surface border border-gunmetal overflow-hidden shrink-0 flex items-center justify-center">
                       {hasLogo ? (
                         <Image
                           src={team.logo}
@@ -155,17 +155,17 @@ export default function TeamsPreview() {
                           sizes="48px"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center font-mono text-xs text-cyan font-bold bg-[#0F172A] border border-cyan/20">
-                          {team.tag?.slice(0, 3) || 'CS2'}
+                        <div className="w-full h-full flex items-center justify-center font-mono text-xs text-sand font-bold bg-darkGreen/40 border border-olive/30">
+                          {team.tag?.slice(0, 3) || 'SQUAD'}
                         </div>
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="text-[10px] font-mono text-cyan tracking-wider truncate font-bold">
+                      <div className="text-[10px] font-mono text-sand tracking-wider truncate font-bold">
                         [{team.tag || 'SQUAD'}]
                       </div>
                       <h3
-                        className="font-display font-bold text-base text-white tracking-wide truncate group-hover:text-cyan transition-colors"
+                        className="font-display font-bold text-base text-tacticalWhite tracking-wide truncate group-hover:text-sand transition-colors"
                         title={team.name}
                       >
                         {team.name}
@@ -173,19 +173,19 @@ export default function TeamsPreview() {
                     </div>
                   </div>
 
-                  <div className="text-xs font-mono text-secondaryText truncate mb-4">
+                  <div className="text-xs font-mono text-mutedText truncate mb-4">
                     {team.university || 'Uva Wellassa University of Sri Lanka'}
                   </div>
 
-                  <div className="pt-3 border-t border-tactical-border/70 flex items-center justify-between text-xs font-mono">
-                    <span className="text-secondaryText">STATUS:</span>
+                  <div className="pt-3 border-t border-gunmetal flex items-center justify-between text-xs font-mono">
+                    <span className="text-mutedText">STATUS:</span>
                     {statusLower === 'approved' && (
                       <span className="flex items-center gap-1 text-emerald-400 font-semibold">
                         <CheckCircle2 className="w-3.5 h-3.5" /> APPROVED
                       </span>
                     )}
                     {statusLower === 'pending' && (
-                      <span className="flex items-center gap-1 text-tactical-gold font-semibold">
+                      <span className="flex items-center gap-1 text-sand font-semibold">
                         <Clock className="w-3.5 h-3.5" /> PENDING
                       </span>
                     )}
@@ -202,12 +202,12 @@ export default function TeamsPreview() {
         )}
 
         {isOpen && (
-          <div className="bg-surface/60 border border-tactical-border p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="bg-surface/60 border border-gunmetal p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-center sm:text-left">
-              <h4 className="font-display font-bold text-base text-white uppercase tracking-wider">
-                IS YOUR UNIVERSITY READY TO COMPETE?
+              <h4 className="font-display font-bold text-base text-tacticalWhite uppercase tracking-wider">
+                IS YOUR SQUAD READY TO DEPLOY?
               </h4>
-              <p className="text-xs font-mono text-secondaryText mt-0.5">
+              <p className="text-xs font-mono text-mutedText mt-0.5">
                 Secure your team slot before registration reaches maximum bracket capacity.
               </p>
             </div>

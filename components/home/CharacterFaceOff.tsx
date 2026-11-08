@@ -70,7 +70,7 @@ export default function CharacterFaceOff() {
       vy: (Math.random() - 0.5) * 0.9,
       size: 1 + Math.random() * 2.5,
       alpha: 0.15 + Math.random() * 0.65,
-      color: Math.random() > 0.5 ? '#00D5FF' : '#FF7438',
+      color: Math.random() > 0.5 ? '#59634A' : '#C2B28A',
       pulse: Math.random() * Math.PI,
     }));
 
@@ -94,17 +94,17 @@ export default function CharacterFaceOff() {
 
         const distFromCenter = Math.abs(p.x - width / 2) / (width / 2);
         if (distFromCenter < 0.2) {
-          ctx.fillStyle = `rgba(255, 255, 255, ${currentAlpha * 1.2})`;
-          ctx.shadowColor = '#00D5FF';
-          ctx.shadowBlur = 10;
+          ctx.fillStyle = `rgba(229, 229, 220, ${currentAlpha * 1.2})`;
+          ctx.shadowColor = '#C2B28A';
+          ctx.shadowBlur = 8;
         } else if (p.x < width / 2) {
-          ctx.fillStyle = `rgba(0, 213, 255, ${currentAlpha})`;
-          ctx.shadowColor = '#00D5FF';
-          ctx.shadowBlur = 6;
+          ctx.fillStyle = `rgba(89, 99, 74, ${currentAlpha})`;
+          ctx.shadowColor = '#59634A';
+          ctx.shadowBlur = 5;
         } else {
-          ctx.fillStyle = `rgba(255, 116, 56, ${currentAlpha})`;
-          ctx.shadowColor = '#FF7438';
-          ctx.shadowBlur = 6;
+          ctx.fillStyle = `rgba(194, 178, 138, ${currentAlpha})`;
+          ctx.shadowColor = '#C2B28A';
+          ctx.shadowBlur = 5;
         }
 
         ctx.fill();
@@ -334,7 +334,7 @@ export default function CharacterFaceOff() {
     <section
       id="commanders"
       ref={containerRef}
-      className="relative w-full bg-[#05070B] text-white overflow-hidden select-none"
+      className="relative w-full bg-military-black text-tacticalWhite overflow-hidden select-none border-b border-gunmetal"
     >
       <canvas
         ref={canvasRef}
@@ -342,9 +342,9 @@ export default function CharacterFaceOff() {
       />
 
       <div className="absolute inset-0 pointer-events-none z-0">
-        <div className="absolute top-1/3 left-0 w-[600px] h-[600px] bg-cyan/20 rounded-full blur-[180px]" />
-        <div className="absolute top-1/3 right-0 w-[600px] h-[600px] bg-orange/20 rounded-full blur-[180px]" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[450px] bg-gradient-to-r from-cyan/15 via-white/10 to-orange/15 rounded-full blur-[130px]" />
+        <div className="absolute top-1/3 left-0 w-[600px] h-[600px] bg-olive/10 rounded-full blur-[180px]" />
+        <div className="absolute top-1/3 right-0 w-[600px] h-[600px] bg-sand/10 rounded-full blur-[180px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[450px] bg-darkGreen/20 rounded-full blur-[130px]" />
         <div className="absolute inset-0 tactical-grid-bg opacity-25" />
       </div>
 
@@ -352,22 +352,22 @@ export default function CharacterFaceOff() {
         <div className="h-[3px] bg-surface w-full">
           <div
             ref={progressBarRef}
-            className="h-full bg-gradient-to-r from-cyan via-white to-orange transition-all duration-75"
+            className="h-full bg-gradient-to-r from-olive via-sand to-olive-light transition-all duration-75"
             style={{ width: '0%' }}
           />
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-3 flex items-center justify-between text-[10px] sm:text-xs font-mono bg-[#05070B]/85 backdrop-blur-md border-b border-tactical-border/60">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-3 flex items-center justify-between text-[10px] sm:text-xs font-mono bg-military-black/85 backdrop-blur-md border-b border-gunmetal">
           <div className="flex items-center gap-3">
-            <span className="w-2 h-2 rounded-full bg-cyan animate-ping shrink-0" />
-            <span ref={telemetryStatusRef} className="text-cyan font-bold tracking-wider uppercase">
-              CONVERGENCE: VECTOR & RAPTOR INCOMING
+            <span className="w-2 h-2 rounded-full bg-sand animate-ping shrink-0" />
+            <span ref={telemetryStatusRef} className="text-sand font-bold tracking-wider uppercase">
+              CONVERGENCE: TASK FORCE &amp; OPFOR INCOMING
             </span>
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="text-secondaryText hidden sm:inline">{"STAGE CONFRONTATION:"}</span>
-            <span className="px-2 py-0.5 bg-surface border border-tactical-border font-bold text-white">
+            <span className="text-mutedText hidden sm:inline">{"STAGE CONFRONTATION:"}</span>
+            <span className="px-2 py-0.5 bg-surface border border-gunmetal font-bold text-tacticalWhite">
               {scrollPercent}%
             </span>
           </div>
@@ -387,48 +387,47 @@ export default function CharacterFaceOff() {
             ref={vectorWrapperRef}
             className="absolute z-20 w-[280px] sm:w-[380px] md:w-[460px] lg:w-[520px] h-[400px] sm:h-[540px] md:h-[640px] lg:h-[720px] will-change-transform"
           >
-            <div className="relative w-full h-full rounded-lg overflow-hidden border-2 border-cyan/60 shadow-[0_0_70px_rgba(0,213,255,0.4)] bg-card/70 backdrop-blur-md">
-              <span className="absolute top-3 left-3 w-5 h-5 border-t-2 border-l-2 border-cyan z-30" />
-              <span className="absolute top-3 right-3 w-5 h-5 border-t-2 border-r-2 border-cyan z-30" />
-              <span className="absolute bottom-3 left-3 w-5 h-5 border-b-2 border-l-2 border-cyan z-30" />
-              <span className="absolute bottom-3 right-3 w-5 h-5 border-b-2 border-r-2 border-cyan z-30" />
+            <div className="relative w-full h-full rounded-lg overflow-hidden border-2 border-olive/70 shadow-[0_4px_35px_rgba(0,0,0,0.85)] bg-card/70 backdrop-blur-md">
+              <span className="absolute top-3 left-3 w-5 h-5 border-t-2 border-l-2 border-olive z-30" />
+              <span className="absolute top-3 right-3 w-5 h-5 border-t-2 border-r-2 border-olive z-30" />
+              <span className="absolute bottom-3 left-3 w-5 h-5 border-b-2 border-l-2 border-olive z-30" />
+              <span className="absolute bottom-3 right-3 w-5 h-5 border-b-2 border-r-2 border-olive z-30" />
 
               <div className="absolute top-4 left-4 right-4 z-30 flex items-center justify-between text-[10px] font-mono tracking-widest">
-                <span className="px-2 py-1 bg-cyan text-background font-black uppercase clip-tactical">
-                  TEAM VECTOR // LEADER
+                <span className="px-2 py-1 bg-olive text-tacticalWhite font-black uppercase clip-tactical">
+                  TASK FORCE // LEADER
                 </span>
-                <span className="text-cyan font-bold bg-background/80 px-2 py-0.5 border border-cyan/40">
-                  CT_TACTICAL
+                <span className="text-sand font-bold bg-background/80 px-2 py-0.5 border border-olive/40">
+                  CT_OPERATOR
                 </span>
               </div>
 
               <div
                 ref={vectorGazeLightRef}
-                className="absolute top-[22%] right-[28%] w-16 h-16 rounded-full bg-cyan/60 blur-[15px] z-30 pointer-events-none mix-blend-screen"
+                className="absolute top-[22%] right-[28%] w-16 h-16 rounded-full bg-olive/40 blur-[15px] z-30 pointer-events-none mix-blend-screen"
               />
 
               <Image
                 src="/images/commanders/vector.jpeg"
-                alt="VECTOR - Team Vector Commander"
+                alt="VECTOR - Task Force Commander"
                 fill
                 priority
-                className="object-cover object-top filter brightness-100 contrast-105"
+                className="object-cover object-top filter brightness-95 contrast-105"
                 sizes="(max-width: 640px) 280px, (max-width: 1024px) 460px, 520px"
               />
 
-              <div className="absolute inset-0 bg-gradient-to-t from-[#05070B] via-transparent to-transparent opacity-85 z-20" />
-              <div className="absolute inset-0 bg-[linear-gradient(rgba(0,213,255,0.06)_1px,transparent_1px)] bg-[size:100%_4px] pointer-events-none z-20" />
+              <div className="absolute inset-0 bg-gradient-to-t from-military-black via-transparent to-transparent opacity-85 z-20" />
 
               <div className="absolute bottom-5 left-5 right-5 z-30">
-                <div className="text-[11px] font-mono text-cyan tracking-widest uppercase mb-1 flex items-center gap-1.5 font-bold">
-                  <Shield className="w-3.5 h-3.5 text-cyan" />
-                  <span>CYAN TACTICAL DEFENSE</span>
+                <div className="text-[11px] font-mono text-sand tracking-widest uppercase mb-1 flex items-center gap-1.5 font-bold">
+                  <Shield className="w-3.5 h-3.5 text-sand" />
+                  <span>TACTICAL DEFENSE MANDATE</span>
                 </div>
-                <h3 className="font-display font-black text-2xl sm:text-4xl text-white tracking-wider uppercase">
+                <h3 className="font-display font-black text-2xl sm:text-4xl text-tacticalWhite tracking-wider uppercase">
                   VECTOR
                 </h3>
-                <p className="text-[11px] font-mono text-secondaryText hidden sm:block mt-0.5">
-                  Strategic Command • Visor Radar Recon • Site Anchor
+                <p className="text-[11px] font-mono text-mutedText hidden sm:block mt-0.5">
+                  Strategic Command • Reconnaissance • Defense Anchor
                 </p>
               </div>
             </div>
@@ -436,40 +435,40 @@ export default function CharacterFaceOff() {
 
           <div
             ref={energyCollisionRef}
-            className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[3px] bg-gradient-to-b from-cyan via-white to-orange z-25 pointer-events-none origin-center shadow-[0_0_25px_rgba(255,255,255,0.8)]"
+            className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[2px] bg-gradient-to-b from-olive via-sand to-olive-light z-25 pointer-events-none origin-center shadow-[0_0_15px_rgba(194,178,138,0.6)]"
           />
 
           <div
             ref={shockwaveRef}
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full border-2 border-white/60 bg-radial from-white/20 via-cyan/10 to-transparent z-25 pointer-events-none blur-[4px]"
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full border border-sand/40 bg-radial from-sand/10 via-olive/5 to-transparent z-25 pointer-events-none blur-[4px]"
           />
 
           <div
             ref={confrontationTextRef}
-            className="absolute z-30 max-w-md text-center px-6 py-6 bg-[#080B10]/90 border border-tactical-border backdrop-blur-2xl shadow-[0_0_80px_rgba(0,0,0,0.9)] will-change-transform"
+            className="absolute z-30 max-w-md text-center px-6 py-6 bg-military-black/95 border border-gunmetal backdrop-blur-2xl shadow-[0_4px_40px_rgba(0,0,0,0.9)] will-change-transform"
           >
             <div className="inline-flex items-center gap-2 mb-2">
-              <Swords className="w-4 h-4 text-cyan" />
-              <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-white font-bold">
-                FACE-TO-FACE CONFRONTATION
+              <Swords className="w-4 h-4 text-sand" />
+              <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-tacticalWhite font-bold">
+                TACTICAL CONFRONTATION
               </span>
-              <Swords className="w-4 h-4 text-orange" />
+              <Swords className="w-4 h-4 text-olive-light" />
             </div>
 
-            <h2 className="font-display font-black text-3xl sm:text-5xl uppercase tracking-tight leading-none text-white my-2">
-              <span className="text-cyan drop-shadow-[0_0_20px_rgba(0,213,255,0.5)]">VECTOR</span>
-              <span className="text-secondaryText text-2xl mx-2 font-mono">VS</span>
-              <span className="text-orange drop-shadow-[0_0_20px_rgba(255,116,56,0.5)]">RAPTOR</span>
+            <h2 className="font-display font-black text-3xl sm:text-5xl uppercase tracking-tight leading-none text-tacticalWhite my-2">
+              <span className="text-sand">VECTOR</span>
+              <span className="text-mutedText text-2xl mx-2 font-mono">VS</span>
+              <span className="text-olive-light">RAPTOR</span>
             </h2>
 
-            <p className="text-xs font-mono text-secondaryText leading-relaxed mt-2">
-              Only two forces stand on the main stage. No compromise. No retreat. Who will dictate the CS2 championship?
+            <p className="text-xs font-mono text-mutedText leading-relaxed mt-2">
+              Only two forces stand on the main stage. No compromise. No retreat. Who will dictate the collegiate championship?
             </p>
 
-            <div className="mt-4 pt-3 border-t border-tactical-border/70 flex items-center justify-around text-[10px] font-mono">
-              <span className="text-cyan font-bold">SUB-TICK 128 SOURCE 2</span>
-              <span className="text-tactical-border">|</span>
-              <span className="text-orange font-bold">MR12 REGULATION</span>
+            <div className="mt-4 pt-3 border-t border-gunmetal flex items-center justify-around text-[10px] font-mono">
+              <span className="text-sand font-bold">MODERN WARFARE PROTOCOL</span>
+              <span className="text-gunmetal">|</span>
+              <span className="text-olive-light font-bold">5v5 MR12 REGULATION</span>
             </div>
           </div>
 
@@ -477,48 +476,47 @@ export default function CharacterFaceOff() {
             ref={raptorWrapperRef}
             className="absolute z-20 w-[280px] sm:w-[380px] md:w-[460px] lg:w-[520px] h-[400px] sm:h-[540px] md:h-[640px] lg:h-[720px] will-change-transform"
           >
-            <div className="relative w-full h-full rounded-lg overflow-hidden border-2 border-orange/60 shadow-[0_0_70px_rgba(255,116,56,0.4)] bg-card/70 backdrop-blur-md">
-              <span className="absolute top-3 left-3 w-5 h-5 border-t-2 border-l-2 border-orange z-30" />
-              <span className="absolute top-3 right-3 w-5 h-5 border-t-2 border-r-2 border-orange z-30" />
-              <span className="absolute bottom-3 left-3 w-5 h-5 border-b-2 border-l-2 border-orange z-30" />
-              <span className="absolute bottom-3 right-3 w-5 h-5 border-b-2 border-r-2 border-orange z-30" />
+            <div className="relative w-full h-full rounded-lg overflow-hidden border-2 border-gunmetal shadow-[0_4px_35px_rgba(0,0,0,0.85)] bg-card/70 backdrop-blur-md">
+              <span className="absolute top-3 left-3 w-5 h-5 border-t-2 border-l-2 border-sand z-30" />
+              <span className="absolute top-3 right-3 w-5 h-5 border-t-2 border-r-2 border-sand z-30" />
+              <span className="absolute bottom-3 left-3 w-5 h-5 border-b-2 border-l-2 border-sand z-30" />
+              <span className="absolute bottom-3 right-3 w-5 h-5 border-b-2 border-r-2 border-sand z-30" />
 
               <div className="absolute top-4 left-4 right-4 z-30 flex items-center justify-between text-[10px] font-mono tracking-widest">
-                <span className="text-orange font-bold bg-background/80 px-2 py-0.5 border border-orange/40">
-                  T_WARFARE
+                <span className="text-sand font-bold bg-background/80 px-2 py-0.5 border border-sand/40">
+                  T_OPERATOR
                 </span>
-                <span className="px-2 py-1 bg-orange text-white font-black uppercase clip-tactical">
-                  TEAM RAPTOR // LEADER
+                <span className="px-2 py-1 bg-sand text-military-black font-black uppercase clip-tactical">
+                  OPFOR // LEADER
                 </span>
               </div>
 
               <div
                 ref={raptorGazeLightRef}
-                className="absolute top-[24%] left-[28%] w-16 h-16 rounded-full bg-orange/60 blur-[15px] z-30 pointer-events-none mix-blend-screen"
+                className="absolute top-[24%] left-[28%] w-16 h-16 rounded-full bg-sand/30 blur-[15px] z-30 pointer-events-none mix-blend-screen"
               />
 
               <Image
                 src="/images/commanders/raptor.jpeg"
-                alt="RAPTOR - Team Raptor Commander"
+                alt="RAPTOR - Opfor Commander"
                 fill
                 priority
-                className="object-cover object-top filter brightness-100 contrast-105"
+                className="object-cover object-top filter brightness-95 contrast-105"
                 sizes="(max-width: 640px) 280px, (max-width: 1024px) 460px, 520px"
               />
 
-              <div className="absolute inset-0 bg-gradient-to-t from-[#05070B] via-transparent to-transparent opacity-85 z-20" />
-              <div className="absolute inset-0 bg-[linear-gradient(rgba(255,116,56,0.06)_1px,transparent_1px)] bg-[size:100%_4px] pointer-events-none z-20" />
+              <div className="absolute inset-0 bg-gradient-to-t from-military-black via-transparent to-transparent opacity-85 z-20" />
 
               <div className="absolute bottom-5 left-5 right-5 z-30 text-right">
-                <div className="text-[11px] font-mono text-orange tracking-widest uppercase mb-1 flex items-center justify-end gap-1.5 font-bold">
-                  <span>TACTICAL AGGRESSION & INVASION</span>
-                  <Flame className="w-3.5 h-3.5 text-orange" />
+                <div className="text-[11px] font-mono text-sand tracking-widest uppercase mb-1 flex items-center justify-end gap-1.5 font-bold">
+                  <span>TACTICAL AGGRESSION &amp; INVASION</span>
+                  <Flame className="w-3.5 h-3.5 text-sand" />
                 </div>
-                <h3 className="font-display font-black text-2xl sm:text-4xl text-white tracking-wider uppercase">
+                <h3 className="font-display font-black text-2xl sm:text-4xl text-tacticalWhite tracking-wider uppercase">
                   RAPTOR
                 </h3>
-                <p className="text-[11px] font-mono text-secondaryText hidden sm:block mt-0.5">
-                  High-Impact Assault • Frontline Entry • Territory Disruption
+                <p className="text-[11px] font-mono text-mutedText hidden sm:block mt-0.5">
+                  High-Impact Assault • Frontline Pointman • Territory Disruption
                 </p>
               </div>
             </div>
@@ -527,19 +525,19 @@ export default function CharacterFaceOff() {
 
         <div
           ref={finalCalloutRef}
-          className="absolute z-40 max-w-2xl text-center px-6 py-8 sm:py-10 bg-[#080B10]/95 border-2 border-cyan/50 backdrop-blur-2xl shadow-[0_0_100px_rgba(0,0,0,0.95)] will-change-transform mx-4"
+          className="absolute z-40 max-w-2xl text-center px-6 py-8 sm:py-10 bg-military-black/95 border-2 border-olive/50 backdrop-blur-2xl shadow-[0_4px_50px_rgba(0,0,0,0.95)] will-change-transform mx-4"
         >
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-cyan/10 border border-cyan/40 text-cyan text-[10px] font-mono font-bold tracking-widest uppercase mb-3">
-            <Sparkles className="w-3.5 h-3.5 text-cyan" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-surface border border-gunmetal text-sand text-[10px] font-mono font-bold tracking-widest uppercase mb-3">
+            <Sparkles className="w-3.5 h-3.5 text-sand" />
             <span>THE ARENA AWAITS YOUR FACTION</span>
           </div>
 
-          <h2 className="font-display font-black text-3xl sm:text-5xl text-white uppercase tracking-tight mb-3">
-            CHOOSE YOUR <span className="text-cyan">SIDE</span>. PROVE YOUR <span className="text-orange">LEGACY</span>.
+          <h2 className="font-display font-black text-3xl sm:text-5xl text-tacticalWhite uppercase tracking-tight mb-3">
+            CHOOSE YOUR <span className="text-sand">SIDE</span>. PROVE YOUR <span className="text-olive-light">LEGACY</span>.
           </h2>
 
-          <p className="text-xs sm:text-sm font-mono text-secondaryText leading-relaxed mb-6 max-w-lg mx-auto">
-            Will you stand with <strong className="text-cyan">VECTOR</strong>&apos;s disciplined defense or attack with <strong className="text-orange">RAPTOR</strong>&apos;s unstoppable firepower? Enlist your 5-man collegiate squad now.
+          <p className="text-xs sm:text-sm font-mono text-mutedText leading-relaxed mb-6 max-w-lg mx-auto">
+            Will you stand with <strong className="text-sand">TASK FORCE</strong> disciplined defense or attack with <strong className="text-olive-light">OPFOR</strong> firepower? Enlist your 5-man collegiate squad now.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -550,19 +548,19 @@ export default function CharacterFaceOff() {
                   variant="cyan"
                   size="lg"
                   icon={<Crosshair className="w-5 h-5" />}
-                  className="w-full sm:w-auto font-black shadow-[0_0_25px_rgba(0,213,255,0.4)]"
+                  className="w-full sm:w-auto font-black shadow-[0_2px_12px_rgba(37,44,36,0.8)]"
                 >
-                  ENLIST TEAM VECTOR
+                  ENLIST TASK FORCE
                 </Button>
 
                 <Button
                   href="/register"
                   variant="orange"
                   size="lg"
-                  icon={<Flame className="w-5 h-5 text-white" />}
-                  className="w-full sm:w-auto font-black shadow-[0_0_25px_rgba(255,116,56,0.4)]"
+                  icon={<Flame className="w-5 h-5 text-military-black" />}
+                  className="w-full sm:w-auto font-black shadow-[0_2px_12px_rgba(194,178,138,0.3)]"
                 >
-                  ENLIST TEAM RAPTOR
+                  ENLIST OPFOR SQUAD
                 </Button>
               </>
             )}
@@ -571,8 +569,8 @@ export default function CharacterFaceOff() {
               href="/#format"
               variant="outline"
               size="lg"
-              icon={<Award className="w-4 h-4 text-cyan" />}
-              className="w-full sm:w-auto"
+              icon={<Award className="w-4 h-4 text-sand" />}
+              className="w-full sm:w-auto border-gunmetal hover:border-sand hover:text-tacticalWhite"
             >
               TOURNAMENT FORMAT
             </Button>
@@ -580,9 +578,9 @@ export default function CharacterFaceOff() {
         </div>
       </div>
 
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 text-[10px] font-mono text-secondaryText/70 tracking-widest pointer-events-none">
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 text-[10px] font-mono text-mutedText tracking-widest pointer-events-none">
         <span>SCROLL TO CONTROL DUEL</span>
-        <ChevronDown className="w-3.5 h-3.5 text-cyan animate-bounce" />
+        <ChevronDown className="w-3.5 h-3.5 text-sand animate-bounce" />
       </div>
     </section>
   );

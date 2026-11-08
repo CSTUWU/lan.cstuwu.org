@@ -83,28 +83,28 @@ export default function Navbar() {
             : '-translate-y-full opacity-0 pointer-events-none'
         } ${
           scrolled
-            ? 'bg-background/95 backdrop-blur-md border-b border-tactical-border py-2.5 shadow-2xl'
-            : 'bg-gradient-to-b from-background/95 via-background/85 to-transparent py-3.5'
+            ? 'bg-military-black/95 backdrop-blur-md border-b border-gunmetal py-2.5 shadow-2xl'
+            : 'bg-gradient-to-b from-military-black/95 via-military-black/85 to-transparent py-3.5'
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-3 group">
-              <div className="relative flex items-center justify-center w-10 h-10 bg-surface border border-cyan/40 clip-tactical group-hover:border-cyan transition-colors shadow-[0_0_15px_rgba(0,213,255,0.2)]">
-                <Shield className="w-5 h-5 text-cyan group-hover:scale-110 transition-transform" />
-                <span className="absolute -bottom-1 -right-1 w-1.5 h-1.5 bg-orange" />
+              <div className="relative flex items-center justify-center w-10 h-10 bg-surface border border-olive/50 clip-tactical group-hover:border-sand transition-colors shadow-[0_2px_10px_rgba(24,30,24,0.7)]">
+                <Shield className="w-5 h-5 text-sand group-hover:scale-110 transition-transform" />
+                <span className="absolute -bottom-1 -right-1 w-1.5 h-1.5 bg-olive" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-display font-black text-lg sm:text-xl tracking-wider text-white">
-                    <span className="text-cyan">LAN</span> <span className="text-orange">CHALLENGE</span>
+                  <span className="font-display font-black text-lg sm:text-xl tracking-wider text-tacticalWhite">
+                    <span className="text-sand">LAN</span> <span className="text-tacticalWhite">CHALLENGE</span>
                   </span>
-                  <span className="hidden sm:inline-block text-[9px] font-mono font-semibold px-1.5 py-0.5 bg-cyan/10 text-cyan border border-cyan/30 rounded-none">
-                    CS2
+                  <span className="hidden sm:inline-block text-[9px] font-mono font-semibold px-1.5 py-0.5 bg-olive/20 text-sand border border-olive/40 rounded-none">
+                    COD4 MW
                   </span>
                 </div>
-                <p className="text-[10px] text-secondaryText tracking-tight font-mono hidden md:block">
-                  UWU • CST DEGREE PROGRAMME
+                <p className="text-[10px] text-mutedText tracking-tight font-mono hidden md:block">
+                  UWU // TAC-OPS COMMAND
                 </p>
               </div>
             </Link>
@@ -116,13 +116,13 @@ export default function Navbar() {
                   href={link.href}
                   className={`relative px-3 py-1.5 text-xs font-mono uppercase tracking-wider transition-colors duration-200 ${
                     isActive(link.href)
-                      ? 'text-cyan font-bold'
-                      : 'text-secondaryText hover:text-white'
+                      ? 'text-sand font-bold'
+                      : 'text-mutedText hover:text-tacticalWhite'
                   }`}
                 >
                   {link.name}
                   {isActive(link.href) && (
-                    <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-cyan shadow-[0_0_8px_#00D5FF]" />
+                    <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-sand shadow-[0_0_8px_rgba(194,178,138,0.6)]" />
                   )}
                 </Link>
               ))}
@@ -143,10 +143,10 @@ export default function Navbar() {
               <div className="flex items-center gap-2 lg:hidden">
                 <button
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="p-2 text-secondaryText hover:text-white border border-tactical-border bg-surface"
+                  className="p-2 text-mutedText hover:text-tacticalWhite border border-gunmetal bg-surface"
                   aria-label="Toggle Navigation"
                 >
-                  {mobileMenuOpen ? <X className="w-5 h-5 text-cyan" /> : <Menu className="w-5 h-5" />}
+                  {mobileMenuOpen ? <X className="w-5 h-5 text-sand" /> : <Menu className="w-5 h-5" />}
                 </button>
               </div>
             </div>
@@ -155,31 +155,31 @@ export default function Navbar() {
       </header>
 
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden bg-background/98 backdrop-blur-2xl pt-20 px-6 pb-8 flex flex-col justify-between border-b border-tactical-border overflow-y-auto">
+        <div className="fixed inset-0 z-40 lg:hidden bg-military-black/98 backdrop-blur-2xl pt-20 px-6 pb-8 flex flex-col justify-between border-b border-gunmetal overflow-y-auto">
           <div className="flex flex-col gap-2.5">
-            <div className="text-[10px] font-mono text-secondaryText uppercase tracking-widest border-b border-tactical-border pb-2">
-              Tactical Navigation
+            <div className="text-[10px] font-mono text-mutedText uppercase tracking-widest border-b border-gunmetal pb-2">
+              Tactical Operations Directory
             </div>
             {navLinks.map((link) => (
               <Link
                 key={link.name}
                 href={link.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center justify-between py-2.5 text-base font-display uppercase tracking-wider border-b border-tactical-border/50 ${
-                  isActive(link.href) ? 'text-cyan font-bold' : 'text-white/80 hover:text-cyan'
+                className={`flex items-center justify-between py-2.5 text-base font-display uppercase tracking-wider border-b border-gunmetal/60 ${
+                  isActive(link.href) ? 'text-sand font-bold' : 'text-tacticalWhite/80 hover:text-sand'
                 }`}
               >
                 <span>{link.name}</span>
-                <ChevronRight className="w-4 h-4 text-secondaryText" />
+                <ChevronRight className="w-4 h-4 text-mutedText" />
               </Link>
             ))}
           </div>
 
-          <div className="pt-6 border-t border-tactical-border flex flex-col gap-3">
-            <div className="text-[11px] font-mono text-secondaryText text-center">
+          <div className="pt-6 border-t border-gunmetal flex flex-col gap-3">
+            <div className="text-[11px] font-mono text-mutedText text-center">
               Computer Science and Technology Degree Programme
               <br />
-              <span className="text-white">Uva Wellassa University of Sri Lanka</span>
+              <span className="text-tacticalWhite">Uva Wellassa University of Sri Lanka</span>
             </div>
             {isOpen && (
               <Button

@@ -72,79 +72,79 @@ type BracketLayoutMode = '16-squad' | '8-squad' | 'linear';
 
 const QUADRANT_THEMES = {
   purple: {
-    name: 'PURPLE BRACKET',
-    accent: '#A855F7',
-    border: 'border-purple-500/60',
-    borderActive: 'border-purple-400',
-    bg: 'bg-purple-950/20',
-    bgBadge: 'bg-purple-500/15',
-    text: 'text-purple-300',
-    glow: 'rgba(168, 85, 247, 0.45)',
-    shadow: 'shadow-[0_0_20px_rgba(168,85,247,0.35)]',
-    cardGlow: 'hover:border-purple-400 hover:shadow-[0_0_25px_rgba(168,85,247,0.5)]',
-    gradient: 'from-purple-900/60 via-[#150D24] to-[#0A0714]',
-    wireStroke: '#A855F7',
-    wireGlow: 'rgba(168, 85, 247, 0.7)',
+    name: 'SECTOR ALPHA [OLIVE]',
+    accent: '#59634A',
+    border: 'border-olive/60',
+    borderActive: 'border-olive-light',
+    bg: 'bg-darkGreen/40',
+    bgBadge: 'bg-olive/20',
+    text: 'text-sand',
+    glow: 'rgba(89, 99, 74, 0.45)',
+    shadow: 'shadow-[0_2px_14px_rgba(24,30,24,0.6)]',
+    cardGlow: 'hover:border-olive-light hover:shadow-[0_2px_18px_rgba(89,99,74,0.4)]',
+    gradient: 'from-darkGreen/80 via-card/90 to-military-black',
+    wireStroke: '#59634A',
+    wireGlow: 'rgba(89, 99, 74, 0.7)',
   },
   orange: {
-    name: 'ORANGE BRACKET',
-    accent: '#F97316',
-    border: 'border-orange-500/60',
-    borderActive: 'border-orange-400',
-    bg: 'bg-orange-950/20',
-    bgBadge: 'bg-orange-500/15',
-    text: 'text-orange-300',
-    glow: 'rgba(249, 115, 22, 0.45)',
-    shadow: 'shadow-[0_0_20px_rgba(249,115,22,0.35)]',
-    cardGlow: 'hover:border-orange-400 hover:shadow-[0_0_25px_rgba(249,115,22,0.5)]',
-    gradient: 'from-orange-900/60 via-[#24130A] to-[#120904]',
-    wireStroke: '#F97316',
-    wireGlow: 'rgba(249, 115, 22, 0.7)',
+    name: 'SECTOR BRAVO [GUNMETAL]',
+    accent: '#8C876B',
+    border: 'border-gunmetal',
+    borderActive: 'border-khaki',
+    bg: 'bg-surface/80',
+    bgBadge: 'bg-gunmetal/30',
+    text: 'text-khaki',
+    glow: 'rgba(140, 135, 107, 0.35)',
+    shadow: 'shadow-[0_2px_14px_rgba(20,25,20,0.6)]',
+    cardGlow: 'hover:border-khaki hover:shadow-[0_2px_18px_rgba(140,135,107,0.35)]',
+    gradient: 'from-gunmetal/60 via-card/90 to-military-black',
+    wireStroke: '#8C876B',
+    wireGlow: 'rgba(140, 135, 107, 0.6)',
   },
   cyan: {
-    name: 'CYAN BRACKET',
-    accent: '#00D5FF',
-    border: 'border-cyan-400/60',
-    borderActive: 'border-cyan-300',
-    bg: 'bg-cyan-950/20',
-    bgBadge: 'bg-cyan-500/15',
-    text: 'text-cyan-300',
-    glow: 'rgba(0, 213, 255, 0.45)',
-    shadow: 'shadow-[0_0_20px_rgba(0,213,255,0.35)]',
-    cardGlow: 'hover:border-cyan-300 hover:shadow-[0_0_25px_rgba(0,213,255,0.5)]',
-    gradient: 'from-cyan-900/60 via-[#0A1824] to-[#040C12]',
-    wireStroke: '#00D5FF',
-    wireGlow: 'rgba(0, 213, 255, 0.7)',
+    name: 'SECTOR CHARLIE [SAND]',
+    accent: '#C2B28A',
+    border: 'border-sand/50',
+    borderActive: 'border-sand',
+    bg: 'bg-darkGreen/30',
+    bgBadge: 'bg-sand/15',
+    text: 'text-sand',
+    glow: 'rgba(194, 178, 138, 0.4)',
+    shadow: 'shadow-[0_2px_14px_rgba(194,178,138,0.2)]',
+    cardGlow: 'hover:border-sand hover:shadow-[0_2px_18px_rgba(194,178,138,0.35)]',
+    gradient: 'from-sand/15 via-card/90 to-military-black',
+    wireStroke: '#C2B28A',
+    wireGlow: 'rgba(194, 178, 138, 0.7)',
   },
   red: {
-    name: 'RED BRACKET',
-    accent: '#F43F5E',
-    border: 'border-rose-500/60',
-    borderActive: 'border-rose-400',
-    bg: 'bg-rose-950/20',
-    bgBadge: 'bg-rose-500/15',
-    text: 'text-rose-300',
-    glow: 'rgba(244, 63, 94, 0.45)',
-    shadow: 'shadow-[0_0_20px_rgba(244,63,94,0.35)]',
-    cardGlow: 'hover:border-rose-400 hover:shadow-[0_0_25px_rgba(244,63,94,0.5)]',
-    gradient: 'from-rose-900/60 via-[#240A12] to-[#120408]',
-    wireStroke: '#F43F5E',
-    wireGlow: 'rgba(244, 63, 94, 0.7)',
+    name: 'SECTOR DELTA [KHAKI]',
+    accent: '#8C876B',
+    border: 'border-gunmetal/80',
+    borderActive: 'border-olive-light',
+    bg: 'bg-card/90',
+    bgBadge: 'bg-olive/15',
+    text: 'text-tacticalWhite',
+    glow: 'rgba(140, 135, 107, 0.35)',
+    shadow: 'shadow-[0_2px_14px_rgba(24,30,24,0.6)]',
+    cardGlow: 'hover:border-olive-light hover:shadow-[0_2px_18px_rgba(89,99,74,0.35)]',
+    gradient: 'from-surface via-card/90 to-military-black',
+    wireStroke: '#8C876B',
+    wireGlow: 'rgba(140, 135, 107, 0.6)',
   },
   gold: {
-    name: 'GRAND CHAMPIONSHIP',
-    accent: '#FFB800',
-    border: 'border-amber-400/70',
-    borderActive: 'border-amber-300',
-    bg: 'bg-amber-950/30',
-    bgBadge: 'bg-amber-500/20',
-    text: 'text-amber-300',
-    glow: 'rgba(255, 184, 0, 0.55)',
-    shadow: 'shadow-[0_0_30px_rgba(255,184,0,0.4)]',
-    cardGlow: 'hover:border-amber-300 hover:shadow-[0_0_35px_rgba(255,184,0,0.6)]',
-    gradient: 'from-amber-900/70 via-[#291A06] to-[#140D03]',
-    wireStroke: '#FFB800',
-    wireGlow: 'rgba(255, 184, 0, 0.8)',
+    name: 'COMMAND FINALS // CHAMPIONSHIP',
+    accent: '#C2B28A',
+    border: 'border-sand/70',
+    borderActive: 'border-sand',
+    bg: 'bg-darkGreen/50',
+    bgBadge: 'bg-sand/20',
+    text: 'text-sand',
+    glow: 'rgba(194, 178, 138, 0.45)',
+    shadow: 'shadow-[0_4px_24px_rgba(194,178,138,0.25)]',
+    cardGlow: 'hover:border-sand hover:shadow-[0_4px_30px_rgba(194,178,138,0.4)]',
+    gradient: 'from-sand/20 via-card/95 to-military-black',
+    wireStroke: '#C2B28A',
+    wireGlow: 'rgba(194, 178, 138, 0.8)',
   },
 };
 
@@ -349,32 +349,32 @@ export default function PlayoffBracketTree({
   return (
     <div className="space-y-6 select-none font-sans" ref={containerRef}>
       
-      <div className="bg-gradient-to-r from-[#0C1420] via-card to-[#0C1420] border-2 border-cyan/40 p-5 sm:p-6 backdrop-blur-md relative overflow-hidden shadow-[0_0_35px_rgba(0,213,255,0.15)] clip-tactical">
-        <div className="absolute top-0 right-0 w-96 h-52 bg-gradient-to-b from-cyan/15 to-transparent rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-1/4 w-80 h-32 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="bg-card border-2 border-gunmetal p-5 sm:p-6 backdrop-blur-md relative overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.8)] clip-tactical">
+        <div className="absolute top-0 right-0 w-96 h-52 bg-gradient-to-b from-sand/5 to-transparent rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-1/4 w-80 h-32 bg-olive/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 relative z-10">
           <div>
             <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-              <span className="w-2.5 h-2.5 rounded-full bg-cyan animate-ping" />
+              <span className="w-2.5 h-2.5 rounded-full bg-sand animate-ping" />
               <Badge variant="cyan" size="sm">
-                ESPORTS TOURNAMENT BRACKET // DUAL-WING ARENA
+                TACTICAL OPERATIONS TREE // DUAL-WING ARENA
               </Badge>
-              <span className="text-[11px] font-mono text-secondaryText">
-                {"// CS2 MR12 REGULATION • SINGLE ELIMINATION"}
+              <span className="text-[11px] font-mono text-mutedText">
+                {"// COD4 MW 5v5 SEARCH & DESTROY • SINGLE ELIMINATION"}
               </span>
             </div>
-            <h2 className="font-display font-black text-2xl sm:text-3xl uppercase text-white tracking-wider flex items-center gap-3">
-              <span>PLAYOFF</span> <span className="text-cyan">CHAMPIONSHIP TREE</span>
+            <h2 className="font-display font-black text-2xl sm:text-3xl uppercase text-tacticalWhite tracking-wider flex items-center gap-3">
+              <span>PLAYOFF</span> <span className="text-sand">CHAMPIONSHIP TREE</span>
             </h2>
-            <p className="text-xs font-mono text-secondaryText mt-1 max-w-2xl leading-relaxed">
-              Symmetrical dual-wing bracket converging directly toward the Grand Final and Champion Trophy Podium. Hover over any squad to trace their complete route to victory.
+            <p className="text-xs font-mono text-mutedText mt-1 max-w-2xl leading-relaxed">
+              Symmetrical dual-wing tactical bracket converging directly toward the Grand Final and Champion Trophy Podium. Hover over any squad to trace their complete route to victory.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
             
-            <div className="bg-surface/90 border border-tactical-border p-1 flex items-center gap-1">
+            <div className="bg-surface/90 border border-gunmetal p-1 flex items-center gap-1">
               <button
                 onClick={() => {
                   setLayoutMode('16-squad');
@@ -382,10 +382,10 @@ export default function PlayoffBracketTree({
                 }}
                 className={`px-3 py-1.5 font-mono text-xs uppercase font-bold flex items-center gap-1.5 transition-all ${
                   layoutMode === '16-squad'
-                    ? 'bg-gradient-to-r from-purple-600 to-cyan text-white shadow-[0_0_15px_rgba(168,85,247,0.4)]'
-                    : 'text-secondaryText hover:text-white'
+                    ? 'bg-olive text-tacticalWhite shadow-[0_2px_10px_rgba(37,44,36,0.8)]'
+                    : 'text-mutedText hover:text-tacticalWhite'
                 }`}
-                title="16-Squad Major Tournament Bracket (Exact structure from reference)"
+                title="16-Squad Major Tournament Bracket"
               >
                 <Layers className="w-3.5 h-3.5" />
                 <span>16-SQUAD MAJOR</span>
@@ -398,8 +398,8 @@ export default function PlayoffBracketTree({
                 }}
                 className={`px-3 py-1.5 font-mono text-xs uppercase font-bold flex items-center gap-1.5 transition-all ${
                   layoutMode === '8-squad'
-                    ? 'bg-cyan text-background font-black shadow-[0_0_15px_rgba(0,213,255,0.4)]'
-                    : 'text-secondaryText hover:text-white'
+                    ? 'bg-sand text-military-black font-black shadow-[0_2px_10px_rgba(194,178,138,0.3)]'
+                    : 'text-mutedText hover:text-tacticalWhite'
                 }`}
                 title="8-Squad UWU Inter-Faculty Tournament Bracket"
               >
@@ -411,8 +411,8 @@ export default function PlayoffBracketTree({
                 onClick={() => setLayoutMode('linear')}
                 className={`px-3 py-1.5 font-mono text-xs uppercase font-bold flex items-center gap-1.5 transition-all ${
                   layoutMode === 'linear'
-                    ? 'bg-tactical-gold text-background font-black shadow-[0_0_15px_rgba(255,184,0,0.4)]'
-                    : 'text-secondaryText hover:text-white'
+                    ? 'bg-gunmetal text-tacticalWhite font-black shadow-sm'
+                    : 'text-mutedText hover:text-tacticalWhite'
                 }`}
                 title="Linear Stage Progression Column View"
               >
@@ -421,31 +421,31 @@ export default function PlayoffBracketTree({
               </button>
             </div>
 
-            <div className="bg-surface/90 border border-tactical-border p-1 flex items-center gap-1">
+            <div className="bg-surface/90 border border-gunmetal p-1 flex items-center gap-1">
               <button
                 onClick={handleZoomIn}
-                className="p-1.5 text-secondaryText hover:text-white hover:bg-card transition-colors"
+                className="p-1.5 text-mutedText hover:text-tacticalWhite hover:bg-card transition-colors"
                 title="Zoom In"
               >
                 <ZoomIn className="w-4 h-4" />
               </button>
               <button
                 onClick={handleZoomOut}
-                className="p-1.5 text-secondaryText hover:text-white hover:bg-card transition-colors"
+                className="p-1.5 text-mutedText hover:text-tacticalWhite hover:bg-card transition-colors"
                 title="Zoom Out"
               >
                 <ZoomOut className="w-4 h-4" />
               </button>
               <button
                 onClick={handleResetZoom}
-                className="p-1.5 text-secondaryText hover:text-white hover:bg-card transition-colors text-[11px] font-mono font-bold px-2"
+                className="p-1.5 text-mutedText hover:text-tacticalWhite hover:bg-card transition-colors text-[11px] font-mono font-bold px-2"
                 title="Reset Zoom (100%)"
               >
                 {Math.round(scale * 100)}%
               </button>
               <button
                 onClick={toggleFullscreen}
-                className="p-1.5 text-cyan hover:text-white hover:bg-cyan/20 transition-colors"
+                className="p-1.5 text-sand hover:text-tacticalWhite hover:bg-olive/20 transition-colors"
                 title="Toggle Auditorium Projector Fullscreen"
               >
                 <Maximize2 className="w-4 h-4" />
@@ -456,10 +456,10 @@ export default function PlayoffBracketTree({
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   onClick={handleCreatePlayoffTree}
-                  className="px-3.5 py-2 bg-gradient-to-r from-purple-600 to-cyan hover:brightness-110 text-white font-mono text-xs uppercase font-black flex items-center gap-1.5 border border-cyan/60 shadow-[0_0_20px_rgba(0,213,255,0.3)] transition-all"
+                  className="px-3.5 py-2 bg-olive hover:bg-olive-light text-tacticalWhite font-mono text-xs uppercase font-black flex items-center gap-1.5 border border-olive-light/50 shadow-[0_2px_12px_rgba(37,44,36,0.8)] transition-all"
                   title="Seed 1st layer with registered squads; Round 2, Semifinals & Finals start free and advance automatically on win"
                 >
-                  <Trophy className="w-3.5 h-3.5 text-cyan" />
+                  <Trophy className="w-3.5 h-3.5 text-sand" />
                   <span>CREATE PLAYOFF TREE</span>
                 </button>
 
@@ -468,16 +468,16 @@ export default function PlayoffBracketTree({
                     <button
                       onClick={handleAutoSimulateChampionship}
                       disabled={isSimulatingAll}
-                      className="px-3.5 py-2 bg-gradient-to-r from-purple-600 via-amber-500 to-cyan text-white hover:brightness-110 font-mono text-xs uppercase font-black flex items-center gap-1.5 border border-amber-400 shadow-[0_0_20px_rgba(255,184,0,0.4)] transition-all disabled:opacity-50"
+                      className="px-3.5 py-2 bg-sand text-military-black hover:bg-sand-light font-mono text-xs uppercase font-black flex items-center gap-1.5 border border-sand-light shadow-[0_2px_12px_rgba(194,178,138,0.3)] transition-all disabled:opacity-50"
                       title="Watch automated progression from Round of 16 all the way to Champion Trophy!"
                     >
-                      <Zap className={`w-3.5 h-3.5 text-tactical-gold ${isSimulatingAll ? 'animate-spin' : 'animate-bounce'}`} />
+                      <Zap className={`w-3.5 h-3.5 text-military-black ${isSimulatingAll ? 'animate-spin' : 'animate-bounce'}`} />
                       <span>{isSimulatingAll ? 'SIMULATING...' : 'AUTO-SIMULATE ALL'}</span>
                     </button>
 
                     <button
                       onClick={handleReset16Tree}
-                      className="px-3 py-2 bg-surface border border-tactical-border hover:border-purple-400 text-secondaryText hover:text-white font-mono text-xs uppercase flex items-center gap-1.5 transition-colors"
+                      className="px-3 py-2 bg-surface border border-gunmetal hover:border-olive text-mutedText hover:text-tacticalWhite font-mono text-xs uppercase flex items-center gap-1.5 transition-colors"
                       title="Reset 16 squads to initial tournament bracket state"
                     >
                       <RotateCcw className="w-3.5 h-3.5" />
@@ -491,7 +491,7 @@ export default function PlayoffBracketTree({
                       if (onRefresh) onRefresh();
                       triggerNotice('✓ Re-seeded official 8-squad UWU bracket!');
                     }}
-                    className="px-3 py-2 bg-surface border border-tactical-border hover:border-cyan text-secondaryText hover:text-white font-mono text-xs uppercase flex items-center gap-1.5 transition-colors"
+                    className="px-3 py-2 bg-surface border border-gunmetal hover:border-sand text-mutedText hover:text-tacticalWhite font-mono text-xs uppercase flex items-center gap-1.5 transition-colors"
                     title="Re-seed 8-squad bracket from registered teams"
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
@@ -504,9 +504,9 @@ export default function PlayoffBracketTree({
             <Link
               href="/scoreboard/live"
               target="_blank"
-              className="px-3.5 py-2 bg-gradient-to-r from-cyan to-blue-600 hover:from-cyan hover:to-cyan text-background font-display font-black text-xs uppercase tracking-wider flex items-center gap-1.5 border border-cyan shadow-[0_0_20px_rgba(0,213,255,0.3)] transition-all"
+              className="px-3.5 py-2 bg-olive hover:bg-olive-light text-tacticalWhite font-display font-black text-xs uppercase tracking-wider flex items-center gap-1.5 border border-olive-light/40 shadow-[0_2px_12px_rgba(37,44,36,0.8)] transition-all"
             >
-              <Radio className="w-3.5 h-3.5 animate-pulse" />
+              <Radio className="w-3.5 h-3.5 animate-pulse text-sand" />
               <span>STAGE HUD</span>
               <ExternalLink className="w-3 h-3 ml-0.5" />
             </Link>
@@ -514,20 +514,20 @@ export default function PlayoffBracketTree({
         </div>
 
         {actionNotice && (
-          <div className="mt-4 p-3 bg-cyan/15 border border-cyan text-cyan font-mono text-xs flex items-center gap-2 animate-pulse shadow-[0_0_20px_rgba(0,213,255,0.2)]">
-            <Radio className="w-4 h-4 shrink-0 animate-ping text-cyan" />
+          <div className="mt-4 p-3 bg-olive/20 border border-olive text-sand font-mono text-xs flex items-center gap-2 animate-pulse shadow-[0_2px_10px_rgba(24,30,24,0.6)]">
+            <Radio className="w-4 h-4 shrink-0 animate-ping text-sand" />
             <span>{actionNotice}</span>
           </div>
         )}
       </div>
 
-      <div className="bg-[#05070B] border-2 border-tactical-border p-4 sm:p-8 relative overflow-x-auto overflow-y-hidden shadow-2xl min-h-[720px]">
+      <div className="bg-military-black border-2 border-gunmetal p-4 sm:p-8 relative overflow-x-auto overflow-y-hidden shadow-2xl min-h-[720px]">
         <div className="absolute inset-0 tactical-grid-bg opacity-15 pointer-events-none" />
-        <div className="absolute top-10 left-10 w-96 h-96 bg-purple-700/10 rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute bottom-10 left-10 w-96 h-96 bg-orange-600/10 rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute top-10 right-10 w-96 h-96 bg-cyan-600/10 rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute bottom-10 right-10 w-96 h-96 bg-rose-600/10 rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[480px] h-[480px] bg-amber-500/10 rounded-full blur-[140px] pointer-events-none" />
+        <div className="absolute top-10 left-10 w-96 h-96 bg-olive/5 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-10 left-10 w-96 h-96 bg-sand/5 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute top-10 right-10 w-96 h-96 bg-darkGreen/10 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-10 right-10 w-96 h-96 bg-olive/5 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[480px] h-[480px] bg-sand/5 rounded-full blur-[140px] pointer-events-none" />
 
         <div
           className="transition-transform duration-200 origin-top-center flex items-center justify-center min-w-[1260px] py-4"
