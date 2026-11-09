@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import { getStoredMatches, getLiveBroadcastChannel, getActiveLiveMatch, getStoredTeams, isPlayoffTreePublished, setPlayoffTreePublished } from '@/lib/storage';
-import { INITIAL_MATCHES, INITIAL_TEAMS } from '@/lib/mockData';
+import { INITIAL_MATCHES, INITIAL_TEAMS, getMapImage } from '@/lib/mockData';
 import { api } from '@/lib/api';
 import { transformBackendMatch } from '@/lib/transformers';
 import { Match, Team } from '@/lib/types';
@@ -334,12 +334,15 @@ function StageProjectorScoreboardContent() {
         ) : (
           <>
             <div className="flex flex-col items-center justify-center mb-6 text-center">
-              <div className="inline-flex items-center gap-2 bg-surface/90 border border-gunmetal px-4 py-1 mb-2 shadow-lg">
+              <div className="inline-flex items-center gap-2.5 bg-surface/90 border border-gunmetal px-4 py-1.5 mb-2 shadow-lg">
                 <Radio className="w-3.5 h-3.5 text-rose-500 animate-pulse" />
                 <span className="font-mono text-xs uppercase font-bold text-tacticalWhite tracking-widest">
                   {activeMatch.stage}
                 </span>
                 <span className="text-mutedKhaki font-mono text-xs">{"//"}</span>
+                <div className="relative w-6 h-4 overflow-hidden border border-gunmetal shrink-0 clip-tactical">
+                  <Image src={getMapImage(activeMatch.map)} alt={activeMatch.map} fill className="object-cover" sizes="24px" />
+                </div>
                 <span className="font-mono text-xs uppercase font-bold text-sand tracking-widest">
                   THEATER: {activeMatch.map}
                 </span>

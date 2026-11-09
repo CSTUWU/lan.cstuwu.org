@@ -38,6 +38,7 @@ import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import { api } from '@/lib/api';
 import { Match, Team, PlayoffBracket, CS2Map } from '@/lib/types';
+import { getMapImage } from '@/lib/mockData';
 import {
   getPlayoffBracket,
   analyzeAndAdvanceBracketWinners,
@@ -2273,11 +2274,16 @@ function MatchDossierModal({ match, onClose, showAdminControls = false, onSimula
         </div>
 
         <div className="grid grid-cols-2 gap-3 text-xs font-mono">
-          <div className="p-3 bg-card border border-tactical-border space-y-1">
-            <span className="text-secondaryText text-[10px] uppercase tracking-wider block">CS2 MAP SELECTION</span>
-            <span className="text-white font-bold flex items-center gap-1.5">
-              <MapPin className="w-3.5 h-3.5 text-cyan" /> {match.map} (MR12)
-            </span>
+          <div className="p-3 bg-card border border-tactical-border space-y-1.5">
+            <span className="text-secondaryText text-[10px] uppercase tracking-wider block">COMBAT THEATER</span>
+            <div className="flex items-center gap-2">
+              <div className="relative w-8 h-5 overflow-hidden border border-gunmetal shrink-0 clip-tactical">
+                <Image src={getMapImage(match.map)} alt={match.map} fill className="object-cover" sizes="32px" />
+              </div>
+              <span className="text-white font-bold text-xs">
+                {match.map} (MR12)
+              </span>
+            </div>
           </div>
           <div className="p-3 bg-card border border-tactical-border space-y-1">
             <span className="text-secondaryText text-[10px] uppercase tracking-wider block">TOURNAMENT VENUE</span>

@@ -19,9 +19,9 @@ export default function MapPoolSection() {
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-16 pb-6 border-b border-gunmetal">
           <div>
             <div className="inline-flex items-center gap-2 mb-3">
-              <Badge variant="orange" size="sm">ACTIVE DUTY MAP POOL</Badge>
+              <Badge variant="orange" size="sm">COD4 PROMODLIVE 2.20 EU MAP POOL</Badge>
               <span className="text-mutedText text-xs font-mono">
-                {`// ${CS2_MAP_POOL.length} COMBAT THEATERS`}
+                {`// ${CS2_MAP_POOL.length} SANCTIONED COMBAT THEATERS`}
               </span>
             </div>
             <h2 className="font-display font-black text-3xl sm:text-5xl uppercase text-tacticalWhite tracking-tight leading-tight">
@@ -30,7 +30,7 @@ export default function MapPoolSection() {
           </div>
 
           <div className="text-xs font-mono text-mutedText max-w-md">
-            <span className="text-sand font-bold">[OFFICIAL TACTICAL INTEL]</span>: The pool represents the sanctioned competitive venues. Final operational veto selections will be confirmed by CST referees during squad leader briefings.
+            <span className="text-sand font-bold">[OFFICIAL PROMOD VETO PROTOCOL]</span>: Sanctioned map pool for knockout, semifinal, and championship rounds. Coin-toss and previous round winners dictate map and side selection.
           </div>
         </div>
 
@@ -86,7 +86,7 @@ export default function MapPoolSection() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
           {CS2_MAP_POOL.map((m) => {
             const isSelected = selectedMap.name === m.name;
             return (
@@ -106,19 +106,22 @@ export default function MapPoolSection() {
                     src={m.image}
                     alt={`${m.name} map`}
                     fill
-                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 14vw"
+                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
                     className="object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
                   <span className="absolute bottom-1 left-2 text-[10px] font-mono text-tacticalWhite/80">
-                  0{CS2_MAP_POOL.indexOf(m) + 1}
+                    0{CS2_MAP_POOL.indexOf(m) + 1}
+                  </span>
+                  <span className="absolute top-1 right-2 text-[9px] font-mono font-bold text-sand bg-military-black/80 px-1 py-0.5 border border-gunmetal/60">
+                    {'callsign' in m ? String(m.callsign) : ''}
                   </span>
                 </div>
                 <div className="font-display font-black text-base sm:text-lg uppercase tracking-wider text-tacticalWhite">
                   {m.name}
                 </div>
                 <div className="text-[10px] font-mono text-sand/80 mt-1 truncate">
-                  {m.location.split(' ')[0]}
+                  {m.location.split('//')[0]?.trim()}
                 </div>
                 {isSelected && (
                   <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-sand" />

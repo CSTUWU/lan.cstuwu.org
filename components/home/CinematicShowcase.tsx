@@ -494,8 +494,7 @@ export default function CinematicShowcase() {
               <span className="px-2 py-0.5 bg-surface border border-gunmetal text-tacticalWhite font-bold">CROSSFIRE</span>
               <span className="px-2 py-0.5 bg-olive/20 border border-olive/50 text-sand font-bold">BACKLOT</span>
               <span className="px-2 py-0.5 bg-surface border border-gunmetal text-tacticalWhite font-bold">STRIKE</span>
-              <span className="px-2 py-0.5 bg-olive/20 border border-olive/50 text-sand font-bold">VACANT</span>
-              <span className="px-2 py-0.5 bg-surface border border-gunmetal text-tacticalWhite font-bold">OVERGROWN</span>
+              <span className="px-2 py-0.5 bg-olive/20 border border-olive/50 text-sand font-bold">CITYSTREET</span>
             </div>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">

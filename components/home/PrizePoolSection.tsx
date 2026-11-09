@@ -37,7 +37,7 @@ export default function PrizePoolSection() {
         'Official CST 2026 Silver Championship Trophy',
         'CST Silver Medals for 5 Active Operatives',
         'Certificate of Tactical Esports Excellence',
-        'Automatic Seed for CST 2027 Major',
+        
       ],
       orderClass: 'order-2 lg:order-1',
     },
@@ -54,10 +54,10 @@ export default function PrizePoolSection() {
       prize: 'LKR 80,000',
       perks: [
         'Official CST LAN Challenge 2026 Grand Trophy',
-        'Official CST Gold Medals for 5 Operatives + Sub',
+        'Official CST Gold Medals for 5 Operatives',
         'Uva Wellassa University COD4 Champion Title',
         'Permanent Enlistment in CST Hall of Fame',
-        'VIP Commemorative Championship Merchandise',
+       
       ],
       orderClass: 'order-1 lg:order-2 lg:-translate-y-4',
       isChampion: true,
@@ -77,7 +77,7 @@ export default function PrizePoolSection() {
         'Official CST 2026 Bronze Championship Trophy',
         'CST Bronze Medals for 5 Active Operatives',
         'Certificate of Tactical Esports Excellence',
-        'Official CST LAN Tournament Swag Pack',
+        
       ],
       orderClass: 'order-3',
     },
@@ -211,6 +211,7 @@ export default function PrizePoolSection() {
           ))}
         </div>
 
+        {/*
         <div className="bg-card/80 border border-gunmetal p-6 sm:p-8 backdrop-blur-md">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gunmetal pb-4 mb-6">
             <div>
@@ -228,7 +229,7 @@ export default function PrizePoolSection() {
             <span className="text-[10px] font-mono text-sand px-2.5 py-1 bg-surface border border-olive/40 self-start sm:self-auto font-bold uppercase">
               MODERN WARFARE METRICS
             </span>
-          </div>
+          </div> 
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 font-mono text-xs">
             {individualAwards.map((award, i) => (
@@ -253,7 +254,8 @@ export default function PrizePoolSection() {
               </div>
             ))}
           </div>
-        </div>
+        </div> 
+        */}
 
       </div>
     </section>

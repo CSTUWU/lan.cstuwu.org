@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getStoredTeams, setStoredTeams, getStoredMatches, getActiveLiveMatch, isPlayoffTreePublished, setPlayoffTreePublished, getLiveBroadcastChannel } from '@/lib/storage';
-import { INITIAL_TEAMS, INITIAL_MATCHES } from '@/lib/mockData';
+import { INITIAL_TEAMS, INITIAL_MATCHES, getMapImage } from '@/lib/mockData';
 import { api } from '@/lib/api';
 import { transformBackendTeam, transformBackendMatch } from '@/lib/transformers';
 import { Team, Match } from '@/lib/types';
@@ -232,8 +232,13 @@ export default function ScoreboardPage() {
                 </span>
               </div>
 
-              <div className="text-xs font-mono text-mutedKhaki">
-                THEATER: <strong className="text-tacticalWhite uppercase">{liveMatch.map}</strong> • FORMAT: MR12 SEARCH & DESTROY
+              <div className="flex items-center gap-2 text-xs font-mono text-mutedKhaki">
+                <div className="relative w-8 h-5 overflow-hidden border border-gunmetal shrink-0 clip-tactical">
+                  <Image src={getMapImage(liveMatch.map)} alt={liveMatch.map} fill className="object-cover" sizes="32px" />
+                </div>
+                <span>
+                  THEATER: <strong className="text-tacticalWhite uppercase">{liveMatch.map}</strong> • FORMAT: MR12 SEARCH &amp; DESTROY
+                </span>
               </div>
             </div>
 
@@ -533,6 +538,9 @@ export default function ScoreboardPage() {
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-gunmetal/70 gap-2 mb-4">
                     <div className="flex items-center gap-2">
+                      <div className="relative w-8 h-5 overflow-hidden border border-gunmetal shrink-0 clip-tactical">
+                        <Image src={getMapImage(m.map)} alt={m.map} fill className="object-cover" sizes="32px" />
+                      </div>
                       <span className="text-xs font-mono text-sand font-bold">{m.stage}</span>
                       <span className="text-xs font-mono text-mutedKhaki">• Theater: {m.map}</span>
                     </div>
@@ -605,6 +613,9 @@ export default function ScoreboardPage() {
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-gunmetal/70 gap-2 mb-4">
                   <div className="flex items-center gap-2">
+                    <div className="relative w-8 h-5 overflow-hidden border border-gunmetal shrink-0 clip-tactical">
+                      <Image src={getMapImage(m.map)} alt={m.map} fill className="object-cover" sizes="32px" />
+                    </div>
                     <span className="text-xs font-mono text-sand font-bold">{m.stage}</span>
                     <span className="text-xs font-mono text-mutedKhaki">• Theater: {m.map}</span>
                   </div>

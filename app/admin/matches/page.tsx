@@ -18,6 +18,7 @@ import {
 import { api } from '@/lib/api';
 import { transformBackendMatch, transformBackendTeam } from '@/lib/transformers';
 import { Team, Match, CS2Map, MatchStatus } from '@/lib/types';
+import { CS2_MAP_POOL, getMapImage } from '@/lib/mockData';
 import { Swords, Plus, Calendar, Clock, MapPin, CheckCircle2, Shield, RefreshCw, Trophy, GitBranch, Radio, Lock, Trash2 } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
@@ -33,7 +34,7 @@ export default function AdminMatchesPage() {
   // Form State
   const [teamAId, setTeamAId] = useState('');
   const [teamBId, setTeamBId] = useState('');
-  const [map, setMap] = useState<CS2Map>('Mirage');
+  const [map, setMap] = useState<CS2Map>('Crash');
   const [dateTime, setDateTime] = useState('2026-11-20T14:00:00');
   const [stage, setStage] = useState('Quarterfinal Match');
   const [status, setStatus] = useState<MatchStatus>('upcoming');
@@ -371,8 +372,11 @@ export default function AdminMatchesPage() {
                   <Calendar className="w-3.5 h-3.5 text-sand" />
                   {new Date(m.dateTime).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                 </div>
-                <div className="text-[11px] font-mono text-mutedKhaki mt-0.5">
-                  THEATER: <strong className="text-tacticalWhite">{m.map}</strong>
+                <div className="flex items-center gap-2 text-[11px] font-mono text-mutedKhaki mt-1">
+                  <div className="relative w-6 h-4 overflow-hidden border border-gunmetal shrink-0 clip-tactical">
+                    <Image src={getMapImage(m.map)} alt={m.map} fill className="object-cover" sizes="24px" />
+                  </div>
+                  <span>THEATER: <strong className="text-tacticalWhite">{m.map}</strong></span>
                 </div>
               </div>
 
@@ -483,13 +487,11 @@ export default function AdminMatchesPage() {
                     onChange={(e) => setMap(e.target.value as CS2Map)}
                     className="w-full bg-surface border border-gunmetal p-2.5 text-tacticalWhite focus:outline-none focus:border-olive"
                   >
-                    <option value="Mirage">Crash</option>
-                    <option value="Dust II">Crossfire</option>
-                    <option value="Inferno">Backlot</option>
-                    <option value="Ancient">Strike</option>
-                    <option value="Nuke">District</option>
-                    <option value="Anubis">Vacant</option>
-                    <option value="Vertigo">Overgrown</option>
+                    {CS2_MAP_POOL.map((m) => (
+                      <option key={m.callsign} value={m.name}>
+                        {m.name} ({m.callsign})
+                      </option>
+                    ))}
                   </select>
                 </div>
 

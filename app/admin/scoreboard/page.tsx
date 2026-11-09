@@ -24,6 +24,7 @@ import {
 import { api } from '@/lib/api';
 import { transformBackendMatch, transformBackendTeam } from '@/lib/transformers';
 import { Match, MatchStatus } from '@/lib/types';
+import { getMapImage } from '@/lib/mockData';
 import {
   Trophy,
   CheckCircle2,
@@ -413,12 +414,17 @@ export default function AdminScoreboardPage() {
             </div>
 
             <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-gunmetal gap-4">
-              <div>
-                <span className="text-xs font-mono text-sand uppercase font-bold tracking-wider">
-                  {`${currentMatch.stage} // THEATER: ${currentMatch.map}`}
-                </span>
-                <div className="text-[11px] font-mono text-mutedKhaki mt-1">
-                  MR12 Regulation (First to 13 rounds wins)
+              <div className="flex items-center gap-3">
+                <div className="relative w-12 h-8 overflow-hidden border border-gunmetal shrink-0 clip-tactical">
+                  <Image src={getMapImage(currentMatch.map)} alt={currentMatch.map} fill className="object-cover" sizes="48px" />
+                </div>
+                <div>
+                  <span className="text-xs font-mono text-sand uppercase font-bold tracking-wider">
+                    {`${currentMatch.stage} // THEATER: ${currentMatch.map}`}
+                  </span>
+                  <div className="text-[11px] font-mono text-mutedKhaki mt-0.5">
+                    MR12 Regulation (First to 13 rounds wins)
+                  </div>
                 </div>
               </div>
 

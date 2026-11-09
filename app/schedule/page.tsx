@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getStoredMatches, isPlayoffTreePublished, setPlayoffTreePublished, getLiveBroadcastChannel } from '@/lib/storage';
-import { INITIAL_MATCHES } from '@/lib/mockData';
+import { INITIAL_MATCHES, getMapImage } from '@/lib/mockData';
 import { api } from '@/lib/api';
 import { transformBackendMatch } from '@/lib/transformers';
 import { Match, MatchStatus } from '@/lib/types';
@@ -247,11 +247,22 @@ export default function SchedulePage() {
 
                     {/* Right Map & Actions */}
                     <div className="flex flex-row lg:flex-col items-center lg:items-end justify-between lg:justify-center gap-3 min-w-[160px]">
-                      <div className="text-right">
-                        <span className="text-[10px] font-mono text-mutedText block">COMBAT THEATER</span>
-                        <span className="text-xs font-mono font-bold text-tacticalWhite uppercase">
-                          {m.map}
-                        </span>
+                      <div className="flex items-center gap-2.5">
+                        <div className="relative w-12 h-8 overflow-hidden border border-gunmetal shrink-0 clip-tactical group">
+                          <Image
+                            src={getMapImage(m.map)}
+                            alt={m.map}
+                            fill
+                            className="object-cover"
+                            sizes="48px"
+                          />
+                        </div>
+                        <div className="text-right">
+                          <span className="text-[10px] font-mono text-mutedText block">THEATER</span>
+                          <span className="text-xs font-mono font-bold text-tacticalWhite uppercase">
+                            {m.map}
+                          </span>
+                        </div>
                       </div>
 
                       {isCompleted ? (

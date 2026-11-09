@@ -94,43 +94,43 @@ export default function TournamentFormat() {
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 border-b border-gunmetal pb-6 mb-6">
             <div>
               <div className="flex items-center gap-2 text-xs font-mono text-sand uppercase mb-1">
-                <Crosshair className="w-4 h-4" /> OFFICIAL MATCH SETTINGS (5v5 MR12)
+                <Crosshair className="w-4 h-4" /> OFFICIAL MATCH SETTINGS // PROMODLIVE 2.20 EU
               </div>
               <h4 className="font-display font-black text-xl text-tacticalWhite uppercase">
-                ADMINISTERED UNDER CST ESPORTS GOVERNANCE
+                promod_mode lan_knockout_mr12
               </h4>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="px-3 py-1 bg-olive/20 border border-olive/40 text-sand text-xs font-mono uppercase">
-                LAN NETWORK: LOW-LATENCY
+                ENGINE: PROMODLIVE 2.20 EU
               </span>
               <span className="px-3 py-1 bg-surface border border-gunmetal text-mutedText text-xs font-mono uppercase">
-                COACHING: PERMITTED IN TIMEOUTS
+                SPECTATOR: 1 DESIGNATED PER SQUAD
               </span>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 text-center font-mono">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 text-center font-mono mb-6">
             <div className="p-3 bg-card border border-gunmetal">
-              <span className="block text-[10px] text-mutedText uppercase mb-1">TEAM ROSTER</span>
-              <span className="text-sm font-bold text-tacticalWhite">5 OPERATIVES</span>
+              <span className="block text-[10px] text-mutedText uppercase mb-1">SCORE LIMIT</span>
+              <span className="text-sm font-bold text-tacticalWhite">FIRST TO 13 (MR12)</span>
             </div>
             <div className="p-3 bg-card border border-gunmetal">
               <span className="block text-[10px] text-mutedText uppercase mb-1">ROUND TIME</span>
-              <span className="text-sm font-bold text-sand">1m 45s</span>
+              <span className="text-sm font-bold text-sand">1.45 MINS</span>
             </div>
             <div className="p-3 bg-card border border-gunmetal">
-              <span className="block text-[10px] text-mutedText uppercase mb-1">BOMB TIMER</span>
-              <span className="text-sm font-bold text-olive-light">45s</span>
+              <span className="block text-[10px] text-mutedText uppercase mb-1">BOMB TIMERS</span>
+              <span className="text-xs font-bold text-olive-light">45s / 5s PL / 7s DEF</span>
             </div>
             <div className="p-3 bg-card border border-gunmetal">
-              <span className="block text-[10px] text-mutedText uppercase mb-1">MATCH SYSTEM</span>
-              <span className="text-sm font-bold text-tacticalWhite">SEARCH &amp; DESTROY</span>
+              <span className="block text-[10px] text-mutedText uppercase mb-1">ROUND LIMIT</span>
+              <span className="text-sm font-bold text-tacticalWhite">24 (SWAP AT 12)</span>
             </div>
             <div className="p-3 bg-card border border-gunmetal">
-              <span className="block text-[10px] text-mutedText uppercase mb-1">TACTICAL TIMEOUTS</span>
-              <span className="text-sm font-bold text-sand">2 x 30s</span>
+              <span className="block text-[10px] text-mutedText uppercase mb-1">CLASS LIMITS</span>
+              <span className="text-xs font-bold text-sand">1 SNIPER • 1 DEMO • 2 SMG</span>
             </div>
             <div className="p-3 bg-card border border-gunmetal">
               <span className="block text-[10px] text-mutedText uppercase mb-1">OVERTIME</span>
@@ -138,9 +138,22 @@ export default function TournamentFormat() {
             </div>
           </div>
 
-          <div className="mt-6 flex items-center gap-3 text-xs font-mono text-mutedText bg-card/60 p-3 border-l-2 border-sand">
-            <AlertTriangle className="w-4 h-4 text-sand shrink-0" />
-            <span>Tournament administration is executed manually by designated CST referees. Exact dates and confirmed prize pool figures will be officially ratified by organizers.</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs font-mono text-mutedText">
+            <div className="p-3 bg-card/60 border-l-2 border-rose-500/80 flex items-start gap-2.5">
+              <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+              <div>
+                <span className="text-tacticalWhite font-bold block mb-0.5">BANNED WEAPONS &amp; ATTACHMENTS</span>
+                P90, Scorpion, M21, Dragunov, Barrett .50cal, and LMGs are strictly banned. All weapon attachments are prohibited.
+              </div>
+            </div>
+
+            <div className="p-3 bg-card/60 border-l-2 border-sand flex items-start gap-2.5">
+              <CheckCircle2 className="w-4 h-4 text-sand shrink-0 mt-0.5" />
+              <div>
+                <span className="text-tacticalWhite font-bold block mb-0.5">MAP &amp; SIDE SELECTION</span>
+                Knockouts: Coin-toss winner picks map or side. Semis &amp; Finals: Previous round winner picks map or side.
+              </div>
+            </div>
           </div>
         </div>
 

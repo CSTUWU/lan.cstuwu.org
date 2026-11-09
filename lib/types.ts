@@ -90,7 +90,25 @@ export interface Team {
 
 export type MatchStatus = 'upcoming' | 'live' | 'completed';
 
-export type CS2Map = 'Mirage' | 'Dust II' | 'Inferno' | 'Ancient' | 'Nuke' | 'Anubis' | 'Vertigo';
+export type CS2Map =
+  | 'Crash'
+  | 'Crossfire'
+  | 'Backlot'
+  | 'Citystreets'
+  | 'Strike'
+  | 'District'
+  | 'mp_crash'
+  | 'mp_crossfire'
+  | 'mp_backlot'
+  | 'mp_citystreet'
+  | 'mp_strike'
+  | 'Mirage'
+  | 'Dust II'
+  | 'Inferno'
+  | 'Ancient'
+  | 'Nuke'
+  | 'Anubis'
+  | 'Vertigo';
 
 export interface Match {
   id: string;
