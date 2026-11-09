@@ -8,6 +8,11 @@ import { api } from '@/lib/api';
 import { saveTeam, getStoredTeams, getLiveBroadcastChannel } from '@/lib/storage';
 import { Team, Player, Captain, UWU_DEGREE_PROGRAMMES, ACADEMIC_YEARS } from '@/lib/types';
 import {
+  extractDegreeFromEnrollment,
+  getDegreeCodeFromName,
+  validateSquadEnrollmentDegrees,
+} from '@/lib/degreeUtils';
+import {
   Shield,
   Check,
   ChevronRight,
@@ -15,6 +20,7 @@ import {
   Upload,
   AlertCircle,
   CheckCircle2,
+  XCircle,
   Users,
   Crosshair,
   Loader2,
@@ -107,6 +113,17 @@ export default function RegisterPage() {
       updated[index] = { ...updated[index], [field]: value };
       return updated;
     });
+
+    // Auto-sync team degree programme when Leader (Member 1) types a recognized enrollment number
+    if (index === 0 && field === 'enrollmentNumber') {
+      const identified = extractDegreeFromEnrollment(value);
+      if (identified && identified.name) {
+        setForm((prev) => ({
+          ...prev,
+          degreeProgram: identified.name,
+        }));
+      }
+    }
   };
 
   const validateStep = (step: number): boolean => {
@@ -151,6 +168,23 @@ export default function RegisterPage() {
           newErrors[`m_${idx}_enrollmentNumber`] = `${roleLabel} enrollment number (e.g. UWU/CST/22/001) is required`;
         }
       });
+
+      // Strict same-degree validation: identify degree from enrollment numbers
+      const enrollmentNumbers = members.map((m) => m.enrollmentNumber.trim());
+      const degreeValidation = validateSquadEnrollmentDegrees(enrollmentNumbers, form.degreeProgram);
+
+      if (!degreeValidation.isValid) {
+        Object.entries(degreeValidation.errors).forEach(([idxStr, err]) => {
+          newErrors[`m_${idxStr}_enrollmentNumber`] = err;
+        });
+        if (degreeValidation.generalError) {
+          setApiError(degreeValidation.generalError);
+        }
+      } else if (degreeValidation.degreeName) {
+        // All 5 members verified from the same degree! Ensure team degree is in sync
+        setForm((prev) => ({ ...prev, degreeProgram: degreeValidation.degreeName! }));
+        setApiError(null);
+      }
     }
 
     setErrors(newErrors);
@@ -178,33 +212,49 @@ export default function RegisterPage() {
       return;
     }
 
+    // Strict verification that all 5 members share the same degree programme via enrollment numbers
+    const enrollmentNumbers = members.map((m) => m.enrollmentNumber.trim());
+    const degreeValidation = validateSquadEnrollmentDegrees(enrollmentNumbers, form.degreeProgram);
+    if (!degreeValidation.isValid) {
+      setApiError(
+        degreeValidation.generalError ||
+          Object.values(degreeValidation.errors)[0] ||
+          'All squad members must belong to the same degree programme identified from their enrollment numbers.'
+      );
+      setIsSubmitting(false);
+      return;
+    }
+
+    const verifiedDegree = degreeValidation.degreeName || form.degreeProgram;
+    const verifiedFaculty = degreeValidation.faculty || 'Faculty of Applied Sciences';
+
     setIsSubmitting(true);
     const nowIso = new Date().toISOString();
     setSubmissionTimestamp(nowIso);
 
-    // Build exactly 5 squad players (all under team's single Degree Programme, each with individual Year and Enrollment Number)
+    // Build exactly 5 squad players (all under team's verified single Degree Programme)
     const rosterPlayers: Player[] = members.map((m, idx) => ({
       id: String(idx + 1),
       name: m.fullName.trim(),
-      faculty: form.degreeProgram,
-      degreeProgram: form.degreeProgram,
+      faculty: verifiedFaculty,
+      degreeProgram: verifiedDegree,
       year: m.year,
       ign: m.gamingName.trim(),
       gamingName: m.gamingName.trim(),
       steamId: m.gamingName.trim(), // Steam ID/Callsign defaults to Gaming Name
       email: idx === 0 ? form.email.trim() : '',
       role: idx === 0 ? 'Team Leader' : `Operative 0${idx + 1}`,
-      enrollmentNumber: m.enrollmentNumber.trim(),
+      enrollmentNumber: m.enrollmentNumber.trim().toUpperCase(),
     }));
 
     const captainInfo: Captain = {
       name: members[0].fullName.trim(),
       whatsappNumber: form.whatsappNumber.trim(),
       phone: form.whatsappNumber.trim(),
-      faculty: form.degreeProgram,
-      degreeProgram: form.degreeProgram,
+      faculty: verifiedFaculty,
+      degreeProgram: verifiedDegree,
       year: members[0].year,
-      enrollmentNumber: members[0].enrollmentNumber.trim(),
+      enrollmentNumber: members[0].enrollmentNumber.trim().toUpperCase(),
       email: form.email.trim().toLowerCase(),
       ign: members[0].gamingName.trim(),
       gamingName: members[0].gamingName.trim(),
@@ -215,10 +265,10 @@ export default function RegisterPage() {
       teamName: form.teamName.trim(),
       teamTag: form.teamTag.trim().toUpperCase(),
       university: 'Uva Wellassa University of Sri Lanka',
-      degreeProgram: form.degreeProgram,
+      degreeProgram: verifiedDegree,
       year: members[0].year,
-      enrollmentNumber: members[0].enrollmentNumber.trim(),
-      column1: members[0].enrollmentNumber.trim(),
+      enrollmentNumber: members[0].enrollmentNumber.trim().toUpperCase(),
+      column1: members[0].enrollmentNumber.trim().toUpperCase(),
       email: form.email.trim().toLowerCase(),
       teamLogo: form.logo,
       captain: captainInfo,
@@ -612,10 +662,20 @@ export default function RegisterPage() {
 
                 {/* Degree Programme Dropdown (Shared once by all 5 members) */}
                 <div>
-                  <label className="block text-xs font-mono text-mutedKhaki uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                    <GraduationCap className="w-3.5 h-3.5 text-sand" />
-                    <span>DEGREE PROGRAMME (UVA WELLASSA UNIVERSITY) <span className="text-sand">*</span></span>
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-xs font-mono text-mutedKhaki uppercase tracking-wider flex items-center gap-1.5">
+                      <GraduationCap className="w-3.5 h-3.5 text-sand" />
+                      <span>DEGREE PROGRAMME (UVA WELLASSA UNIVERSITY) <span className="text-sand">*</span></span>
+                    </label>
+                    {(() => {
+                      const code = getDegreeCodeFromName(form.degreeProgram);
+                      return code ? (
+                        <span className="text-[10px] font-mono px-2 py-0.5 bg-surface border border-gunmetal text-sand font-bold">
+                          DEGREE CODE: {code}
+                        </span>
+                      ) : null;
+                    })()}
+                  </div>
                   <select
                     value={form.degreeProgram}
                     onChange={(e) => setForm({ ...form, degreeProgram: e.target.value })}
@@ -629,7 +689,7 @@ export default function RegisterPage() {
                   </select>
                   {errors.degreeProgram && <p className="text-[11px] font-mono text-rose-500 mt-1">{errors.degreeProgram}</p>}
                   <p className="text-[10px] font-mono text-mutedKhaki mt-1">
-                    All 5 squad operatives represent this single degree programme.
+                    Every squad member must be enrolled in this same degree programme. Verified from individual enrolment numbers (e.g. <span className="text-sand font-bold">UWU/{getDegreeCodeFromName(form.degreeProgram) || 'CST'}/...</span>).
                   </p>
                 </div>
 
@@ -715,10 +775,31 @@ export default function RegisterPage() {
                         STEP 2: 5 SQUAD MEMBERS (NAME, GAMING NAME, YEAR &amp; ENROLLMENT NUMBER)
                       </h3>
                       <p className="text-xs font-mono text-mutedKhaki mt-1">
-                        All 5 members are enrolled in <strong className="text-tacticalWhite">{form.degreeProgram}</strong>. Enter each member&apos;s Full Name, Gaming Name (IGN), Academic Year (1, 2, 3, or 4), and Enrollment Number.
+                        All 5 operatives must belong to <strong className="text-sand">{form.degreeProgram}</strong>. Degree is identified directly from each member&apos;s individual enrollment number.
                       </p>
                     </div>
                     <Badge variant="olive" size="sm">5 ATHLETES REQUIRED</Badge>
+                  </div>
+                </div>
+
+                {/* Prominent Same-Degree Eligibility Requirement Banner */}
+                <div className="p-4 bg-olive/15 border border-olive/60 clip-tactical flex items-start gap-3">
+                  <GraduationCap className="w-5 h-5 text-sand shrink-0 mt-0.5" />
+                  <div className="space-y-1 font-mono text-xs">
+                    <div className="text-sand font-bold uppercase tracking-wider flex items-center gap-2 flex-wrap">
+                      <span>OFFICIAL ELIGIBILITY MANDATE: SAME DEGREE REQUIREMENT</span>
+                      {(() => {
+                        const code = getDegreeCodeFromName(form.degreeProgram);
+                        return code ? (
+                          <span className="px-2 py-0.5 bg-surface border border-gunmetal text-sand font-bold text-[10px]">
+                            DEGREE CODE: {code}
+                          </span>
+                        ) : null;
+                      })()}
+                    </div>
+                    <p className="text-tacticalWhite/90 leading-relaxed text-[11px]">
+                      Tournament regulations dictate that every squad member must belong to the <strong className="text-sand">same Degree Programme</strong>. The system automatically identifies each operative&apos;s degree using their enrolment number (e.g. <span className="text-sand font-bold">UWU/{getDegreeCodeFromName(form.degreeProgram) || 'CST'}/22/001</span>).
+                    </p>
                   </div>
                 </div>
 
@@ -824,14 +905,14 @@ export default function RegisterPage() {
                             )}
                           </div>
 
-                          {/* 4. Individual Enrollment Number */}
+                          {/* 4. Individual Enrollment Number & Real-Time Degree Detection */}
                           <div>
                             <div className="flex items-center justify-between text-[11px] font-mono text-mutedKhaki uppercase mb-1.5 h-5">
                               <span className="font-bold flex items-center gap-1">
                                 ENROLLMENT NUMBER <span className="text-sand">*</span>
                               </span>
                               <span className="text-[10px] text-sand font-mono bg-card px-1.5 py-0.2 border border-gunmetal">
-                                STUDENT ID
+                                IDENTIFIES DEGREE
                               </span>
                             </div>
                             <input
@@ -841,6 +922,43 @@ export default function RegisterPage() {
                               onChange={(e) => handleMemberChange(idx, 'enrollmentNumber', e.target.value)}
                               className="h-10 w-full bg-surface border border-gunmetal px-3.5 text-xs font-mono text-sand font-bold focus:outline-none focus:border-olive uppercase transition-colors"
                             />
+
+                            {/* Real-Time Live Degree Feedback */}
+                            {(() => {
+                              const val = member.enrollmentNumber.trim();
+                              if (!val) {
+                                return (
+                                  <p className="text-[10px] font-mono text-mutedKhaki mt-1">
+                                    Format: UWU/&lt;DEGREE&gt;/&lt;YEAR&gt;/&lt;NO&gt; (e.g. UWU/{getDegreeCodeFromName(form.degreeProgram) || 'CST'}/22/00{idx + 1})
+                                  </p>
+                                );
+                              }
+                              const deg = extractDegreeFromEnrollment(val);
+                              const expectedCode = getDegreeCodeFromName(form.degreeProgram);
+                              if (!deg) {
+                                return (
+                                  <p className="text-[10px] font-mono text-amber-400 mt-1 flex items-center gap-1">
+                                    <AlertCircle className="w-3 h-3 shrink-0" />
+                                    <span>Unrecognized format. Enter official UWU enrollment number (e.g. UWU/CST/22/001)</span>
+                                  </p>
+                                );
+                              }
+                              if (expectedCode && deg.code !== expectedCode) {
+                                return (
+                                  <p className="text-[10px] font-mono text-rose-400 mt-1 flex items-center gap-1 font-bold">
+                                    <XCircle className="w-3 h-3 shrink-0" />
+                                    <span>DEGREE MISMATCH: Identified &apos;{deg.code}&apos; ({deg.name}), but squad degree is &apos;{expectedCode}&apos;. All members must have the same degree.</span>
+                                  </p>
+                                );
+                              }
+                              return (
+                                <p className="text-[10px] font-mono text-emerald-400 mt-1 flex items-center gap-1 font-bold">
+                                  <CheckCircle2 className="w-3 h-3 shrink-0" />
+                                  <span>VERIFIED DEGREE: {deg.code} — {deg.name}</span>
+                                </p>
+                              );
+                            })()}
+
                             {errors[`m_${idx}_enrollmentNumber`] && (
                               <p className="text-[10px] font-mono text-rose-500 mt-1">{errors[`m_${idx}_enrollmentNumber`]}</p>
                             )}
@@ -896,6 +1014,20 @@ export default function RegisterPage() {
 
                   {/* 5 Squad Members */}
                   <div>
+                    {/* Verified Squad Degree Banner */}
+                    <div className="p-3 bg-olive/20 border border-olive flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                        <div>
+                          <span className="text-[10px] text-mutedKhaki uppercase block">VERIFIED SQUAD DEGREE PROGRAMME:</span>
+                          <span className="text-sand font-bold text-xs sm:text-sm">{form.degreeProgram}</span>
+                        </div>
+                      </div>
+                      <span className="text-[10px] text-emerald-400 font-mono px-2.5 py-1 bg-surface border border-emerald-500/40 font-bold shrink-0">
+                        ✓ 5/5 OPERATIVES SHARE SAME DEGREE
+                      </span>
+                    </div>
+
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-sand font-bold uppercase text-xs">
                         5 SQUAD OPERATIVES (EACH WITH INDIVIDUAL ENROLLMENT NUMBER):
@@ -931,8 +1063,16 @@ export default function RegisterPage() {
                             </span>
                             <div className="flex items-center gap-1.5">
                               <span className="text-mutedKhaki text-[11px]">ENROLLMENT:</span>
-                              <span className="px-2 py-0.5 bg-surface border border-gunmetal text-tacticalWhite font-bold">
-                                {m.enrollmentNumber}
+                              <span className="px-2 py-0.5 bg-surface border border-gunmetal text-tacticalWhite font-bold flex items-center gap-1.5">
+                                <span>{m.enrollmentNumber}</span>
+                                {(() => {
+                                  const d = extractDegreeFromEnrollment(m.enrollmentNumber);
+                                  return d ? (
+                                    <span className="px-1.5 py-0.2 bg-olive/30 text-sand text-[9px] font-bold border border-olive/50">
+                                      {d.code}
+                                    </span>
+                                  ) : null;
+                                })()}
                               </span>
                             </div>
                             <div className="flex items-center gap-1.5">

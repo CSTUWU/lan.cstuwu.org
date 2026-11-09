@@ -25,6 +25,7 @@ import {
   Pause,
   MapPin,
   Lock,
+  GraduationCap,
 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
@@ -459,6 +460,19 @@ export default function AboutPage() {
                   </p>
                   <p className="mt-1 text-tacticalWhite">
                     <strong className="text-sand font-bold">PERMITTED EXCEPTION:</strong> Third-party voice communication software such as Teamspeak or Discord are strictly allowed for squad comms.
+                  </p>
+                </div>
+
+                <div className="p-4 bg-surface border-l-4 border-sand">
+                  <h4 className="text-tacticalWhite font-bold uppercase text-sm mb-1 flex items-center gap-2">
+                    <GraduationCap className="w-4 h-4 text-sand" />
+                    ELIGIBILITY &amp; SAME-DEGREE ENLISTMENT MANDATE:
+                  </h4>
+                  <p>
+                    All squad competitors must be currently registered undergraduate students of Uva Wellassa University of Sri Lanka.
+                  </p>
+                  <p className="mt-1 text-tacticalWhite">
+                    <strong className="text-sand font-bold">SAME DEGREE REQUIREMENT:</strong> Every operative on a 5-player squad must belong to the <strong>same Degree Programme</strong>. Each competitor&apos;s degree is identified and verified directly through their official university enrolment number (e.g. <span className="text-sand font-bold">UWU/CST/22/001</span> indicates Computer Science and Technology). Mixed-degree rosters are strictly prohibited.
                   </p>
                 </div>
 

@@ -7,7 +7,8 @@ import { getStoredTeams, setStoredTeams, updateTeamStatus } from '@/lib/storage'
 import { api } from '@/lib/api';
 import { transformBackendRegistration } from '@/lib/transformers';
 import { Team, ApprovalStatus } from '@/lib/types';
-import { Search, CheckCircle2, XCircle, Clock, Eye, X, Mail, Phone, Shield, RefreshCw, GraduationCap, Calendar, Hash, UserCheck, FileSpreadsheet, Download } from 'lucide-react';
+import { extractDegreeFromEnrollment, validateSquadEnrollmentDegrees } from '@/lib/degreeUtils';
+import { Search, CheckCircle2, XCircle, Clock, Eye, X, Mail, Phone, Shield, RefreshCw, GraduationCap, Calendar, Hash, UserCheck, FileSpreadsheet, Download, AlertCircle } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import { downloadTeamWiseExcel, downloadAllMembersExcel } from '@/lib/exportExcel';
@@ -203,7 +204,24 @@ export default function AdminRegistrationsPage() {
                       <span className="text-tacticalWhite block font-medium truncate max-w-[180px]">
                         {team.degreeProgram || team.faculty || 'Computer Science & Tech'}
                       </span>
-                      <span className="text-[10px] text-mutedKhaki">5 Registered Operatives</span>
+                      {(() => {
+                        const enrollments = (team.players || []).map((p) => p.enrollmentNumber || '');
+                        const check = validateSquadEnrollmentDegrees(enrollments, team.degreeProgram);
+                        if (check.isValid && check.degreeCode) {
+                          return (
+                            <span className="inline-flex items-center gap-1 text-[9px] font-mono px-1.5 py-0.2 bg-olive/20 text-sand border border-olive/40 mt-1 font-bold">
+                              ✓ SAME DEGREE ({check.degreeCode})
+                            </span>
+                          );
+                        } else if (enrollments.some(Boolean)) {
+                          return (
+                            <span className="inline-flex items-center gap-1 text-[9px] font-mono px-1.5 py-0.2 bg-rose-500/10 text-rose-400 border border-rose-500/30 mt-1 font-bold">
+                              ⚠ DEGREE MISMATCH
+                            </span>
+                          );
+                        }
+                        return <span className="text-[10px] text-mutedKhaki block">5 Registered Operatives</span>;
+                      })()}
                     </td>
 
                     <td className="py-3.5 px-4">
@@ -380,6 +398,38 @@ export default function AdminRegistrationsPage() {
               </div>
             </div>
 
+            {/* Degree Verification Audit Banner */}
+            {(() => {
+              const enrollments = (selectedTeam.players || []).map((p) => p.enrollmentNumber || '');
+              const check = validateSquadEnrollmentDegrees(enrollments, selectedTeam.degreeProgram);
+              return (
+                <div
+                  className={`p-3.5 border mb-6 text-xs font-mono flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${
+                    check.isValid ? 'bg-olive/20 border-olive text-sand' : 'bg-rose-950/40 border-rose-800 text-rose-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    {check.isValid ? (
+                      <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                    ) : (
+                      <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
+                    )}
+                    <div>
+                      <span className="text-[10px] text-mutedKhaki uppercase block">DEGREE ELIGIBILITY AUDIT:</span>
+                      <span className="font-bold text-tacticalWhite">{check.degreeName || selectedTeam.degreeProgram || 'Unknown Degree'}</span>
+                    </div>
+                  </div>
+                  <span
+                    className={`text-[10px] px-2.5 py-1 border font-bold shrink-0 ${
+                      check.isValid ? 'bg-surface border-emerald-500/40 text-emerald-400' : 'bg-surface border-rose-500/40 text-rose-400'
+                    }`}
+                  >
+                    {check.isValid ? '✓ 5/5 MEMBERS SAME DEGREE' : '⚠ DEGREE MISMATCH DETECTED'}
+                  </span>
+                </div>
+              );
+            })()}
+
             {/* Starting 5 Operatives Lineup */}
             <div className="mb-6">
               <h3 className="font-display font-bold text-sm text-tacticalWhite uppercase tracking-wider mb-3 flex items-center justify-between">
@@ -390,6 +440,7 @@ export default function AdminRegistrationsPage() {
               <div className="space-y-2">
                 {selectedTeam.players.map((p, idx) => {
                   const isLeader = idx === 0 || p.role === 'Team Leader';
+                  const degInfo = extractDegreeFromEnrollment(p.enrollmentNumber);
                   return (
                     <div
                       key={p.id || idx}
@@ -407,6 +458,11 @@ export default function AdminRegistrationsPage() {
                           <span className="text-[10px] px-1.5 py-0.2 bg-surface border border-gunmetal text-sand font-bold">
                             Year {p.year || '1'}
                           </span>
+                          {degInfo && (
+                            <span className="text-[9px] px-1.5 py-0.2 bg-olive/20 border border-olive text-sand font-bold">
+                              DEGREE: {degInfo.code}
+                            </span>
+                          )}
                         </div>
                         <div className="text-[11px] text-mutedKhaki mt-0.5 pl-6">
                           Gaming Name: <strong className="text-sand">{p.gamingName || p.ign || '—'}</strong>

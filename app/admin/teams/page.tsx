@@ -7,6 +7,7 @@ import { getStoredTeams, setStoredTeams, updateTeamStatus, createAndSeedPlayoffT
 import { api } from '@/lib/api';
 import { transformBackendTeam } from '@/lib/transformers';
 import { Team, ApprovalStatus, Player } from '@/lib/types';
+import { extractDegreeFromEnrollment, validateSquadEnrollmentDegrees } from '@/lib/degreeUtils';
 import {
   Users,
   Search,
@@ -329,8 +330,22 @@ export default function AdminTeamsPage() {
                             {team.name}
                           </h3>
                         </div>
-                        <p className="text-xs font-mono text-mutedKhaki">
-                          {team.degreeProgram || team.faculty || 'UWU'} {team.enrollmentNumber ? `• Reg: ${team.enrollmentNumber}` : ''} • {team.players.length} Operatives
+                        <p className="text-xs font-mono text-mutedKhaki flex items-center gap-1.5 flex-wrap">
+                          <span>{team.degreeProgram || team.faculty || 'UWU'}</span>
+                          {(() => {
+                            const enrollments = (team.players || []).map((p) => p.enrollmentNumber || '');
+                            const check = validateSquadEnrollmentDegrees(enrollments, team.degreeProgram);
+                            if (check.isValid && check.degreeCode) {
+                              return (
+                                <span className="text-[9px] font-mono px-1.5 py-0.2 bg-olive/20 text-sand border border-olive/40 font-bold">
+                                  ✓ SAME DEGREE ({check.degreeCode})
+                                </span>
+                              );
+                            }
+                            return null;
+                          })()}
+                          {team.enrollmentNumber ? <span>• Reg: {team.enrollmentNumber}</span> : null}
+                          <span>• {team.players.length} Operatives</span>
                         </p>
                       </div>
                     </div>
@@ -451,9 +466,19 @@ export default function AdminTeamsPage() {
                                 </div>
 
                                 <div className="mt-3 pt-2.5 border-t border-gunmetal/60 flex items-center justify-between text-[11px] font-mono">
-                                  <span className="text-mutedKhaki truncate max-w-[120px]" title={player.enrollmentNumber || player.steamId || 'Operative'}>
-                                    {player.enrollmentNumber || player.steamId || 'Active'}
-                                  </span>
+                                  <div className="flex items-center gap-1 min-w-0">
+                                    <span className="text-mutedKhaki truncate max-w-[100px]" title={player.enrollmentNumber || player.steamId || 'Operative'}>
+                                      {player.enrollmentNumber || player.steamId || 'Active'}
+                                    </span>
+                                    {(() => {
+                                      const deg = extractDegreeFromEnrollment(player.enrollmentNumber);
+                                      return deg ? (
+                                        <span className="text-[9px] px-1 py-0.2 bg-olive/20 text-sand border border-olive/40 font-bold shrink-0">
+                                          {deg.code}
+                                        </span>
+                                      ) : null;
+                                    })()}
+                                  </div>
                                   {(player.enrollmentNumber || player.steamId) && (
                                     <button
                                       onClick={() => copyToClipboard(player.enrollmentNumber || player.steamId!)}
