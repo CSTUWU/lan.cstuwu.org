@@ -68,18 +68,24 @@ class ApiClient {
         }));
 
         if (!response.ok) {
+          const rawMessage = json.message || 'API request failed';
+          const detailedMessage =
+            json.errors && json.errors.length > 0 && !rawMessage.includes(':')
+              ? `${rawMessage}: ${json.errors.map((e: any) => e.message || `${e.field || 'field'} is invalid`).join('; ')}`
+              : rawMessage;
+
           // If 5xx server error and there is another fallback URL, try it
           if (response.status >= 500 && targetUrl !== targetUrls[targetUrls.length - 1]) {
             lastError = {
               status: response.status,
-              message: json.message || 'API request failed',
+              message: detailedMessage,
               errors: json.errors || [],
             };
             continue;
           }
           throw {
             status: response.status,
-            message: json.message || 'API request failed',
+            message: detailedMessage,
             errors: json.errors || [],
           };
         }
