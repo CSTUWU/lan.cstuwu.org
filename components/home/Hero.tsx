@@ -3,11 +3,12 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { gsap, ScrollTrigger } from '@/lib/gsap';
-import { Shield, Crosshair, Trophy, Clock, ChevronDown, Activity, Mouse, Sparkles } from 'lucide-react';
+import { Shield, Crosshair, Trophy, Clock, ChevronDown, Activity, Mouse, Sparkles, Radio } from 'lucide-react';
 import Button from '../ui/Button';
-import { getStoredCountdown, saveCountdown } from '@/lib/storage';
+import { getStoredCountdown, saveCountdown, getStoredMatches } from '@/lib/storage';
 import { api } from '@/lib/api';
-import { transformBackendSettings } from '@/lib/transformers';
+import { transformBackendSettings, transformBackendMatch } from '@/lib/transformers';
+import { Match } from '@/lib/types';
 import { useRegistrationStatus } from '@/hooks/useRegistrationStatus';
 
 const TOTAL_FRAMES = 199;
@@ -78,6 +79,39 @@ export default function Hero() {
     return () => {
       clearInterval(interval);
       window.removeEventListener('cst_countdown_updated', handleUpdate);
+    };
+  }, []);
+
+  const [liveMatch, setLiveMatch] = useState<Match | null>(null);
+
+  useEffect(() => {
+    const checkLive = () => {
+      try {
+        const stored = getStoredMatches();
+        const local = stored.find((m) => m.status === 'live');
+        if (local) setLiveMatch(local);
+      } catch (e) {}
+
+      api.public
+        .getMatches({ status: 'LIVE' })
+        .then((res) => {
+          if (res?.success && Array.isArray(res.data) && res.data.length > 0) {
+            setLiveMatch(transformBackendMatch(res.data[0]));
+          } else if (res?.success && Array.isArray(res.data) && res.data.length === 0) {
+            const stored = getStoredMatches();
+            const local = stored.find((m) => m.status === 'live');
+            setLiveMatch(local || null);
+          }
+        })
+        .catch(() => {});
+    };
+
+    checkLive();
+    const liveInt = setInterval(checkLive, 4000);
+    window.addEventListener('cst_matches_updated', checkLive);
+    return () => {
+      clearInterval(liveInt);
+      window.removeEventListener('cst_matches_updated', checkLive);
     };
   }, []);
 
@@ -452,17 +486,34 @@ export default function Hero() {
 
       <div
         ref={topStandoffBadgeRef}
-        className="absolute top-20 sm:top-24 lg:top-10 left-1/2 -translate-x-1/2 z-20 pointer-events-none px-2 w-max max-w-[95vw] text-center"
+        className="absolute top-20 sm:top-24 lg:top-10 left-1/2 -translate-x-1/2 z-20 pointer-events-auto px-2 w-max max-w-[95vw] text-center"
       >
         <div className="inline-flex items-center gap-2.5 px-3 sm:px-4 py-1.5 bg-military-black/90 border border-gunmetal clip-badge backdrop-blur-md shadow-2xl">
-          <Shield className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-sand shrink-0" />
-          <span className="text-[11px] sm:text-sm font-display font-black text-tacticalWhite tracking-wider uppercase">
-            CST LAN CHALLENGE 2026
-          </span>
-          <span className="text-gunmetal font-mono text-[10px]">|</span>
-          <span className="text-[9px] sm:text-xs font-mono text-sand font-bold tracking-wider">
-            COD4 MODERN WARFARE
-          </span>
+          {liveMatch ? (
+            <Link
+              href="/scoreboard"
+              className="flex items-center gap-2 text-rose-400 hover:text-rose-300 transition-colors"
+            >
+              <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
+              <span className="text-[11px] sm:text-xs font-mono font-black uppercase tracking-wider">
+                🔴 LIVE MATCH: [{liveMatch.teamATag}] {liveMatch.scoreA} : {liveMatch.scoreB} [{liveMatch.teamBTag}]
+              </span>
+              <span className="text-sand font-mono text-[10px] hidden sm:inline underline">
+                VIEW LIVE HUD →
+              </span>
+            </Link>
+          ) : (
+            <>
+              <Shield className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-sand shrink-0" />
+              <span className="text-[11px] sm:text-sm font-display font-black text-tacticalWhite tracking-wider uppercase">
+                CST LAN CHALLENGE 2026
+              </span>
+              <span className="text-gunmetal font-mono text-[10px]">|</span>
+              <span className="text-[9px] sm:text-xs font-mono text-sand font-bold tracking-wider">
+                COD4 MODERN WARFARE
+              </span>
+            </>
+          )}
         </div>
       </div>
 
@@ -529,6 +580,25 @@ export default function Hero() {
             </p>
           </div>
         </div>
+
+        {liveMatch && (
+          <div className="mb-3 w-full max-w-sm sm:max-w-md bg-rose-950/90 border border-rose-500/70 p-2.5 backdrop-blur-md flex items-center justify-between gap-2 shadow-[0_0_20px_rgba(225,29,72,0.4)] pointer-events-auto">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping shrink-0" />
+              <div className="text-left font-mono text-[11px] truncate">
+                <span className="text-rose-400 font-bold uppercase">LIVE NOW: </span>
+                <span className="text-tacticalWhite font-bold">[{liveMatch.teamATag}] {liveMatch.scoreA} : {liveMatch.scoreB} [{liveMatch.teamBTag}]</span>
+              </div>
+            </div>
+            <Link
+              href="/scoreboard/live"
+              target="_blank"
+              className="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white font-mono text-[10px] font-black uppercase tracking-wider shrink-0 transition-colors shadow-md"
+            >
+              STAGE HUD →
+            </Link>
+          </div>
+        )}
 
         <div
           ref={countdownBlockRef}

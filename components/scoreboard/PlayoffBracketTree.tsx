@@ -384,8 +384,22 @@ export default function PlayoffBracketTree({
     triggerNotice('👑 TOURNAMENT CHAMPION CROWNED ON THE TROPHY PODIUM!');
   };
 
-  // If playoff bracket is disabled/unpublished and viewer is NOT using admin controls:
-  if (!isPublished && !showAdminControls) {
+  // Check if real playoff fixtures exist in either 8-squad or 16-squad brackets
+  const hasPlayoffMatches = useMemo(() => {
+    return (
+      matches.some(
+        (m) =>
+          m.bracketRound === 'quarterfinals' ||
+          m.bracketRound === 'semifinals' ||
+          m.bracketRound === 'final' ||
+          m.bracketRound === 'third_place' ||
+          m.bracketRound === 'round_of_16'
+      ) || sixteenMatches.some((m) => m.bracketRound === 'round_of_16')
+    );
+  }, [matches, sixteenMatches]);
+
+  // If playoff bracket is disabled/unpublished and viewer is NOT using admin controls and no playoff matches exist:
+  if (!isPublished && !showAdminControls && !hasPlayoffMatches) {
     return (
       <div className="space-y-6 select-none font-sans" ref={containerRef}>
         <div className="bg-card border-2 border-gunmetal p-8 sm:p-14 text-center relative overflow-hidden clip-tactical shadow-2xl backdrop-blur-md">

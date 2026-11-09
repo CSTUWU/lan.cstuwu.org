@@ -397,6 +397,7 @@ export const createAndSeedPlayoffTree = (teams?: Team[]): Match[] => {
       notifyMatchesUpdated(updatedMatches);
       setActiveBracketMode('8-squad');
       recalculateStandings(updatedMatches);
+      setPlayoffTreePublished(true);
     }
 
     return updatedMatches;
@@ -480,6 +481,7 @@ export const createAndSeedPlayoffTree = (teams?: Team[]): Match[] => {
       localStorage.setItem(MATCHES_16_KEY, JSON.stringify(cleanTree));
       notify16MatchesUpdated(cleanTree);
       setActiveBracketMode('16-squad');
+      setPlayoffTreePublished(true);
     }
 
     // Also seed 8-squad UWU bracket

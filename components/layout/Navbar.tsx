@@ -3,14 +3,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Shield, Menu, X, ChevronRight, Crosshair } from 'lucide-react';
+import { Shield, Menu, X, ChevronRight, Crosshair, Radio } from 'lucide-react';
 import { useRegistrationStatus } from '@/hooks/useRegistrationStatus';
+import { api } from '@/lib/api';
+import { getStoredMatches } from '@/lib/storage';
 import Button from '../ui/Button';
 
 export default function Navbar() {
   const { isOpen } = useRegistrationStatus();
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [hasLiveMatch, setHasLiveMatch] = useState(false);
   const pathname = usePathname();
   const isHome = pathname === '/';
 
@@ -94,10 +97,34 @@ export default function Navbar() {
     // Initial check on mount
     checkScrollState();
 
+    const checkLiveMatch = () => {
+      try {
+        const stored = getStoredMatches();
+        const localLive = stored.some((m) => m.status === 'live');
+        if (localLive) {
+          setHasLiveMatch(true);
+          return;
+        }
+        api.public.getMatches({ status: 'LIVE' }).then((res) => {
+          if (res?.success && Array.isArray(res.data) && res.data.length > 0) {
+            setHasLiveMatch(true);
+          } else {
+            setHasLiveMatch(false);
+          }
+        }).catch(() => {});
+      } catch (e) {}
+    };
+
+    checkLiveMatch();
+    const liveInterval = setInterval(checkLiveMatch, 4000);
+    window.addEventListener('cst_matches_updated', checkLiveMatch);
+
     return () => {
+      clearInterval(liveInterval);
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('cst_hero_text_visible', handleTextVisible);
+      window.removeEventListener('cst_matches_updated', checkLiveMatch);
     };
   }, [checkScrollState, isHome, mobileMenuOpen]);
 
@@ -160,13 +187,16 @@ export default function Navbar() {
               <Link
                 key={link.name}
                 href={link.href}
-                className={`relative px-3 py-1.5 text-xs font-mono uppercase tracking-wider transition-colors duration-200 ${
+                className={`relative px-3 py-1.5 text-xs font-mono uppercase tracking-wider transition-colors duration-200 flex items-center gap-1.5 ${
                   isActive(link.href)
                     ? 'text-sand font-bold'
                     : 'text-mutedText hover:text-tacticalWhite'
                 }`}
               >
-                {link.name}
+                <span>{link.name}</span>
+                {link.name === 'Scoreboard' && hasLiveMatch && (
+                  <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
+                )}
                 {isActive(link.href) && (
                   <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-sand shadow-[0_0_8px_rgba(194,178,138,0.6)]" />
                 )}
@@ -175,6 +205,17 @@ export default function Navbar() {
           </nav>
 
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {hasLiveMatch && (
+              <Link
+                href="/scoreboard/live"
+                target="_blank"
+                className="px-2.5 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs font-mono font-black bg-rose-600/90 hover:bg-rose-600 text-tacticalWhite border border-rose-400/80 transition-all flex items-center gap-1.5 clip-tactical shadow-[0_0_15px_rgba(225,29,72,0.4)]"
+              >
+                <Radio className="w-3.5 h-3.5 animate-pulse text-sand" />
+                <span className="uppercase tracking-wider">LIVE HUD</span>
+              </Link>
+            )}
+
             {isOpen && (
               <>
                 <Button
@@ -212,9 +253,29 @@ export default function Navbar() {
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-40 lg:hidden bg-military-black/98 backdrop-blur-2xl pt-20 px-6 pb-8 flex flex-col justify-between border-b border-gunmetal overflow-y-auto overscroll-contain">
           <div className="flex flex-col gap-2.5">
-            <div className="text-[10px] font-mono text-mutedText uppercase tracking-widest border-b border-gunmetal pb-2">
-              Tactical Operations Directory
+            <div className="text-[10px] font-mono text-mutedText uppercase tracking-widest border-b border-gunmetal pb-2 flex items-center justify-between">
+              <span>Tactical Operations Directory</span>
+              {hasLiveMatch && (
+                <span className="text-rose-400 font-bold flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
+                  STAGE MATCH LIVE
+                </span>
+              )}
             </div>
+            {hasLiveMatch && (
+              <Link
+                href="/scoreboard/live"
+                target="_blank"
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-3 bg-rose-950/80 border border-rose-500/80 text-tacticalWhite font-display font-black text-xs uppercase tracking-wider flex items-center justify-between clip-tactical shadow-lg my-1"
+              >
+                <div className="flex items-center gap-2">
+                  <Radio className="w-4 h-4 text-sand animate-pulse" />
+                  <span>AUDITORIUM STAGE PROJECTOR HUD</span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-rose-300" />
+              </Link>
+            )}
             {navLinks.map((link) => (
               <Link
                 key={link.name}

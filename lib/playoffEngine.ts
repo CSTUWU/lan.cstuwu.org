@@ -371,20 +371,148 @@ export function analyzeAndAdvanceBracketWinners(
       }
 
       // 2. Advance winner to the downstream match (QF, SF, or Grand Final)
-      if (match.winnerId && (match.nextMatchId || (match as any).nextMatchNumber)) {
-        let nextMatch = match.nextMatchId ? matchMap.get(match.nextMatchId) : null;
-        if (!nextMatch && (match as any).nextMatchNumber) {
-          nextMatch = cloned.find((m) => m.matchNumber === (match as any).nextMatchNumber);
+      let nextId = match.nextMatchId;
+      let nextNum = (match as any).nextMatchNumber;
+      let nextSlot = match.nextMatchSlot;
+
+      const roundLower = (match.bracketRound || '').toLowerCase();
+      const stageLower = (match.stage || '').toLowerCase();
+      const mNum = match.matchNumber || (match.bracketPosition ? 100 + match.bracketPosition : 0);
+
+      const isQF1 =
+        mNum === 101 ||
+        mNum === 1 ||
+        (roundLower === 'quarterfinals' && match.bracketPosition === 1) ||
+        stageLower.includes('quarterfinal 1') ||
+        stageLower.includes('quarterfinal 01');
+      const isQF2 =
+        mNum === 102 ||
+        mNum === 2 ||
+        (roundLower === 'quarterfinals' && match.bracketPosition === 2) ||
+        stageLower.includes('quarterfinal 2') ||
+        stageLower.includes('quarterfinal 02');
+      const isQF3 =
+        mNum === 103 ||
+        mNum === 3 ||
+        (roundLower === 'quarterfinals' && match.bracketPosition === 3) ||
+        stageLower.includes('quarterfinal 3') ||
+        stageLower.includes('quarterfinal 03');
+      const isQF4 =
+        mNum === 104 ||
+        mNum === 4 ||
+        (roundLower === 'quarterfinals' && match.bracketPosition === 4) ||
+        stageLower.includes('quarterfinal 4') ||
+        stageLower.includes('quarterfinal 04');
+
+      const isSF1 =
+        mNum === 105 ||
+        (roundLower === 'semifinals' && match.bracketPosition === 1) ||
+        stageLower.includes('semifinal 1') ||
+        stageLower.includes('semifinal 01') ||
+        match.id === 'm-sf-1';
+      const isSF2 =
+        mNum === 106 ||
+        (roundLower === 'semifinals' && match.bracketPosition === 2) ||
+        stageLower.includes('semifinal 2') ||
+        stageLower.includes('semifinal 02') ||
+        match.id === 'm-sf-2';
+
+      if (isQF1) {
+        nextId = nextId || 'm-sf-1';
+        nextNum = nextNum || 105;
+        nextSlot = nextSlot || 'teamA';
+      } else if (isQF2) {
+        nextId = nextId || 'm-sf-1';
+        nextNum = nextNum || 105;
+        nextSlot = nextSlot || 'teamB';
+      } else if (isQF3) {
+        nextId = nextId || 'm-sf-2';
+        nextNum = nextNum || 106;
+        nextSlot = nextSlot || 'teamA';
+      } else if (isQF4) {
+        nextId = nextId || 'm-sf-2';
+        nextNum = nextNum || 106;
+        nextSlot = nextSlot || 'teamB';
+      } else if (isSF1) {
+        nextId = nextId || 'm-gf';
+        nextNum = nextNum || 107;
+        nextSlot = nextSlot || 'teamA';
+      } else if (isSF2) {
+        nextId = nextId || 'm-gf';
+        nextNum = nextNum || 107;
+        nextSlot = nextSlot || 'teamB';
+      }
+
+      if (match.winnerId && (nextId || nextNum)) {
+        let nextMatch = nextId ? matchMap.get(nextId) : null;
+        if (!nextMatch && nextNum) {
+          nextMatch = cloned.find((m) => m.matchNumber === nextNum);
         }
-        if (!nextMatch && match.nextMatchId) {
-          if (match.nextMatchId === 'm-105' || match.nextMatchId === '105') {
+        if (!nextMatch && nextId) {
+          if (nextId === 'm-105' || nextId === '105') {
             nextMatch = matchMap.get('m-sf-1') || cloned.find((m) => m.matchNumber === 105);
-          } else if (match.nextMatchId === 'm-106' || match.nextMatchId === '106') {
+          } else if (nextId === 'm-106' || nextId === '106') {
             nextMatch = matchMap.get('m-sf-2') || cloned.find((m) => m.matchNumber === 106);
-          } else if (match.nextMatchId === 'm-107' || match.nextMatchId === '107') {
+          } else if (nextId === 'm-107' || nextId === '107') {
             nextMatch = matchMap.get('m-gf') || cloned.find((m) => m.matchNumber === 107);
           }
         }
+
+        // Dynamically create downstream match (Semifinals / Grand Final) if it does not exist yet!
+        if (!nextMatch && (nextId || nextNum)) {
+          const defaultTargetId = nextId || (nextNum ? `m-${nextNum}` : `m-auto-${Date.now()}`);
+          const defaultStage =
+            isSF1 || isSF2
+              ? 'Grand Final (LAN Main Auditorium Stage)'
+              : nextNum === 106 || isQF3 || isQF4
+              ? 'Semifinal 02 (MR12)'
+              : 'Semifinal 01 (MR12)';
+          const defaultRound = isSF1 || isSF2 ? 'final' : 'semifinals';
+          const defaultPos = isQF3 || isQF4 || isSF2 ? 2 : 1;
+          const defaultMap = isSF1 || isSF2 ? 'Mirage' : isQF3 || isQF4 ? 'Anubis' : 'Nuke';
+
+          const winningTeam = teamLookup.get(match.winnerId) || {
+            id: match.winnerId,
+            name: match.winnerId === match.teamAId ? match.teamAName : match.teamBName,
+            tag: match.winnerId === match.teamAId ? match.teamATag : match.teamBTag,
+            logo: match.winnerId === match.teamAId ? match.teamALogo : match.teamBLogo,
+          };
+
+          nextMatch = {
+            id: defaultTargetId,
+            matchNumber: nextNum,
+            bracketRound: defaultRound,
+            bracketPosition: defaultPos,
+            nextMatchId: defaultRound === 'semifinals' ? 'm-gf' : undefined,
+            nextMatchSlot: defaultRound === 'semifinals' ? (defaultPos === 1 ? 'teamA' : 'teamB') : undefined,
+            stage: defaultStage,
+            teamAId: nextSlot === 'teamA' ? winningTeam.id : 'tbd-a',
+            teamAName: nextSlot === 'teamA' ? winningTeam.name : 'TBD',
+            teamATag: nextSlot === 'teamA' ? winningTeam.tag : 'TBD',
+            teamALogo: nextSlot === 'teamA' ? (winningTeam.logo || '/images/team-placeholder.svg') : '/images/team-placeholder.svg',
+            teamBId: nextSlot === 'teamB' ? winningTeam.id : 'tbd-b',
+            teamBName: nextSlot === 'teamB' ? winningTeam.name : 'TBD',
+            teamBTag: nextSlot === 'teamB' ? winningTeam.tag : 'TBD',
+            teamBLogo: nextSlot === 'teamB' ? (winningTeam.logo || '/images/team-placeholder.svg') : '/images/team-placeholder.svg',
+            map: defaultMap as any,
+            dateTime: new Date(Date.now() + 86400000).toISOString(),
+            status: 'upcoming',
+            scoreA: 0,
+            scoreB: 0,
+            streamUrl: 'https://twitch.tv/cst_lan_challenge',
+            currentRound: 0,
+            half: 1,
+            c4Planted: false,
+            roundHistory: [],
+            teamASide: 'CT',
+            teamBSide: 'T',
+          };
+          cloned.push(nextMatch);
+          matchMap.set(nextMatch.id, nextMatch);
+          isUpdated = true;
+          changedInPass = true;
+        }
+
         if (nextMatch) {
           const winningTeam = teamLookup.get(match.winnerId) || {
             id: match.winnerId,
@@ -393,7 +521,7 @@ export function analyzeAndAdvanceBracketWinners(
             logo: match.winnerId === match.teamAId ? match.teamALogo : match.teamBLogo,
           };
 
-          if (match.nextMatchSlot === 'teamA') {
+          if (nextSlot === 'teamA') {
             if (
               nextMatch.teamAId !== winningTeam.id ||
               nextMatch.teamAName !== winningTeam.name ||
@@ -406,7 +534,7 @@ export function analyzeAndAdvanceBracketWinners(
               isUpdated = true;
               changedInPass = true;
             }
-          } else if (match.nextMatchSlot === 'teamB') {
+          } else if (nextSlot === 'teamB') {
             if (
               nextMatch.teamBId !== winningTeam.id ||
               nextMatch.teamBName !== winningTeam.name ||
@@ -435,12 +563,13 @@ export function analyzeAndAdvanceBracketWinners(
             changedInPass = true;
           }
         }
-      } else if (!match.winnerId && match.nextMatchId) {
+      } else if (!match.winnerId && (nextId || match.nextMatchId)) {
         // If match winner is cleared or not yet determined, revert downstream slot to clean placeholder
-        const nextMatch = matchMap.get(match.nextMatchId);
+        const nextMatch = matchMap.get(nextId || match.nextMatchId!);
         if (nextMatch) {
-          const placeholder = getDefaultSlotPlaceholder(match.nextMatchId, match.nextMatchSlot || 'teamA');
-          if (match.nextMatchSlot === 'teamA') {
+          const slotToRevert = nextSlot || match.nextMatchSlot || 'teamA';
+          const placeholder = getDefaultSlotPlaceholder(nextMatch.id, slotToRevert);
+          if (slotToRevert === 'teamA') {
             if (
               nextMatch.teamAId !== placeholder.id &&
               (nextMatch.teamAId === match.teamAId || nextMatch.teamAId === match.teamBId)

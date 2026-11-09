@@ -145,7 +145,12 @@ export default function ScoreboardPage() {
     window.addEventListener('cst_playoff_published_changed', handlePubChange);
     window.addEventListener('storage', reloadData);
 
+    const pollInterval = setInterval(() => {
+      reloadData();
+    }, 4000);
+
     return () => {
+      clearInterval(pollInterval);
       channel?.removeEventListener('message', handleBroadcast);
       window.removeEventListener('cst_teams_updated', handleTeamsUpdate);
       window.removeEventListener('cst_matches_updated', handleMatchesUpdate);
@@ -166,6 +171,11 @@ export default function ScoreboardPage() {
       }
       return (b.wins || 0) - (a.wins || 0);
     });
+
+  const hasPlayoffMatches = matches.some(
+    (m) => m.bracketRound && m.bracketRound !== 'groups'
+  );
+  const showPlayoffTab = isTreePublished || hasPlayoffMatches;
 
   const liveMatch = matches.find((m) => m.status === 'live');
   const upcomingMatches = matches.filter((m) => m.status === 'upcoming');
@@ -316,7 +326,7 @@ export default function ScoreboardPage() {
 
         {/* Navigation Tabs */}
         <div className="flex flex-wrap items-center gap-3 mb-8 border-b border-gunmetal pb-4">
-          {isTreePublished && (
+          {showPlayoffTab && (
             <button
               onClick={() => setActiveTab('playoffs')}
               className={`px-4 py-2.5 font-mono text-xs uppercase font-bold tracking-wider transition-all border flex items-center gap-2 ${
@@ -333,7 +343,7 @@ export default function ScoreboardPage() {
           <button
             onClick={() => setActiveTab('standings')}
             className={`px-4 py-2.5 font-mono text-xs uppercase font-bold tracking-wider transition-all border flex items-center gap-2 ${
-              activeTab === 'standings' || (!isTreePublished && activeTab === 'playoffs')
+              activeTab === 'standings' || (!showPlayoffTab && activeTab === 'playoffs')
                 ? 'bg-olive text-tacticalWhite border-olive'
                 : 'bg-card text-mutedKhaki border-gunmetal hover:text-tacticalWhite hover:border-sand/40'
             }`}

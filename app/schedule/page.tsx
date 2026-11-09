@@ -8,7 +8,7 @@ import { INITIAL_MATCHES, getMapImage } from '@/lib/mockData';
 import { api } from '@/lib/api';
 import { transformBackendMatch } from '@/lib/transformers';
 import { Match, MatchStatus } from '@/lib/types';
-import { Calendar, Clock, MapPin, Tv, Shield, ChevronRight, CheckCircle2, Trophy } from 'lucide-react';
+import { Calendar, Clock, MapPin, Tv, Shield, ChevronRight, CheckCircle2, Trophy, Radio, Bomb } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import { useRegistrationStatus } from '@/hooks/useRegistrationStatus';
@@ -16,13 +16,10 @@ import { useRegistrationStatus } from '@/hooks/useRegistrationStatus';
 export default function SchedulePage() {
   const { isOpen } = useRegistrationStatus();
   const [matches, setMatches] = useState<Match[]>(INITIAL_MATCHES);
-  const [filter, setFilter] = useState<'all' | 'upcoming' | 'completed'>('all');
+  const [filter, setFilter] = useState<'all' | 'live' | 'upcoming' | 'completed'>('all');
   const [isTreePublished, setIsTreePublished] = useState<boolean>(() => isPlayoffTreePublished());
 
-  useEffect(() => {
-    setMatches(getStoredMatches());
-    setIsTreePublished(isPlayoffTreePublished());
-
+  const fetchMatches = () => {
     api.public.getSettings().then((res) => {
       if (res?.data?.playoffTreePublished !== undefined) {
         setIsTreePublished(Boolean(res.data.playoffTreePublished));
@@ -35,6 +32,13 @@ export default function SchedulePage() {
         setMatches(res.data.map(transformBackendMatch));
       }
     }).catch(() => {});
+  };
+
+  useEffect(() => {
+    setMatches(getStoredMatches());
+    setIsTreePublished(isPlayoffTreePublished());
+
+    fetchMatches();
 
     const handleUpdate = () => setMatches(getStoredMatches());
     const handlePub = () => setIsTreePublished(isPlayoffTreePublished());
@@ -50,17 +54,28 @@ export default function SchedulePage() {
     };
     channel?.addEventListener('message', handleBroadcast);
 
+    const pollInterval = setInterval(() => {
+      fetchMatches();
+    }, 4000);
+
     return () => {
+      clearInterval(pollInterval);
       window.removeEventListener('cst_matches_updated', handleUpdate);
       window.removeEventListener('cst_playoff_published_changed', handlePub);
       channel?.removeEventListener('message', handleBroadcast);
     };
   }, []);
 
+  const liveMatch = matches.find((m) => m.status === 'live');
+  const hasLive = Boolean(liveMatch);
+
   const filteredMatches = matches.filter((m) => {
     if (filter === 'all') return true;
     return m.status === filter;
   });
+
+  const hasPlayoffMatches = matches.some((m) => m.bracketRound && m.bracketRound !== 'groups');
+  const showPlayoffBanner = isTreePublished || hasPlayoffMatches;
 
   return (
     <div className="pt-28 pb-24 bg-military-black min-h-screen">
@@ -90,7 +105,7 @@ export default function SchedulePage() {
           </div>
 
           <div className="flex items-center gap-3">
-            {isTreePublished && (
+            {showPlayoffBanner && (
               <Button href="/scoreboard" variant="sand" size="sm" icon={<Trophy className="w-3.5 h-3.5 text-military-black" />}>
                 PLAYOFF BRACKET
               </Button>
@@ -106,8 +121,113 @@ export default function SchedulePage() {
           </div>
         </div>
 
+        {/* Live Match Stage Telemetry Card */}
+        {liveMatch && (
+          <div className="mb-10 bg-gradient-to-r from-card via-[#1A201A] to-card border-2 border-rose-500/60 p-6 sm:p-8 backdrop-blur-md relative overflow-hidden shadow-2xl clip-tactical">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-rose-500/10 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+              <div className="inline-flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-rose-500 animate-ping" />
+                <span className="font-mono text-xs font-black uppercase text-rose-400 tracking-widest flex items-center gap-2">
+                  <Radio className="w-4 h-4 animate-pulse" />
+                  🔴 LIVE NOW ON AUDITORIUM STAGE SCREEN
+                </span>
+                <span className="text-xs font-mono text-mutedText">{"//"}</span>
+                <span className="text-xs font-mono text-sand uppercase font-bold">
+                  {liveMatch.stage}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2 text-xs font-mono text-mutedText">
+                <div className="relative w-8 h-5 overflow-hidden border border-gunmetal shrink-0 clip-tactical">
+                  <Image src={getMapImage(liveMatch.map)} alt={liveMatch.map} fill className="object-cover" sizes="32px" />
+                </div>
+                <span>
+                  THEATER: <strong className="text-tacticalWhite uppercase">{liveMatch.map}</strong> • FORMAT: MR12 PROMOD
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-12 items-center gap-6">
+              {/* Team A */}
+              <div className="md:col-span-4 flex items-center gap-4">
+                <div className="relative w-14 h-14 bg-surface border border-gunmetal shrink-0 overflow-hidden clip-tactical">
+                  <Image src={liveMatch.teamALogo} alt={liveMatch.teamAName} fill className="object-cover" sizes="56px" />
+                </div>
+                <div>
+                  <span className="text-xs font-mono text-sand font-bold">[{liveMatch.teamATag}]</span>
+                  <h3 className="font-display font-black text-lg text-tacticalWhite uppercase truncate">
+                    {liveMatch.teamAName}
+                  </h3>
+                  <span className="text-[10px] font-mono text-sand bg-olive/20 border border-olive px-2 py-0.5 inline-block mt-0.5">
+                    {liveMatch.teamASide === 'T' ? 'OPFOR SIDE' : 'TASK FORCE SIDE'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Live Round and Score */}
+              <div className="md:col-span-4 flex flex-col items-center justify-center text-center">
+                <span className="text-[10px] font-mono text-mutedText uppercase tracking-widest mb-1">
+                  ROUND {liveMatch.currentRound || (liveMatch.scoreA + liveMatch.scoreB)} {"// TARGET: 13"}
+                </span>
+                <div className="font-display font-black text-4xl sm:text-5xl text-tacticalWhite flex items-center gap-3">
+                  <span className="text-sand">{liveMatch.scoreA}</span>
+                  <span className="text-mutedText/50">:</span>
+                  <span className="text-khaki">{liveMatch.scoreB}</span>
+                </div>
+                {liveMatch.c4Planted && (
+                  <div className="mt-2 text-rose-400 font-mono text-xs font-bold animate-pulse flex items-center gap-1.5 bg-rose-500/10 border border-rose-500/40 px-2 py-0.5">
+                    <Bomb className="w-3.5 h-3.5" />
+                    <span>ORDNANCE PLANTED</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Team B */}
+              <div className="md:col-span-4 flex items-center justify-end gap-4 text-right">
+                <div>
+                  <span className="text-xs font-mono text-khaki font-bold">[{liveMatch.teamBTag}]</span>
+                  <h3 className="font-display font-black text-lg text-tacticalWhite uppercase truncate">
+                    {liveMatch.teamBName}
+                  </h3>
+                  <span className="text-[10px] font-mono text-khaki bg-card border border-gunmetal px-2 py-0.5 inline-block mt-0.5">
+                    {liveMatch.teamBSide === 'CT' ? 'TASK FORCE SIDE' : 'OPFOR SIDE'}
+                  </span>
+                </div>
+                <div className="relative w-14 h-14 bg-surface border border-gunmetal shrink-0 overflow-hidden clip-tactical">
+                  <Image src={liveMatch.teamBLogo} alt={liveMatch.teamBName} fill className="object-cover" sizes="56px" />
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-gunmetal flex flex-col sm:flex-row items-center justify-between gap-3">
+              <span className="text-xs font-mono text-mutedText">
+                Live combat telemetry broadcast directly from the referee operations command.
+              </span>
+              <div className="flex items-center gap-3">
+                <Link
+                  href="/scoreboard"
+                  className="px-3.5 py-1.5 bg-olive hover:bg-olive/90 text-tacticalWhite font-display font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 clip-tactical border border-gunmetal"
+                >
+                  <Trophy className="w-3.5 h-3.5 text-sand" />
+                  <span>VIEW SCOREBOARD</span>
+                </Link>
+                <Link
+                  href={`/scoreboard/live?matchId=${liveMatch.id}`}
+                  target="_blank"
+                  className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-500 text-tacticalWhite font-display font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 clip-tactical"
+                >
+                  <Radio className="w-3.5 h-3.5" />
+                  <span>OPEN AUDITORIUM HUD</span>
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Live Playoff Bracket Banner when Published */}
-        {isTreePublished && (
+        {showPlayoffBanner && (
           <div className="mb-8 p-4 bg-surface/90 border border-sand/40 flex flex-col sm:flex-row items-center justify-between gap-4 clip-tactical shadow-lg">
             <div className="flex items-center gap-3">
               <span className="w-2.5 h-2.5 rounded-full bg-sand animate-ping shrink-0" />
@@ -134,17 +254,18 @@ export default function SchedulePage() {
         {/* Filter bar */}
         <div className="bg-card/70 border border-gunmetal p-4 mb-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            {(['all', 'upcoming', 'completed'] as const).map((tab) => (
+            {(hasLive ? (['all', 'live', 'upcoming', 'completed'] as const) : (['all', 'upcoming', 'completed'] as const)).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setFilter(tab)}
-                className={`px-4 py-2 text-xs font-mono uppercase font-bold tracking-wider border transition-colors ${
+                className={`px-4 py-2 text-xs font-mono uppercase font-bold tracking-wider border transition-colors flex items-center gap-1.5 ${
                   filter === tab
                     ? 'bg-olive text-tacticalWhite border-olive-light/50 shadow-sm'
                     : 'bg-surface text-mutedText border-gunmetal hover:text-tacticalWhite'
                 }`}
               >
-                {tab} ({tab === 'all' ? matches.length : matches.filter(m => m.status === tab).length})
+                {tab === 'live' && <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />}
+                <span>{tab} ({tab === 'all' ? matches.length : matches.filter(m => m.status === tab).length})</span>
               </button>
             ))}
           </div>

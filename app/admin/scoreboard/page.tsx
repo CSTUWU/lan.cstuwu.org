@@ -295,14 +295,17 @@ export default function AdminScoreboardPage() {
     if (!confirmSeed) return;
 
     createAndSeedPlayoffTree(sourceTeams);
+    setIsTreePublished(true);
+    setPlayoffTreePublished(true);
     try {
       await api.admin.generatePlayoffs().catch(() => null);
+      await api.admin.updateSettings({ playoffTreePublished: true }).catch(() => null);
     } catch (e) {}
 
     const updated = getCleanMatches();
     setMatches(updated);
     showNotice(
-      `✓ Playoff Tree generated! 1st round fixtures linked. Match wins will automatically advance winners down the tree.`
+      `✓ Playoff Tree generated & published to live public site! 1st round fixtures linked. Match wins will automatically advance winners down the tree.`
     );
   };
 
