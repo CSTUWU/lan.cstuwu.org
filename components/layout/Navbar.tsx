@@ -124,7 +124,7 @@ export default function Navbar() {
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 z-50 h-16 transition-all duration-300 ease-in-out ${
+        className={`fixed top-0 left-0 right-0 z-50 h-16 transition-all duration-300 ease-in-out max-lg:translate-y-0 max-lg:opacity-100 max-lg:pointer-events-auto max-lg:bg-military-black/95 max-lg:backdrop-blur-md max-lg:border-b max-lg:border-gunmetal max-lg:shadow-[0_4px_25px_rgba(0,0,0,0.85)] ${
           showNavbar
             ? 'translate-y-0 opacity-100 pointer-events-auto'
             : '-translate-y-full opacity-0 pointer-events-none'
@@ -134,15 +134,15 @@ export default function Navbar() {
             : 'bg-gradient-to-b from-military-black/90 via-military-black/60 to-transparent border-b border-transparent'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="relative flex items-center justify-center w-10 h-10 bg-surface border border-olive/50 clip-tactical group-hover:border-sand transition-colors shadow-[0_2px_10px_rgba(24,30,24,0.7)] shrink-0">
-              <Shield className="w-5 h-5 text-sand group-hover:scale-110 transition-transform" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between gap-2">
+          <Link href="/" className="flex items-center gap-2 sm:gap-3 group shrink-0">
+            <div className="relative flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 bg-surface border border-olive/50 clip-tactical group-hover:border-sand transition-colors shadow-[0_2px_10px_rgba(24,30,24,0.7)] shrink-0">
+              <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-sand group-hover:scale-110 transition-transform" />
               <span className="absolute -bottom-1 -right-1 w-1.5 h-1.5 bg-olive" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <span className="font-display font-black text-lg sm:text-xl tracking-wider text-tacticalWhite">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <span className="font-display font-black text-base sm:text-xl tracking-wider text-tacticalWhite whitespace-nowrap">
                   <span className="text-sand">LAN</span> <span className="text-tacticalWhite">CHALLENGE</span>
                 </span>
                 <span className="hidden sm:inline-block text-[9px] font-mono font-semibold px-1.5 py-0.5 bg-olive/20 text-sand border border-olive/40 rounded-none">
@@ -174,22 +174,32 @@ export default function Navbar() {
             ))}
           </nav>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {isOpen && (
-              <Button
-                href="/register"
-                variant="cyan"
-                size="sm"
-                icon={<Crosshair className="w-3.5 h-3.5" />}
-              >
-                REGISTER TEAM
-              </Button>
+              <>
+                <Button
+                  href="/register"
+                  variant="cyan"
+                  size="sm"
+                  icon={<Crosshair className="w-3.5 h-3.5" />}
+                  className="hidden sm:inline-flex"
+                >
+                  REGISTER TEAM
+                </Button>
+                <Link
+                  href="/register"
+                  className="sm:hidden px-2.5 py-1.5 text-[10px] font-mono font-bold bg-cyan/15 text-cyan border border-cyan/40 hover:bg-cyan/25 transition-colors flex items-center gap-1 shrink-0"
+                >
+                  <Crosshair className="w-3 h-3" />
+                  <span>JOIN</span>
+                </Link>
+              </>
             )}
 
-            <div className="flex items-center gap-2 lg:hidden">
+            <div className="flex items-center lg:hidden">
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="p-2 text-mutedText hover:text-tacticalWhite border border-gunmetal bg-surface focus:outline-none focus:ring-1 focus:ring-sand transition-colors"
+                className="p-2 text-mutedText hover:text-tacticalWhite border border-gunmetal bg-surface focus:outline-none focus:ring-1 focus:ring-sand transition-colors shrink-0"
                 aria-label="Toggle Navigation"
               >
                 {mobileMenuOpen ? <X className="w-5 h-5 text-sand" /> : <Menu className="w-5 h-5" />}
@@ -200,7 +210,7 @@ export default function Navbar() {
       </header>
 
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden bg-military-black/98 backdrop-blur-2xl pt-20 px-6 pb-8 flex flex-col justify-between border-b border-gunmetal overflow-y-auto">
+        <div className="fixed inset-0 z-40 lg:hidden bg-military-black/98 backdrop-blur-2xl pt-20 px-6 pb-8 flex flex-col justify-between border-b border-gunmetal overflow-y-auto overscroll-contain">
           <div className="flex flex-col gap-2.5">
             <div className="text-[10px] font-mono text-mutedText uppercase tracking-widest border-b border-gunmetal pb-2">
               Tactical Operations Directory

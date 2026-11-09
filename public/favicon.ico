@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" fill="none">
+  <!-- Military Dark Hexagonal Shield Background -->
+  <path d="M32 4L56 14V34C56 47.5 45.5 57 32 60C18.5 57 8 47.5 8 34V14L32 4Z" fill="#0E120E" stroke="#C2B28A" stroke-width="2.5" stroke-linejoin="round"/>
+  <!-- Inner Tactical Accent Border -->
+  <path d="M32 9L51 17.5V33C51 44.5 42.5 52.5 32 55C21.5 52.5 13 44.5 13 33V17.5L32 9Z" fill="#151C15" stroke="#4D5D43" stroke-width="1.5" stroke-linejoin="round"/>
+  
+  <!-- Outer Crosshair Ring -->
+  <circle cx="32" cy="32" r="14" stroke="#C2B28A" stroke-width="1.8" stroke-dasharray="3 2" opacity="0.85"/>
+  <!-- Inner Reticle -->
+  <circle cx="32" cy="32" r="7" stroke="#4ADE80" stroke-width="1.5"/>
+  <circle cx="32" cy="32" r="2.5" fill="#4ADE80"/>
+
+  <!-- Tactical Reticle Axis Marks -->
+  <line x1="32" y1="13" x2="32" y2="21" stroke="#C2B28A" stroke-width="2" stroke-linecap="round"/>
+  <line x1="32" y1="43" x2="32" y2="51" stroke="#C2B28A" stroke-width="2" stroke-linecap="round"/>
+  <line x1="13" y1="32" x2="21" y2="32" stroke="#C2B28A" stroke-width="2" stroke-linecap="round"/>
+  <line x1="43" y1="32" x2="51" y2="32" stroke="#C2B28A" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Tactical Corner Corner-brackets -->
+  <path d="M22 25H25V22" stroke="#C2B28A" stroke-width="1.5" stroke-linecap="square"/>
+  <path d="M42 25H39V22" stroke="#C2B28A" stroke-width="1.5" stroke-linecap="square"/>
+  <path d="M22 39H25V42" stroke="#C2B28A" stroke-width="1.5" stroke-linecap="square"/>
+  <path d="M42 39H39V42" stroke="#C2B28A" stroke-width="1.5" stroke-linecap="square"/>
+</svg>

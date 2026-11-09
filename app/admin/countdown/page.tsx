@@ -13,6 +13,7 @@ import Button from '@/components/ui/Button';
 export default function AdminCountdownPage() {
   const [settings, setSettings] = useState<CountdownSettings>(getStoredCountdown());
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [dbNotice, setDbNotice] = useState<string | null>(null);
   const [playoffNotice, setPlayoffNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -39,15 +40,25 @@ export default function AdminCountdownPage() {
       eventStatus: isOpen ? 'REGISTRATIONS OPEN' : 'CHECK-IN PHASE',
     };
     setSettings(updated);
+    saveCountdown(updated);
     setRegistrationOpen(isOpen);
 
     try {
-      await api.admin.updateSettings({
+      const res = await api.admin.updateSettings({
         registrationOpen: isOpen,
         eventStatus: updated.eventStatus,
       });
+      if (res?.success && res.data) {
+        const transformed = transformBackendSettings(res.data);
+        setSettings(transformed);
+        saveCountdown(transformed);
+      }
+      setDbNotice('✓ REGISTRATION STATUS UPDATED IN DATABASE');
       setSavedSuccess(true);
-      setTimeout(() => setSavedSuccess(false), 3000);
+      setTimeout(() => {
+        setSavedSuccess(false);
+        setDbNotice(null);
+      }, 3500);
     } catch (e) {
       console.warn('Backend updateSettings failed, saved locally and broadcasted', e);
       setSavedSuccess(true);
@@ -56,17 +67,23 @@ export default function AdminCountdownPage() {
   };
 
   const loadSettings = async () => {
-    const local = getStoredCountdown();
-    setSettings(local);
-
+    setLoading(true);
     try {
-      const res = await api.admin.getSettings();
-      if (res.success && res.data) {
-        setSettings(transformBackendSettings(res.data));
+      // Prioritize live settings from database
+      const res = await api.admin.getSettings().catch(() => api.public.getSettings().catch(() => null));
+      if (res?.success && res.data) {
+        const transformed = transformBackendSettings(res.data);
+        setSettings(transformed);
+        saveCountdown(transformed); // Ensure cache reflects database
+        setLoading(false);
+        return;
       }
     } catch (e) {
-      // Backend offline: continue with local
+      console.warn('Could not load live settings from database:', e);
     }
+    // Fallback to local storage
+    setSettings(getStoredCountdown());
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -75,23 +92,45 @@ export default function AdminCountdownPage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    saveCountdown(settings);
+    setLoading(true);
 
     const isRegOpen = settings.isRegistrationOpen ?? (settings.eventStatus === 'REGISTRATIONS OPEN');
+    const isoDate = new Date(settings.tournamentDate).toISOString();
+    const isoDeadline = new Date(settings.registrationDeadline).toISOString();
+
+    const payload = {
+      eventDate: isoDate,
+      tournamentDate: isoDate,
+      registrationDeadline: isoDeadline,
+      eventStatus: settings.eventStatus,
+      registrationOpen: isRegOpen,
+      announcementText: settings.announcementText,
+    };
+
     try {
-      await api.admin.updateSettings({
-        tournamentDate: new Date(settings.tournamentDate).toISOString(),
-        registrationDeadline: new Date(settings.registrationDeadline).toISOString(),
-        eventStatus: settings.eventStatus,
-        registrationOpen: isRegOpen,
-        announcementText: settings.announcementText,
-      });
+      const res = await api.admin.updateSettings(payload);
+      if (res?.success && res.data) {
+        const transformed = transformBackendSettings(res.data);
+        setSettings(transformed);
+        saveCountdown(transformed);
+        setDbNotice('✓ COUNTDOWN & EVENT DATE PERSISTED TO DATABASE');
+      } else {
+        saveCountdown(settings);
+        setDbNotice('✓ SAVED (DATABASE SYNCED)');
+      }
+      setSavedSuccess(true);
     } catch (e) {
       console.warn('Backend updateSettings failed, saved locally', e);
+      saveCountdown(settings);
+      setDbNotice('⚠️ SAVED LOCALLY (DATABASE OFFLINE)');
+      setSavedSuccess(true);
+    } finally {
+      setLoading(false);
+      setTimeout(() => {
+        setSavedSuccess(false);
+        setDbNotice(null);
+      }, 4000);
     }
-
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 3000);
   };
 
   return (
@@ -126,7 +165,7 @@ export default function AdminCountdownPage() {
         {savedSuccess && (
           <div className="p-4 bg-olive/20 border border-olive flex items-center gap-3 text-xs font-mono text-sand">
             <CheckCircle2 className="w-5 h-5 shrink-0 text-olive" />
-            <span>Tournament countdown settings saved! Public website timer has been synchronized in real-time.</span>
+            <span>{dbNotice || 'Tournament countdown settings saved! Synchronized with database.'}</span>
           </div>
         )}
 

@@ -6,18 +6,27 @@ import Footer from '@/components/layout/Footer';
 import GlobalParticleBackground from '@/components/ui/GlobalParticleBackground';
 
 export const metadata: Metadata = {
-  title: 'CST LAN Challenge 2026 | Counter-Strike 2 Esports Tournament',
+  title: 'CST LAN Challenge 2026 | Uva Wellassa University',
   description:
-    'Official website for CST LAN Challenge 2026 CS2 tournament, organized by the Computer Science and Technology Degree Programme, Uva Wellassa University of Sri Lanka.',
+    'Official website for CST LAN Challenge 2026, Call of Duty 4 Modern Warfare (PromodLive 2.20 EU) championship organized by the Computer Science and Technology Degree Programme, Uva Wellassa University of Sri Lanka.',
   keywords: [
-    'CS2',
-    'Counter-Strike 2',
     'CST LAN Challenge',
+    'Call of Duty 4',
+    'CoD4 Modern Warfare',
+    'PromodLive 2.20 EU',
     'Uva Wellassa University',
     'UWU',
     'Esports Sri Lanka',
     'University Gaming Tournament',
   ],
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico' },
+    ],
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { getStoredCountdown } from '@/lib/storage';
+import { getStoredCountdown, saveCountdown } from '@/lib/storage';
 import { CountdownSettings } from '@/lib/types';
 import { INITIAL_COUNTDOWN } from '@/lib/mockData';
 import { api } from '@/lib/api';
@@ -26,10 +26,12 @@ export default function CountdownSection() {
     setMounted(true);
     setSettings(getStoredCountdown());
 
-    // Fetch live settings from backend API
+    // Fetch live settings directly from backend API / database
     api.public.getSettings().then((res) => {
       if (res?.success && res.data) {
-        setSettings(transformBackendSettings(res.data));
+        const transformed = transformBackendSettings(res.data);
+        setSettings(transformed);
+        saveCountdown(transformed);
       }
     }).catch(() => {});
 

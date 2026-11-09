@@ -143,10 +143,10 @@ export function transformBackendSettings(raw: any): CountdownSettings {
   if (!raw) {
     return {
       tournamentDate: '2026-11-20T09:00:00',
-      registrationDeadline: '2026-11-10T23:59:59',
+      registrationDeadline: '2026-11-12T23:59:59',
       eventStatus: 'REGISTRATIONS OPEN',
       isRegistrationOpen: true,
-      announcementText: 'CST LAN CHALLENGE 2026 - Official Counter-Strike 2 Championship hosted by Uva Wellassa University',
+      announcementText: 'CST LAN CHALLENGE 2026 live at Uva Wellassa University Main Auditorium. Inter-Faculty 5v5 MR12 Call of Duty 4 Modern Warfare (PromodLive 2.20 EU) championship.',
     };
   }
 
@@ -154,9 +154,14 @@ export function transformBackendSettings(raw: any): CountdownSettings {
     ? raw.registrationOpen
     : (raw.eventStatus === 'REGISTRATIONS OPEN');
 
+  const rawDate = raw.tournamentDate || raw.eventDate;
+  const tournamentDate = rawDate ? new Date(rawDate).toISOString() : '2026-11-20T09:00:00';
+  const rawDeadline = raw.registrationDeadline;
+  const registrationDeadline = rawDeadline ? new Date(rawDeadline).toISOString() : '2026-11-12T23:59:59';
+
   return {
-    tournamentDate: raw.tournamentDate ? new Date(raw.tournamentDate).toISOString() : '2026-11-20T09:00:00',
-    registrationDeadline: raw.registrationDeadline ? new Date(raw.registrationDeadline).toISOString() : '2026-11-10T23:59:59',
+    tournamentDate,
+    registrationDeadline,
     eventStatus: raw.eventStatus || 'REGISTRATIONS OPEN',
     isRegistrationOpen: isOpen,
     announcementText: raw.announcementText || 'CST LAN CHALLENGE 2026',
