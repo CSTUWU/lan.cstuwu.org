@@ -43,40 +43,28 @@ export default function AdminTeamsPage() {
   const [notice, setNotice] = useState<string | null>(null);
 
   const loadTeams = async () => {
-    const local = getStoredTeams();
-    setTeams(local);
-
+    setLoading(true);
     try {
       const res = await api.admin.getTeams();
-      if (res.success && Array.isArray(res.data)) {
+      if (res?.success && Array.isArray(res.data)) {
         const transformed = res.data.map(transformBackendTeam);
         setTeams(transformed);
-        setStoredTeams(transformed);
         
         const expandedMap: Record<string, boolean> = {};
         transformed.forEach((t) => {
           expandedMap[t.id] = true;
         });
         setExpandedTeams(expandedMap);
-        return;
       }
-    } catch (e) {
-      // Backend offline: use local storage
+    } catch (e: any) {
+      console.error('Failed to load teams from database:', e);
+    } finally {
+      setLoading(false);
     }
-
-    const initialExpanded: Record<string, boolean> = {};
-    local.forEach((t) => {
-      initialExpanded[t.id] = true;
-    });
-    setExpandedTeams(initialExpanded);
   };
 
   useEffect(() => {
     loadTeams();
-
-    const handleUpdate = () => setTeams(getStoredTeams());
-    window.addEventListener('cst_teams_updated', handleUpdate);
-    return () => window.removeEventListener('cst_teams_updated', handleUpdate);
   }, []);
 
   const toggleExpand = (teamId: string) => {

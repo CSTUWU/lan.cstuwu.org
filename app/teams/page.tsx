@@ -15,41 +15,27 @@ import { useRegistrationStatus } from '@/hooks/useRegistrationStatus';
 
 export default function TeamsPage() {
   const { isOpen } = useRegistrationStatus();
-  const [teams, setTeams] = useState<Team[]>(INITIAL_TEAMS);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'approved' | 'pending' | 'rejected'>('all');
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
 
   useEffect(() => {
-    setTeams(getStoredTeams());
-    
-    // Query public teams API
+    // Query public teams API directly from database
     api.public
       .getTeams()
       .then((res) => {
-        if (res?.success && Array.isArray(res.data) && res.data.length > 0) {
+        if (res?.success && Array.isArray(res.data)) {
           setTeams(res.data.map(transformBackendTeam));
         }
       })
-      .catch(() => {});
-
-    const handleUpdate = () => setTeams(getStoredTeams());
-    window.addEventListener('cst_teams_updated', handleUpdate);
-    window.addEventListener('storage', handleUpdate);
-
-    const channel = getLiveBroadcastChannel();
-    const handleChannelMsg = (event: MessageEvent) => {
-      if (event.data?.type === 'CST_TEAMS_UPDATE') {
-        handleUpdate();
-      }
-    };
-    channel?.addEventListener('message', handleChannelMsg);
-
-    return () => {
-      window.removeEventListener('cst_teams_updated', handleUpdate);
-      window.removeEventListener('storage', handleUpdate);
-      channel?.removeEventListener('message', handleChannelMsg);
-    };
+      .catch((err) => {
+        console.error('Failed to query public teams:', err);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
   const filteredTeams = (teams || []).filter((team) => {

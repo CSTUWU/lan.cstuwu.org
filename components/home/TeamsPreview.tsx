@@ -15,64 +15,24 @@ import { useRegistrationStatus } from '@/hooks/useRegistrationStatus';
 
 export default function TeamsPreview() {
   const { isOpen } = useRegistrationStatus();
-  const [teams, setTeams] = useState<Team[]>(INITIAL_TEAMS);
+  const [teams, setTeams] = useState<Team[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // 1. Instant local render from storage
-    const local = getStoredTeams();
-    setTeams(local);
-    setIsLoading(false);
-
-    // 2. Fetch live registered squads from backend API
+    // Fetch live registered squads from backend API directly
     api.public
       .getTeams()
       .then((res) => {
-        if (res?.success && Array.isArray(res.data) && res.data.length > 0) {
-          const transformed = res.data.map(transformBackendTeam);
-          setTeams(transformed);
-
-          // Synchronize with localStorage
-          const localTeams = getStoredTeams();
-          const merged = [...transformed];
-          localTeams.forEach((lt) => {
-            if (!merged.some((m) => m.id === lt.id || m.name.toLowerCase() === lt.name.toLowerCase())) {
-              merged.push(lt);
-            }
-          });
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('cst_lan_teams_2026', JSON.stringify(merged));
-          }
+        if (res?.success && Array.isArray(res.data)) {
+          setTeams(res.data.map(transformBackendTeam));
         }
       })
       .catch((err) => {
-        console.warn('TeamsPreview: backend offline, using local teams', err);
+        console.error('TeamsPreview error fetching squads from database:', err);
       })
       .finally(() => {
         setIsLoading(false);
       });
-
-    // 3. Listen to local and cross-tab update events
-    const handleUpdate = () => {
-      setTeams(getStoredTeams());
-    };
-
-    window.addEventListener('cst_teams_updated', handleUpdate);
-    window.addEventListener('storage', handleUpdate);
-
-    const channel = getLiveBroadcastChannel();
-    const handleChannelMsg = (event: MessageEvent) => {
-      if (event.data?.type === 'CST_TEAMS_UPDATE') {
-        handleUpdate();
-      }
-    };
-    channel?.addEventListener('message', handleChannelMsg);
-
-    return () => {
-      window.removeEventListener('cst_teams_updated', handleUpdate);
-      window.removeEventListener('storage', handleUpdate);
-      channel?.removeEventListener('message', handleChannelMsg);
-    };
   }, []);
 
   const displayTeams = teams.slice(0, 4);

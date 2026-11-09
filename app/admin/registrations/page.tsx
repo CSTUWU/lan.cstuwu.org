@@ -22,26 +22,22 @@ export default function AdminRegistrationsPage() {
   const [actionNotice, setActionNotice] = useState<string | null>(null);
 
   const loadRegistrations = async () => {
-    // 1. Initial local render
-    setTeams(getStoredTeams());
-
+    setLoading(true);
     try {
       const res = await api.admin.getRegistrations();
-      if (res.success && Array.isArray(res.data)) {
+      if (res?.success && Array.isArray(res.data)) {
         const transformed = res.data.map(transformBackendRegistration);
         setTeams(transformed);
-        setStoredTeams(transformed);
       }
-    } catch (e) {
-      // Backend not running: use local storage
+    } catch (e: any) {
+      console.error('Failed to load registrations from database:', e);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     loadRegistrations();
-    const handleUpdate = () => setTeams(getStoredTeams());
-    window.addEventListener('cst_teams_updated', handleUpdate);
-    return () => window.removeEventListener('cst_teams_updated', handleUpdate);
   }, []);
 
   const showNotice = (msg: string) => {
@@ -53,22 +49,24 @@ export default function AdminRegistrationsPage() {
     try {
       if (status === 'approved') {
         await api.admin.approveRegistration(teamId);
-        showNotice(`Registration approved! Squad has been added to official tournament teams.`);
+        showNotice(`Squad approved! Added to official tournament roster in database.`);
       } else if (status === 'rejected') {
-        const reason = window.prompt('Specify reason for rejection (optional):', 'Roster requirements or student eligibility criteria not met') || undefined;
+        const reason =
+          window.prompt(
+            'Specify reason for rejection (optional):',
+            'Roster requirements or student eligibility criteria not met'
+          ) || undefined;
         await api.admin.rejectRegistration(teamId, reason);
-        showNotice(`Registration rejected.`);
+        showNotice(`Registration rejected in database.`);
+      }
+      await loadRegistrations();
+      if (selectedTeam && selectedTeam.id === teamId) {
+        setSelectedTeam({ ...selectedTeam, status });
       }
     } catch (err: any) {
-      console.warn('Backend API registration call failed, updating local state', err);
-      showNotice(`Status updated to ${status.toUpperCase()} locally.`);
+      console.error('Backend API registration call failed:', err);
+      showNotice(err.message || `Failed to update status on database.`);
     }
-
-    updateTeamStatus(teamId, status);
-    if (selectedTeam && selectedTeam.id === teamId) {
-      setSelectedTeam({ ...selectedTeam, status });
-    }
-    loadRegistrations();
   };
 
   const filteredTeams = (teams || []).filter((team) => {

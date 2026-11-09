@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
-import { saveTeam, getStoredTeams, getLiveBroadcastChannel } from '@/lib/storage';
+import { getLiveBroadcastChannel } from '@/lib/storage';
 import { Team, Player, Captain, UWU_DEGREE_PROGRAMMES, ACADEMIC_YEARS } from '@/lib/types';
 import {
   extractDegreeFromEnrollment,
@@ -296,75 +296,39 @@ export default function RegisterPage() {
         res = await api.registrations.submit(backendPayload);
       }
 
-      const confirmationId = res?.data?.registrationNumber || `REG-2026-${Date.now().toString(36).toUpperCase()}`;
+      const confirmationId =
+        res?.data?.registrationNumber ||
+        res?.data?.confirmationCode ||
+        `REG-2026-${Date.now().toString(36).toUpperCase()}`;
 
       const teamObj: Team = {
         id: confirmationId,
-        name: form.teamName.trim(),
-        tag: form.teamTag.trim().toUpperCase(),
+        name: res?.data?.teamName || form.teamName.trim(),
+        tag: res?.data?.teamTag || form.teamTag.trim().toUpperCase(),
         university: 'Uva Wellassa University of Sri Lanka',
         logo: form.logo,
-        status: 'pending',
-        createdAt: nowIso,
+        status: (res?.data?.status || 'pending').toLowerCase() as any,
+        createdAt: res?.data?.createdAt || nowIso,
         captain: captainInfo,
         players: rosterPlayers,
-        degreeProgram: form.degreeProgram,
+        degreeProgram: verifiedDegree,
         year: members[0].year,
-        enrollmentNumber: members[0].enrollmentNumber.trim(),
-        column1: members[0].enrollmentNumber.trim(),
+        enrollmentNumber: members[0].enrollmentNumber.trim().toUpperCase(),
+        column1: members[0].enrollmentNumber.trim().toUpperCase(),
         email: form.email.trim(),
       };
-
-      const existing = getStoredTeams();
-      if (!existing.some((t) => t.id === teamObj.id || t.name.toLowerCase() === teamObj.name.toLowerCase())) {
-        const updated = [teamObj, ...existing];
-        localStorage.setItem('cst_lan_teams_2026', JSON.stringify(updated));
-        window.dispatchEvent(new Event('cst_teams_updated'));
-        try {
-          const channel = getLiveBroadcastChannel();
-          channel?.postMessage({
-            type: 'CST_TEAMS_UPDATE',
-            teams: updated,
-            timestamp: Date.now(),
-          });
-        } catch (e) {}
-      }
 
       setCreatedTeam(teamObj);
       setIsSubmitted(true);
       window.scrollTo({ top: 80, behavior: 'smooth' });
     } catch (err: any) {
-      console.warn('Backend API submission note (fallback to local):', err);
+      console.error('Backend registration submission failed:', err);
       if (err.errors && err.errors.length > 0) {
         setApiError(err.errors.map((e: any) => e.message).join(' | '));
-        setIsSubmitting(false);
-        return;
+      } else {
+        setApiError(err.message || 'Registration failed. Could not establish communication with tournament database.');
       }
-      // Only abort for client-side validation errors, tag conflicts, or rate limits
-      if (err.status === 400 || err.status === 409 || err.status === 429) {
-        setApiError(err.message || 'Validation error occurred');
-        setIsSubmitting(false);
-        return;
-      }
-
-      // Seamless local storage fallback for server/connection errors
-      const created = saveTeam({
-        name: form.teamName.trim(),
-        tag: form.teamTag.trim().toUpperCase(),
-        university: 'Uva Wellassa University of Sri Lanka',
-        logo: form.logo,
-        captain: captainInfo,
-        players: rosterPlayers,
-        degreeProgram: form.degreeProgram,
-        year: members[0].year,
-        enrollmentNumber: members[0].enrollmentNumber.trim(),
-        column1: members[0].enrollmentNumber.trim(),
-        email: form.email.trim(),
-      });
-
-      setCreatedTeam(created);
-      setIsSubmitted(true);
-      window.scrollTo({ top: 80, behavior: 'smooth' });
+      window.scrollTo({ top: 120, behavior: 'smooth' });
     } finally {
       setIsSubmitting(false);
     }

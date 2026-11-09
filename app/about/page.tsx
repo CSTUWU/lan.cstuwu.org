@@ -49,7 +49,7 @@ export default function AboutPage() {
       <div className="absolute inset-0 tactical-grid-bg opacity-15 pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        
+
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-xs font-mono text-mutedKhaki mb-8">
           <Link href="/" className="hover:text-sand transition-colors">HOME</Link>
@@ -175,11 +175,10 @@ export default function AboutPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveRuleTab(tab.id)}
-                className={`px-3.5 py-2 text-xs font-mono font-bold uppercase tracking-wider whitespace-nowrap transition-all flex items-center gap-2 border ${
-                  activeRuleTab === tab.id
+                className={`px-3.5 py-2 text-xs font-mono font-bold uppercase tracking-wider whitespace-nowrap transition-all flex items-center gap-2 border ${activeRuleTab === tab.id
                     ? 'bg-sand text-military-black border-sand shadow-[0_2px_10px_rgba(194,178,138,0.4)]'
                     : 'bg-surface text-mutedKhaki border-gunmetal hover:border-olive hover:text-tacticalWhite'
-                }`}
+                  }`}
               >
                 {tab.icon}
                 <span>{tab.label}</span>
