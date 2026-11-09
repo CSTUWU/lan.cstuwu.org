@@ -71,8 +71,13 @@ export default function CinematicShowcase() {
     const rect = canvas.getBoundingClientRect();
     const width = rect.width || (typeof window !== 'undefined' ? window.innerWidth : 1920);
     const height = rect.height || (typeof window !== 'undefined' ? window.innerHeight : 1080);
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
+    const targetWidth = Math.round(width * dpr);
+    const targetHeight = Math.round(height * dpr);
+
+    if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+    }
 
     drawFrame(currentFrameRef.current);
   }, [drawFrame]);
@@ -118,147 +123,155 @@ export default function CinematicShowcase() {
     };
   }, [handleResize, drawFrame]);
 
-  // 4. GSAP ScrollTrigger Sequence: Left -> Right -> Center
+  // 4. GSAP ScrollTrigger Sequence: Left -> Right -> Center with Mobile Responsiveness
   useEffect(() => {
     if (!containerRef.current || !canvasRef.current) return;
 
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (prefersReducedMotion) return;
 
-    const ctx = gsap.context(() => {
-      const frameObj = { frame: 0 };
+    const mm = gsap.matchMedia();
 
-      const scrubTimeline = gsap.timeline({
-        scrollTrigger: {
-          trigger: containerRef.current,
-          start: 'top top',
-          end: '+=1600',
-          pin: true,
-          scrub: 0.4,
-          anticipatePin: 1,
-          onUpdate: (self) => {
-            const currentFrame = Math.min(
-              TOTAL_FRAMES - 1,
-              Math.floor(self.progress * (TOTAL_FRAMES - 1))
-            );
-            drawFrame(currentFrame);
+    mm.add(
+      {
+        isDesktop: '(min-width: 768px)',
+        isMobile: '(max-width: 767px)',
+      },
+      (context) => {
+        const { isMobile } = context.conditions as { isDesktop: boolean; isMobile: boolean };
+        const frameObj = { frame: 0 };
 
-            // Update bottom telemetry bar
-            if (scrubBarRef.current) {
-              scrubBarRef.current.style.width = `${Math.round(self.progress * 100)}%`;
-            }
+        const scrubTimeline = gsap.timeline({
+          scrollTrigger: {
+            trigger: containerRef.current,
+            start: 'top top',
+            end: isMobile ? '+=900' : '+=1600',
+            pin: true,
+            scrub: isMobile ? 0.25 : 0.4,
+            anticipatePin: 1,
+            onUpdate: (self) => {
+              const currentFrame = Math.min(
+                TOTAL_FRAMES - 1,
+                Math.floor(self.progress * (TOTAL_FRAMES - 1))
+              );
+              drawFrame(currentFrame);
 
-            // Update phase tag
-            if (telemetryTagRef.current) {
-              if (self.progress < 0.35) {
-                telemetryTagRef.current.innerText = 'PHASE 1: CT VECTOR DEPLOYMENT // LEFT BRIEFING';
-              } else if (self.progress < 0.70) {
-                telemetryTagRef.current.innerText = 'PHASE 2: T RAPTOR MOBILIZATION // RIGHT BRIEFING';
-              } else {
-                telemetryTagRef.current.innerText = 'PHASE 3: CS2 SHOWDOWN // CENTER ARENA';
+              // Update bottom telemetry bar
+              if (scrubBarRef.current) {
+                scrubBarRef.current.style.width = `${Math.round(self.progress * 100)}%`;
               }
-            }
+
+              // Update phase tag
+              if (telemetryTagRef.current) {
+                if (self.progress < 0.35) {
+                  telemetryTagRef.current.innerText = 'PHASE 1: CT VECTOR DEPLOYMENT // LEFT BRIEFING';
+                } else if (self.progress < 0.70) {
+                  telemetryTagRef.current.innerText = 'PHASE 2: T RAPTOR MOBILIZATION // RIGHT BRIEFING';
+                } else {
+                  telemetryTagRef.current.innerText = 'PHASE 3: CS2 SHOWDOWN // CENTER ARENA';
+                }
+              }
+            },
           },
-        },
-      });
+        });
 
-      // Scrub frames 0 -> 198 across virtual duration 10
-      scrubTimeline.to(
-        frameObj,
-        {
-          frame: TOTAL_FRAMES - 1,
-          ease: 'none',
-          duration: 10,
-        },
-        0
-      );
+        // Scrub frames 0 -> 198 across virtual duration 10
+        scrubTimeline.to(
+          frameObj,
+          {
+            frame: TOTAL_FRAMES - 1,
+            ease: 'none',
+            duration: 10,
+          },
+          0
+        );
 
-      scrubTimeline.fromTo(
-        slideLeftRef.current,
-        {
-          x: -60,
-          opacity: 0,
-          scale: 0.94,
-          filter: 'blur(8px)',
-        },
-        {
-          x: 0,
-          opacity: 1,
-          scale: 1,
-          filter: 'blur(0px)',
-          ease: 'power3.out',
-          duration: 1.5,
-        },
-        0.3
-      );
+        scrubTimeline.fromTo(
+          slideLeftRef.current,
+          {
+            x: isMobile ? -30 : -60,
+            opacity: 0,
+            scale: 0.94,
+            filter: 'blur(8px)',
+          },
+          {
+            x: 0,
+            opacity: 1,
+            scale: 1,
+            filter: 'blur(0px)',
+            ease: 'power3.out',
+            duration: 1.5,
+          },
+          0.3
+        );
 
-      scrubTimeline.to(
-        slideLeftRef.current,
-        {
-          x: -40,
-          opacity: 0,
-          scale: 0.96,
-          filter: 'blur(6px)',
-          ease: 'power2.in',
-          duration: 1.0,
-        },
-        3.0
-      );
+        scrubTimeline.to(
+          slideLeftRef.current,
+          {
+            x: isMobile ? -20 : -40,
+            opacity: 0,
+            scale: 0.96,
+            filter: 'blur(6px)',
+            ease: 'power2.in',
+            duration: 1.0,
+          },
+          3.0
+        );
 
-      scrubTimeline.fromTo(
-        slideRightRef.current,
-        {
-          x: 60,
-          opacity: 0,
-          scale: 0.94,
-          filter: 'blur(8px)',
-        },
-        {
-          x: 0,
-          opacity: 1,
-          scale: 1,
-          filter: 'blur(0px)',
-          ease: 'power3.out',
-          duration: 1.5,
-        },
-        3.8
-      );
+        scrubTimeline.fromTo(
+          slideRightRef.current,
+          {
+            x: isMobile ? 30 : 60,
+            opacity: 0,
+            scale: 0.94,
+            filter: 'blur(8px)',
+          },
+          {
+            x: 0,
+            opacity: 1,
+            scale: 1,
+            filter: 'blur(0px)',
+            ease: 'power3.out',
+            duration: 1.5,
+          },
+          3.8
+        );
 
-      scrubTimeline.to(
-        slideRightRef.current,
-        {
-          x: 40,
-          opacity: 0,
-          scale: 0.96,
-          filter: 'blur(6px)',
-          ease: 'power2.in',
-          duration: 1.0,
-        },
-        6.5
-      );
+        scrubTimeline.to(
+          slideRightRef.current,
+          {
+            x: isMobile ? 20 : 40,
+            opacity: 0,
+            scale: 0.96,
+            filter: 'blur(6px)',
+            ease: 'power2.in',
+            duration: 1.0,
+          },
+          6.5
+        );
 
-      
-      scrubTimeline.fromTo(
-        slideCenterRef.current,
-        {
-          y: 50,
-          opacity: 0,
-          scale: 0.92,
-          filter: 'blur(10px)',
-        },
-        {
-          y: 0,
-          opacity: 1,
-          scale: 1,
-          filter: 'blur(0px)',
-          ease: 'power3.out',
-          duration: 1.8,
-        },
-        7.2
-      );
-    }, containerRef);
+        scrubTimeline.fromTo(
+          slideCenterRef.current,
+          {
+            y: isMobile ? 30 : 50,
+            opacity: 0,
+            scale: 0.92,
+            filter: 'blur(10px)',
+          },
+          {
+            y: 0,
+            opacity: 1,
+            scale: 1,
+            filter: 'blur(0px)',
+            ease: 'power3.out',
+            duration: 1.8,
+          },
+          7.2
+        );
+      }
+    );
 
-    return () => ctx.revert();
+    return () => mm.revert();
   }, [drawFrame]);
 
   return (
@@ -312,7 +325,7 @@ export default function CinematicShowcase() {
 
         <div
           ref={slideLeftRef}
-          className="absolute left-4 sm:left-8 lg:left-12 max-w-lg lg:max-w-xl w-full opacity-0 pointer-events-auto will-change-transform"
+          className="absolute left-3 right-3 sm:left-8 sm:right-auto lg:left-12 max-w-lg lg:max-w-xl opacity-0 pointer-events-auto will-change-transform"
         >
           <div className="relative p-6 sm:p-8 bg-card/90 border border-olive/50 backdrop-blur-2xl rounded-md shadow-[0_4px_30px_rgba(0,0,0,0.8)]">
             <span className="absolute top-2 left-2 w-3.5 h-3.5 border-t-2 border-l-2 border-olive" />
@@ -381,7 +394,7 @@ export default function CinematicShowcase() {
 
         <div
           ref={slideRightRef}
-          className="absolute right-4 sm:right-8 lg:right-12 max-w-lg lg:max-w-xl w-full ml-auto opacity-0 pointer-events-auto will-change-transform"
+          className="absolute left-3 right-3 sm:left-auto sm:right-8 lg:right-12 max-w-lg lg:max-w-xl opacity-0 pointer-events-auto will-change-transform"
         >
           <div className="relative p-6 sm:p-8 bg-card/90 border border-gunmetal backdrop-blur-2xl rounded-md shadow-[0_4px_30px_rgba(0,0,0,0.8)]">
             <span className="absolute top-2 left-2 w-3.5 h-3.5 border-t-2 border-l-2 border-sand" />
@@ -455,7 +468,7 @@ export default function CinematicShowcase() {
 
         <div
           ref={slideCenterRef}
-          className="absolute left-1/2 -translate-x-1/2 max-w-xl sm:max-w-2xl w-full px-4 text-center opacity-0 pointer-events-auto will-change-transform"
+          className="absolute left-1/2 -translate-x-1/2 w-[94vw] max-w-xl sm:max-w-2xl px-2 sm:px-4 text-center opacity-0 pointer-events-auto will-change-transform"
         >
           <div className="relative p-6 sm:p-8 bg-card/95 border border-sand/60 backdrop-blur-2xl rounded-md shadow-[0_4px_40px_rgba(0,0,0,0.85)]">
             <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 bg-sand text-military-black font-mono text-[10px] font-black uppercase tracking-widest clip-tactical shadow-lg flex items-center gap-1.5">

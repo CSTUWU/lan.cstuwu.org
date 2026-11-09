@@ -98,8 +98,13 @@ export default function Hero() {
     const rect = canvas.getBoundingClientRect();
     const width = rect.width || (typeof window !== 'undefined' ? window.innerWidth : 1920);
     const height = rect.height || (typeof window !== 'undefined' ? window.innerHeight : 1080);
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
+    const targetWidth = Math.round(width * dpr);
+    const targetHeight = Math.round(height * dpr);
+
+    if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+    }
 
     drawFrame(currentFrameRef.current);
   }, [drawFrame]);
@@ -147,7 +152,7 @@ export default function Hero() {
     };
   }, [handleResize, drawFrame]);
 
-  // 5. GSAP ScrollTrigger Sequence & Choreography
+  // 5. GSAP ScrollTrigger Sequence & Choreography with Mobile Responsiveness
   useEffect(() => {
     if (!containerRef.current || !canvasRef.current) return;
 
@@ -161,166 +166,176 @@ export default function Hero() {
       return;
     }
 
-    const ctx = gsap.context(() => {
-      const frameObj = { frame: 0 };
-      let lastNotifiedVisible: boolean | null = null;
+    const mm = gsap.matchMedia();
 
-      const scrubTimeline = gsap.timeline({
-        scrollTrigger: {
-          trigger: containerRef.current,
-          start: 'top top',
-          end: '+=1800',
-          pin: true,
-          scrub: 0.35,
-          anticipatePin: 1,
-          onUpdate: (self) => {
-            const currentFrame = Math.min(
-              TOTAL_FRAMES - 1,
-              Math.floor(self.progress * (TOTAL_FRAMES - 1))
-            );
-            drawFrame(currentFrame);
+    mm.add(
+      {
+        isDesktop: '(min-width: 768px)',
+        isMobile: '(max-width: 767px)',
+      },
+      (context) => {
+        const { isMobile } = context.conditions as { isDesktop: boolean; isMobile: boolean };
+        const frameObj = { frame: 0 };
+        let lastNotifiedVisible: boolean | null = null;
 
-            // Update scrub HUD telemetry
-            if (scrubBarRef.current) {
-              scrubBarRef.current.style.width = `${Math.round(self.progress * 100)}%`;
-            }
-            if (progressTextRef.current) {
-              const sec = (self.progress * 9.96).toFixed(1);
-              progressTextRef.current.innerText = `00:0${sec}s // ${(self.progress * 100).toFixed(0)}%`;
-            }
-
-            const isTextVisible = self.progress >= 0.40;
-            if (lastNotifiedVisible !== isTextVisible) {
-              lastNotifiedVisible = isTextVisible;
-              window.dispatchEvent(
-                new CustomEvent('cst_hero_text_visible', { detail: { visible: isTextVisible } })
+        const scrubTimeline = gsap.timeline({
+          scrollTrigger: {
+            trigger: containerRef.current,
+            start: 'top top',
+            end: isMobile ? '+=900' : '+=1600',
+            pin: true,
+            scrub: isMobile ? 0.25 : 0.35,
+            anticipatePin: 1,
+            onUpdate: (self) => {
+              const currentFrame = Math.min(
+                TOTAL_FRAMES - 1,
+                Math.floor(self.progress * (TOTAL_FRAMES - 1))
               );
-            }
+              drawFrame(currentFrame);
+
+              // Update scrub HUD telemetry
+              if (scrubBarRef.current) {
+                scrubBarRef.current.style.width = `${Math.round(self.progress * 100)}%`;
+              }
+              if (progressTextRef.current) {
+                const sec = (self.progress * 9.96).toFixed(1);
+                progressTextRef.current.innerText = `00:0${sec}s // ${(self.progress * 100).toFixed(0)}%`;
+              }
+
+              const isTextVisible = self.progress >= (isMobile ? 0.32 : 0.40);
+              if (lastNotifiedVisible !== isTextVisible) {
+                lastNotifiedVisible = isTextVisible;
+                window.dispatchEvent(
+                  new CustomEvent('cst_hero_text_visible', { detail: { visible: isTextVisible } })
+                );
+              }
+            },
           },
-        },
-      });
+        });
 
-      scrubTimeline.to(
-        frameObj,
-        {
-          frame: TOTAL_FRAMES - 1,
-          ease: 'none',
-          duration: 10,
-        },
-        0
-      );
-
-      scrubTimeline.to(
-        [scrollHintRef.current, topStandoffBadgeRef.current],
-        {
-          opacity: 0,
-          y: -20,
-          duration: 1.4,
-          ease: 'power2.in',
-        },
-        0.4
-      );
-
-      scrubTimeline.fromTo(
-        contentWrapperRef.current,
-        {
-          opacity: 0,
-          scale: 0.9,
-          y: 35,
-          filter: 'blur(8px)',
-        },
-        {
-          opacity: 1,
-          scale: 1,
-          y: 0,
-          filter: 'blur(0px)',
-          ease: 'power3.out',
-          duration: 2.4,
-          onStart: () => {
-            if (contentWrapperRef.current) {
-              contentWrapperRef.current.style.pointerEvents = 'auto';
-            }
+        scrubTimeline.to(
+          frameObj,
+          {
+            frame: TOTAL_FRAMES - 1,
+            ease: 'none',
+            duration: 10,
           },
-          onReverseComplete: () => {
-            if (contentWrapperRef.current) {
-              contentWrapperRef.current.style.pointerEvents = 'none';
-            }
+          0
+        );
+
+        scrubTimeline.to(
+          [scrollHintRef.current, topStandoffBadgeRef.current],
+          {
+            opacity: 0,
+            y: -20,
+            duration: 1.4,
+            ease: 'power2.in',
           },
-        },
-        3.8
-      );
+          0.4
+        );
 
-      scrubTimeline.fromTo(
-        countdownBlockRef.current,
-        {
-          y: 25,
-          opacity: 0,
-          scale: 0.95,
-        },
-        {
-          y: 0,
-          opacity: 1,
-          scale: 1,
-          duration: 2.0,
-          ease: 'back.out(1.4)',
-        },
-        4.6
-      );
+        scrubTimeline.fromTo(
+          contentWrapperRef.current,
+          {
+            opacity: 0,
+            scale: isMobile ? 0.94 : 0.90,
+            y: isMobile ? 20 : 35,
+            filter: 'blur(8px)',
+          },
+          {
+            opacity: 1,
+            scale: 1,
+            y: 0,
+            filter: 'blur(0px)',
+            ease: 'power3.out',
+            duration: 2.4,
+            onStart: () => {
+              if (contentWrapperRef.current) {
+                contentWrapperRef.current.style.pointerEvents = 'auto';
+              }
+            },
+            onReverseComplete: () => {
+              if (contentWrapperRef.current) {
+                contentWrapperRef.current.style.pointerEvents = 'none';
+              }
+            },
+          },
+          isMobile ? 3.2 : 3.8
+        );
 
-      scrubTimeline.fromTo(
-        ctaBlockRef.current,
-        {
-          y: 20,
-          opacity: 0,
-          scale: 0.95,
-        },
-        {
-          y: 0,
-          opacity: 1,
-          scale: 1,
-          duration: 1.6,
-          ease: 'power3.out',
-        },
-        5.2
-      );
+        scrubTimeline.fromTo(
+          countdownBlockRef.current,
+          {
+            y: 20,
+            opacity: 0,
+            scale: 0.95,
+          },
+          {
+            y: 0,
+            opacity: 1,
+            scale: 1,
+            duration: 2.0,
+            ease: 'back.out(1.4)',
+          },
+          isMobile ? 4.0 : 4.6
+        );
 
-      const enterTl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+        scrubTimeline.fromTo(
+          ctaBlockRef.current,
+          {
+            y: 15,
+            opacity: 0,
+            scale: 0.95,
+          },
+          {
+            y: 0,
+            opacity: 1,
+            scale: 1,
+            duration: 1.6,
+            ease: 'power3.out',
+          },
+          isMobile ? 4.6 : 5.2
+        );
 
-      enterTl.fromTo(
-        frameRef.current,
-        { opacity: 0, scale: 0.98 },
-        { opacity: 1, scale: 1, duration: 1.2 }
-      );
+        const enterTl = gsap.timeline({ defaults: { ease: 'power3.out' } });
 
-      enterTl.fromTo(
-        hudRef.current?.children || [],
-        { opacity: 0, y: -10 },
-        { opacity: 1, y: 0, stagger: 0.08, duration: 0.7 },
-        '-=0.8'
-      );
+        enterTl.fromTo(
+          frameRef.current,
+          { opacity: 0, scale: 0.98 },
+          { opacity: 1, scale: 1, duration: 1.2 }
+        );
 
-      enterTl.fromTo(
-        topStandoffBadgeRef.current,
-        { opacity: 0, y: -15 },
-        { opacity: 1, y: 0, duration: 0.8 },
-        '-=0.6'
-      );
+        enterTl.fromTo(
+          hudRef.current?.children || [],
+          { opacity: 0, y: -10 },
+          { opacity: 1, y: 0, stagger: 0.08, duration: 0.7 },
+          '-=0.8'
+        );
 
-      enterTl.fromTo(
-        scrollHintRef.current,
-        { opacity: 0, y: 25, scale: 0.95 },
-        { opacity: 1, y: 0, scale: 1, duration: 0.9 },
-        '-=0.5'
-      );
-    }, containerRef);
+        enterTl.fromTo(
+          topStandoffBadgeRef.current,
+          { opacity: 0, y: -15 },
+          { opacity: 1, y: 0, duration: 0.8 },
+          '-=0.6'
+        );
 
-    return () => ctx.revert();
+        enterTl.fromTo(
+          scrollHintRef.current,
+          { opacity: 0, y: 25, scale: 0.95 },
+          { opacity: 1, y: 0, scale: 1, duration: 0.9 },
+          '-=0.5'
+        );
+      }
+    );
+
+    return () => mm.revert();
   }, [drawFrame]);
 
   const handleScrollToContent = () => {
     if (typeof window !== 'undefined') {
+      const isMobile = window.innerWidth < 768;
       window.scrollTo({
-        top: 1550,
+        top: isMobile ? 950 : 1650,
         behavior: 'smooth',
       });
     }
@@ -406,15 +421,15 @@ export default function Hero() {
 
       <div
         ref={topStandoffBadgeRef}
-        className="absolute top-8 sm:top-10 left-1/2 -translate-x-1/2 z-20 pointer-events-none"
+        className="absolute top-20 sm:top-24 lg:top-10 left-1/2 -translate-x-1/2 z-20 pointer-events-none px-2 w-max max-w-[95vw] text-center"
       >
-        <div className="inline-flex items-center gap-2.5 px-4 py-1.5 bg-military-black/90 border border-gunmetal clip-badge backdrop-blur-md shadow-2xl">
-          <Shield className="w-4 h-4 text-sand shrink-0" />
-          <span className="text-xs sm:text-sm font-display font-black text-tacticalWhite tracking-wider uppercase">
+        <div className="inline-flex items-center gap-2.5 px-3 sm:px-4 py-1.5 bg-military-black/90 border border-gunmetal clip-badge backdrop-blur-md shadow-2xl">
+          <Shield className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-sand shrink-0" />
+          <span className="text-[11px] sm:text-sm font-display font-black text-tacticalWhite tracking-wider uppercase">
             CST LAN CHALLENGE 2026
           </span>
           <span className="text-gunmetal font-mono text-[10px]">|</span>
-          <span className="text-[10px] sm:text-xs font-mono text-sand font-bold tracking-wider">
+          <span className="text-[9px] sm:text-xs font-mono text-sand font-bold tracking-wider">
             COD4 MODERN WARFARE
           </span>
         </div>
@@ -423,30 +438,30 @@ export default function Hero() {
       <div
         ref={scrollHintRef}
         onClick={handleScrollToContent}
-        className="absolute bottom-10 sm:bottom-14 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-3 text-center cursor-pointer group"
+        className="absolute bottom-6 sm:bottom-10 lg:bottom-14 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-2 sm:gap-3 text-center cursor-pointer group max-w-[95vw] px-2"
       >
-        <div className="relative px-5 sm:px-7 py-3 bg-military-black/95 border border-olive/50 backdrop-blur-xl rounded-md shadow-[0_4px_24px_rgba(0,0,0,0.8)] transition-all duration-300 group-hover:border-sand group-hover:scale-105 flex items-center gap-3.5">
+        <div className="relative px-4 sm:px-7 py-2.5 sm:py-3 bg-military-black/95 border border-olive/50 backdrop-blur-xl rounded-md shadow-[0_4px_24px_rgba(0,0,0,0.8)] transition-all duration-300 group-hover:border-sand group-hover:scale-105 flex items-center gap-3 sm:gap-3.5">
           <span className="absolute -top-1 -left-1 w-2.5 h-2.5 border-t-2 border-l-2 border-olive" />
           <span className="absolute -top-1 -right-1 w-2.5 h-2.5 border-t-2 border-r-2 border-sand" />
           <span className="absolute -bottom-1 -left-1 w-2.5 h-2.5 border-b-2 border-l-2 border-olive" />
           <span className="absolute -bottom-1 -right-1 w-2.5 h-2.5 border-b-2 border-r-2 border-sand" />
 
-          <div className="w-5 h-8 rounded-full border-2 border-olive-light/80 flex items-start justify-center p-1 bg-surface/80 shrink-0">
-            <div className="w-1.5 h-2.5 rounded-full bg-sand animate-bounce" />
+          <div className="w-4 sm:w-5 h-7 sm:h-8 rounded-full border-2 border-olive-light/80 flex items-start justify-center p-1 bg-surface/80 shrink-0">
+            <div className="w-1.5 h-2 rounded-full bg-sand animate-bounce" />
           </div>
 
           <div className="text-left font-mono">
-            <div className="text-xs sm:text-sm font-black tracking-widest uppercase text-tacticalWhite flex items-center gap-1.5 group-hover:text-sand transition-colors">
+            <div className="text-[11px] sm:text-sm font-black tracking-widest uppercase text-tacticalWhite flex items-center gap-1.5 group-hover:text-sand transition-colors">
               <span>SCROLL DOWN TO REVEAL</span>
-              <ChevronDown className="w-4 h-4 text-sand animate-bounce" />
+              <ChevronDown className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-sand animate-bounce" />
             </div>
-            <p className="text-[10px] text-mutedText tracking-wide mt-0.5">
+            <p className="text-[9px] sm:text-[10px] text-mutedText tracking-wide mt-0.5">
               Engage tactical reconnaissance &amp; unlock intel
             </p>
           </div>
         </div>
 
-        <span className="text-[10px] font-mono text-sand/80 tracking-widest uppercase flex items-center gap-1.5">
+        <span className="text-[9px] sm:text-[10px] font-mono text-sand/80 tracking-widest uppercase flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-sand animate-ping" />
           SCROLL WHEEL • SWIPE • OR CLICK TO ENTER
         </span>
@@ -454,7 +469,7 @@ export default function Hero() {
 
       <div
         ref={contentWrapperRef}
-        className="relative z-20 h-full max-w-4xl w-full mx-auto px-4 sm:px-6 flex flex-col items-center justify-center text-center pt-24 sm:pt-28 lg:pt-32 pb-8 opacity-0 pointer-events-none will-change-transform"
+        className="relative z-20 h-full max-w-4xl w-full mx-auto px-4 sm:px-6 flex flex-col items-center justify-center text-center pt-20 sm:pt-28 lg:pt-32 pb-8 opacity-0 pointer-events-none will-change-transform"
       >
         <div className="inline-flex items-center gap-2 px-3 py-1 bg-surface/90 border border-gunmetal text-[11px] sm:text-xs font-mono text-sand uppercase tracking-wider mb-3 backdrop-blur-md shadow-xl">
           <Shield className="w-3.5 h-3.5 text-sand shrink-0" />

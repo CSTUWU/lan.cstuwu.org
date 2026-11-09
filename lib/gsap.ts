@@ -5,6 +5,12 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
+  
+  // Prevent mobile address bar show/hide from triggering heavy recalculations
+  ScrollTrigger.config({
+    ignoreMobileResize: true,
+  });
+
   // Default ease and config
   gsap.defaults({
     ease: 'power3.out',
@@ -13,4 +19,3 @@ if (typeof window !== 'undefined') {
 }
 
 export { gsap, ScrollTrigger };
-

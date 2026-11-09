@@ -9,16 +9,22 @@ interface SmoothScrollProps {
 
 export default function SmoothScroll({ children }: SmoothScrollProps) {
   useEffect(() => {
-    // Ensure GSAP ScrollTrigger updates on window resize or load
+    let lastWidth = typeof window !== 'undefined' ? window.innerWidth : 0;
+
     const handleResize = () => {
-      ScrollTrigger.refresh();
+      // Avoid triggering refresh if only height changed (e.g. mobile address bar)
+      if (typeof window !== 'undefined' && window.innerWidth !== lastWidth) {
+        lastWidth = window.innerWidth;
+        ScrollTrigger.refresh();
+      }
     };
 
-    window.addEventListener('resize', handleResize);
+    window.addEventListener('resize', handleResize, { passive: true });
+
     // Refresh ScrollTrigger once DOM and initial assets are ready
     const timer = setTimeout(() => {
       ScrollTrigger.refresh();
-    }, 150);
+    }, 200);
 
     return () => {
       window.removeEventListener('resize', handleResize);
@@ -28,4 +34,3 @@ export default function SmoothScroll({ children }: SmoothScrollProps) {
 
   return <>{children}</>;
 }
-

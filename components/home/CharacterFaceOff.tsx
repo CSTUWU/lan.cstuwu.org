@@ -57,6 +57,7 @@ export default function CharacterFaceOff() {
 
     const handleResize = () => {
       if (!canvas) return;
+      if (width === window.innerWidth && Math.abs(height - window.innerHeight) < 80) return;
       width = canvas.width = window.innerWidth;
       height = canvas.height = window.innerHeight;
     };
@@ -122,212 +123,271 @@ export default function CharacterFaceOff() {
     };
   }, []);
 
-  // 2. Master GSAP ScrollTrigger Animation
+  // 2. Master GSAP ScrollTrigger Animation with Mobile Responsiveness
   useEffect(() => {
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (prefersReducedMotion) return;
 
-    const ctx = gsap.context(() => {
-      const masterTl = gsap.timeline({
-        scrollTrigger: {
-          trigger: containerRef.current,
-          start: 'top top',
-          end: '+=420%',
-          pin: true,
-          scrub: 1,
-          onUpdate: (self) => {
-            const prog = self.progress;
-            setScrollPercent(Math.round(prog * 100));
+    const mm = gsap.matchMedia();
 
-            if (progressBarRef.current) {
-              progressBarRef.current.style.width = `${prog * 100}%`;
-            }
+    mm.add(
+      {
+        isDesktop: '(min-width: 768px)',
+        isMobile: '(max-width: 767px)',
+      },
+      (context) => {
+        const { isMobile } = context.conditions as { isDesktop: boolean; isMobile: boolean };
+        const endDistance = isMobile ? '+=230%' : '+=380%';
+        const s1Offset = isMobile ? 32 : 48;
+        const s2Offset = isMobile ? 18 : 24;
+        const s3Scale = isMobile ? 1.15 : 1.4;
+        const s3Offset = isMobile ? 10 : 15;
+        const s4Offset = isMobile ? 26 : 38;
 
-            if (telemetryStatusRef.current) {
-              if (prog < 0.25) {
-                telemetryStatusRef.current.innerText = 'CONVERGENCE: VECTOR & RAPTOR INCOMING';
-                telemetryStatusRef.current.className = 'text-cyan font-bold';
-              } else if (prog < 0.55) {
-                telemetryStatusRef.current.innerText = 'PROXIMITY ALERT: FACE-TO-FACE ENGAGEMENT';
-                telemetryStatusRef.current.className = 'text-white font-bold tracking-wider';
-              } else if (prog < 0.82) {
-                telemetryStatusRef.current.innerText = 'CRITICAL PROXIMITY: EYE-CONTACT CLASH FOCUS';
-                telemetryStatusRef.current.className = 'text-orange font-bold animate-pulse';
-              } else {
-                telemetryStatusRef.current.innerText = 'MAXIMUM COLLISION: TOURNAMENT SHOWDOWN LOCK-IN';
-                telemetryStatusRef.current.className = 'text-emerald-400 font-bold';
+        const masterTl = gsap.timeline({
+          scrollTrigger: {
+            trigger: containerRef.current,
+            start: 'top top',
+            end: endDistance,
+            pin: true,
+            scrub: isMobile ? 0.8 : 1,
+            onUpdate: (self) => {
+              const prog = self.progress;
+              setScrollPercent(Math.round(prog * 100));
+
+              if (progressBarRef.current) {
+                progressBarRef.current.style.width = `${prog * 100}%`;
               }
-            }
+
+              if (telemetryStatusRef.current) {
+                if (prog < 0.25) {
+                  telemetryStatusRef.current.innerText = 'CONVERGENCE: VECTOR & RAPTOR INCOMING';
+                  telemetryStatusRef.current.className = 'text-cyan font-bold';
+                } else if (prog < 0.55) {
+                  telemetryStatusRef.current.innerText = 'PROXIMITY ALERT: FACE-TO-FACE ENGAGEMENT';
+                  telemetryStatusRef.current.className = 'text-white font-bold tracking-wider';
+                } else if (prog < 0.82) {
+                  telemetryStatusRef.current.innerText = 'CRITICAL PROXIMITY: EYE-CONTACT CLASH FOCUS';
+                  telemetryStatusRef.current.className = 'text-orange font-bold animate-pulse';
+                } else {
+                  telemetryStatusRef.current.innerText = 'MAXIMUM COLLISION: TOURNAMENT SHOWDOWN LOCK-IN';
+                  telemetryStatusRef.current.className = 'text-emerald-400 font-bold';
+                }
+              }
+            },
           },
-        },
-      });
+        });
 
-      // INITIAL STAGE POSITIONS
-      gsap.set(vectorWrapperRef.current, {
-        xPercent: -130,
-        rotationY: 18,
-        scale: 0.88,
-        opacity: 0,
-        filter: 'blur(10px) brightness(0.4)',
-        transformPerspective: 1200,
-        transformOrigin: 'right center',
-      });
+        // INITIAL STAGE POSITIONS
+        gsap.set(vectorWrapperRef.current, {
+          xPercent: isMobile ? -100 : -130,
+          rotationY: isMobile ? 12 : 18,
+          scale: 0.88,
+          opacity: 0,
+          filter: 'blur(10px) brightness(0.4)',
+          transformPerspective: 1200,
+          transformOrigin: 'right center',
+        });
 
-      gsap.set(raptorWrapperRef.current, {
-        xPercent: 130,
-        rotationY: -18,
-        scale: 0.88,
-        opacity: 0,
-        filter: 'blur(10px) brightness(0.4)',
-        transformPerspective: 1200,
-        transformOrigin: 'left center',
-      });
+        gsap.set(raptorWrapperRef.current, {
+          xPercent: isMobile ? 100 : 130,
+          rotationY: isMobile ? -12 : -18,
+          scale: 0.88,
+          opacity: 0,
+          filter: 'blur(10px) brightness(0.4)',
+          transformPerspective: 1200,
+          transformOrigin: 'left center',
+        });
 
-      gsap.set(energyCollisionRef.current, { scaleY: 0, opacity: 0 });
-      gsap.set(shockwaveRef.current, { scale: 0, opacity: 0 });
-      gsap.set(confrontationTextRef.current, { opacity: 0, scale: 0.8, y: 30 });
-      gsap.set(finalCalloutRef.current, { opacity: 0, y: 60, scale: 0.95 });
-      gsap.set(vectorGazeLightRef.current, { opacity: 0, scale: 0.5 });
-      gsap.set(raptorGazeLightRef.current, { opacity: 0, scale: 0.5 });
+        gsap.set(energyCollisionRef.current, { scaleY: 0, opacity: 0 });
+        gsap.set(shockwaveRef.current, { scale: 0, opacity: 0 });
+        gsap.set(confrontationTextRef.current, { opacity: 0, scale: 0.8, y: 30 });
+        gsap.set(finalCalloutRef.current, { opacity: 0, y: 60, scale: 0.95 });
+        gsap.set(vectorGazeLightRef.current, { opacity: 0, scale: 0.5 });
+        gsap.set(raptorGazeLightRef.current, { opacity: 0, scale: 0.5 });
 
-      // SCENE 1: CINEMATIC ENTRANCE FROM LEFT & RIGHT (0% -> 25%)
-      masterTl
-        .to(vectorWrapperRef.current, {
-          xPercent: -48,
-          rotationY: 10,
-          scale: 0.98,
-          opacity: 1,
-          filter: 'blur(0px) brightness(1)',
-          duration: 2.2,
-          ease: 'power2.out',
-        })
-        .to(
-          raptorWrapperRef.current,
-          {
-            xPercent: 48,
-            rotationY: -10,
-            scale: 0.98,
+        // SCENE 1: CINEMATIC ENTRANCE FROM LEFT & RIGHT (0% -> 25%)
+        masterTl
+          .to(vectorWrapperRef.current, {
+            xPercent: -s1Offset,
+            rotationY: isMobile ? 6 : 10,
+            scale: isMobile ? 0.92 : 0.98,
             opacity: 1,
             filter: 'blur(0px) brightness(1)',
             duration: 2.2,
             ease: 'power2.out',
-          },
-          '<0.1'
-        );
+          })
+          .to(
+            raptorWrapperRef.current,
+            {
+              xPercent: s1Offset,
+              rotationY: isMobile ? -6 : -10,
+              scale: isMobile ? 0.92 : 0.98,
+              opacity: 1,
+              filter: 'blur(0px) brightness(1)',
+              duration: 2.2,
+              ease: 'power2.out',
+            },
+            '<0.1'
+          );
 
-      // SCENE 2: MOVING CLOSER & FACE-TO-FACE LOCK (25% -> 55%)
-      masterTl
-        .to(vectorWrapperRef.current, {
-          xPercent: -24,
-          rotationY: 5,
-          scale: 1.05,
-          duration: 3,
-          ease: 'power1.inOut',
-        })
-        .to(
-          raptorWrapperRef.current,
-          {
-            xPercent: 24,
-            rotationY: -5,
-            scale: 1.05,
+        // SCENE 2: MOVING CLOSER & FACE-TO-FACE LOCK (25% -> 55%)
+        masterTl
+          .to(vectorWrapperRef.current, {
+            xPercent: -s2Offset,
+            rotationY: isMobile ? 3 : 5,
+            scale: isMobile ? 0.98 : 1.05,
             duration: 3,
             ease: 'power1.inOut',
-          },
-          '<0'
-        )
-        .to(vectorGazeLightRef.current, {
-          opacity: 1,
-          scale: 1.2,
-          duration: 1.5,
-          ease: 'power2.out',
-        }, '<1.0')
-        .to(raptorGazeLightRef.current, {
-          opacity: 1,
-          scale: 1.2,
-          duration: 1.5,
-          ease: 'power2.out',
-        }, '<0')
-        .to(energyCollisionRef.current, {
-          scaleY: 1,
-          opacity: 1,
-          duration: 1.8,
-          ease: 'power3.out',
-        }, '<0.5')
-        .to(confrontationTextRef.current, {
-          opacity: 1,
-          scale: 1,
-          y: 0,
-          duration: 2,
-          ease: 'back.out(1.2)',
-        }, '<0.2');
+          })
+          .to(
+            raptorWrapperRef.current,
+            {
+              xPercent: s2Offset,
+              rotationY: isMobile ? -3 : -5,
+              scale: isMobile ? 0.98 : 1.05,
+              duration: 3,
+              ease: 'power1.inOut',
+            },
+            '<0'
+          )
+          .to(
+            vectorGazeLightRef.current,
+            {
+              opacity: 1,
+              scale: isMobile ? 1.0 : 1.2,
+              duration: 1.5,
+              ease: 'power2.out',
+            },
+            '<1.0'
+          )
+          .to(
+            raptorGazeLightRef.current,
+            {
+              opacity: 1,
+              scale: isMobile ? 1.0 : 1.2,
+              duration: 1.5,
+              ease: 'power2.out',
+            },
+            '<0'
+          )
+          .to(
+            energyCollisionRef.current,
+            {
+              scaleY: 1,
+              opacity: 1,
+              duration: 1.8,
+              ease: 'power3.out',
+            },
+            '<0.5'
+          )
+          .to(
+            confrontationTextRef.current,
+            {
+              opacity: 1,
+              scale: 1,
+              y: 0,
+              duration: 2,
+              ease: 'back.out(1.2)',
+            },
+            '<0.2'
+          );
 
-      // SCENE 3: CAMERA PUSH-IN / FACE CLOSE-UP ZOOM (55% -> 80%)
-      masterTl
-        .to(cameraRigRef.current, {
-          scale: 1.4,
-          y: -40,
-          duration: 3.5,
-          ease: 'power2.inOut',
-        })
-        .to(vectorWrapperRef.current, {
-          xPercent: -15,
-          duration: 3.5,
-          ease: 'power2.inOut',
-        }, '<0')
-        .to(raptorWrapperRef.current, {
-          xPercent: 15,
-          duration: 3.5,
-          ease: 'power2.inOut',
-        }, '<0')
-        .to(shockwaveRef.current, {
-          scale: 2.2,
-          opacity: 0.8,
-          duration: 2,
-          ease: 'power2.out',
-        }, '<1.0')
-        .to(shockwaveRef.current, {
-          opacity: 0,
-          duration: 1.5,
-        });
+        // SCENE 3: CAMERA PUSH-IN / FACE CLOSE-UP ZOOM (55% -> 80%)
+        masterTl
+          .to(cameraRigRef.current, {
+            scale: s3Scale,
+            y: isMobile ? -20 : -40,
+            duration: 3.5,
+            ease: 'power2.inOut',
+          })
+          .to(
+            vectorWrapperRef.current,
+            {
+              xPercent: -s3Offset,
+              duration: 3.5,
+              ease: 'power2.inOut',
+            },
+            '<0'
+          )
+          .to(
+            raptorWrapperRef.current,
+            {
+              xPercent: s3Offset,
+              duration: 3.5,
+              ease: 'power2.inOut',
+            },
+            '<0'
+          )
+          .to(
+            shockwaveRef.current,
+            {
+              scale: isMobile ? 1.5 : 2.2,
+              opacity: 0.8,
+              duration: 2,
+              ease: 'power2.out',
+            },
+            '<1.0'
+          )
+          .to(shockwaveRef.current, {
+            opacity: 0,
+            duration: 1.5,
+          });
 
-      // SCENE 4: CLIMAX & CALL TO ARMS ENLISTMENT (80% -> 100%)
-      masterTl
-        .to(cameraRigRef.current, {
-          scale: 1.0,
-          y: 0,
-          duration: 2.5,
-          ease: 'power3.out',
-        })
-        .to(vectorWrapperRef.current, {
-          xPercent: -38,
-          rotationY: 12,
-          scale: 0.92,
-          duration: 2.5,
-          ease: 'power3.out',
-        }, '<0')
-        .to(raptorWrapperRef.current, {
-          xPercent: 38,
-          rotationY: -12,
-          scale: 0.92,
-          duration: 2.5,
-          ease: 'power3.out',
-        }, '<0')
-        .to(confrontationTextRef.current, {
-          opacity: 0,
-          scale: 0.9,
-          duration: 1.2,
-        }, '<0')
-        .to(finalCalloutRef.current, {
-          opacity: 1,
-          y: 0,
-          scale: 1,
-          duration: 2.2,
-          ease: 'back.out(1.1)',
-        }, '<0.8');
+        // SCENE 4: CLIMAX & CALL TO ARMS ENLISTMENT (80% -> 100%)
+        masterTl
+          .to(cameraRigRef.current, {
+            scale: 1.0,
+            y: 0,
+            duration: 2.5,
+            ease: 'power3.out',
+          })
+          .to(
+            vectorWrapperRef.current,
+            {
+              xPercent: -s4Offset,
+              rotationY: isMobile ? 8 : 12,
+              scale: isMobile ? 0.88 : 0.92,
+              duration: 2.5,
+              ease: 'power3.out',
+            },
+            '<0'
+          )
+          .to(
+            raptorWrapperRef.current,
+            {
+              xPercent: s4Offset,
+              rotationY: isMobile ? -8 : -12,
+              scale: isMobile ? 0.88 : 0.92,
+              duration: 2.5,
+              ease: 'power3.out',
+            },
+            '<0'
+          )
+          .to(
+            confrontationTextRef.current,
+            {
+              opacity: 0,
+              scale: 0.9,
+              duration: 1.2,
+            },
+            '<0'
+          )
+          .to(
+            finalCalloutRef.current,
+            {
+              opacity: 1,
+              y: 0,
+              scale: 1,
+              duration: 2.2,
+              ease: 'back.out(1.1)',
+            },
+            '<0.8'
+          );
+      }
+    );
 
-    }, containerRef);
-
-    return () => ctx.revert();
+    return () => mm.revert();
   }, []);
 
   return (
@@ -385,7 +445,7 @@ export default function CharacterFaceOff() {
         >
           <div
             ref={vectorWrapperRef}
-            className="absolute z-20 w-[280px] sm:w-[380px] md:w-[460px] lg:w-[520px] h-[400px] sm:h-[540px] md:h-[640px] lg:h-[720px] will-change-transform"
+            className="absolute z-20 w-[230px] sm:w-[340px] md:w-[440px] lg:w-[520px] h-[340px] sm:h-[480px] md:h-[600px] lg:h-[720px] will-change-transform"
           >
             <div className="relative w-full h-full rounded-lg overflow-hidden border-2 border-olive/70 shadow-[0_4px_35px_rgba(0,0,0,0.85)] bg-card/70 backdrop-blur-md">
               <span className="absolute top-3 left-3 w-5 h-5 border-t-2 border-l-2 border-olive z-30" />
@@ -445,7 +505,7 @@ export default function CharacterFaceOff() {
 
           <div
             ref={confrontationTextRef}
-            className="absolute z-30 max-w-md text-center px-6 py-6 bg-military-black/95 border border-gunmetal backdrop-blur-2xl shadow-[0_4px_40px_rgba(0,0,0,0.9)] will-change-transform"
+            className="absolute z-30 w-[92vw] max-w-md text-center px-4 sm:px-6 py-4 sm:py-6 bg-military-black/95 border border-gunmetal backdrop-blur-2xl shadow-[0_4px_40px_rgba(0,0,0,0.9)] will-change-transform"
           >
             <div className="inline-flex items-center gap-2 mb-2">
               <Swords className="w-4 h-4 text-sand" />
@@ -474,7 +534,7 @@ export default function CharacterFaceOff() {
 
           <div
             ref={raptorWrapperRef}
-            className="absolute z-20 w-[280px] sm:w-[380px] md:w-[460px] lg:w-[520px] h-[400px] sm:h-[540px] md:h-[640px] lg:h-[720px] will-change-transform"
+            className="absolute z-20 w-[230px] sm:w-[340px] md:w-[440px] lg:w-[520px] h-[340px] sm:h-[480px] md:h-[600px] lg:h-[720px] will-change-transform"
           >
             <div className="relative w-full h-full rounded-lg overflow-hidden border-2 border-gunmetal shadow-[0_4px_35px_rgba(0,0,0,0.85)] bg-card/70 backdrop-blur-md">
               <span className="absolute top-3 left-3 w-5 h-5 border-t-2 border-l-2 border-sand z-30" />
@@ -525,7 +585,7 @@ export default function CharacterFaceOff() {
 
         <div
           ref={finalCalloutRef}
-          className="absolute z-40 max-w-2xl text-center px-6 py-8 sm:py-10 bg-military-black/95 border-2 border-olive/50 backdrop-blur-2xl shadow-[0_4px_50px_rgba(0,0,0,0.95)] will-change-transform mx-4"
+          className="absolute z-40 w-[92vw] max-w-2xl text-center px-4 sm:px-6 py-6 sm:py-10 bg-military-black/95 border-2 border-olive/50 backdrop-blur-2xl shadow-[0_4px_50px_rgba(0,0,0,0.95)] will-change-transform mx-4"
         >
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-surface border border-gunmetal text-sand text-[10px] font-mono font-bold tracking-widest uppercase mb-3">
             <Sparkles className="w-3.5 h-3.5 text-sand" />
