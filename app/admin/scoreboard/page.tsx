@@ -45,7 +45,6 @@ import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 
 export default function AdminScoreboardPage() {
-  const [bracketFilter, setBracketFilter] = useState<'16-squad' | '8-squad' | 'all'>('16-squad');
   const [matches, setMatches] = useState<Match[]>([]);
   const [selectedMatchId, setSelectedMatchId] = useState<string>('');
   const [scoreA, setScoreA] = useState<number>(0);
@@ -56,17 +55,19 @@ export default function AdminScoreboardPage() {
   const [actionNotice, setActionNotice] = useState<string | null>(null);
   const [isTreePublished, setIsTreePublished] = useState<boolean>(() => isPlayoffTreePublished());
 
-  const getCombinedMatches = (filter: '16-squad' | '8-squad' | 'all') => {
-    const list8 = getStoredMatches();
-    const list16 = getStored16Matches();
-    if (filter === '16-squad') return list16;
-    if (filter === '8-squad') return list8;
-    return [...list16, ...list8];
+  const getCleanMatches = () => {
+    const list = getStoredMatches();
+    // Filter out dummy/sample placeholders so only real scheduled fixtures appear
+    return list.filter((m) => {
+      const isDummyA = (m.teamAName || '').startsWith('TBD (Slot') || (m.teamATag || '').startsWith('SLOT');
+      const isDummyB = (m.teamBName || '').startsWith('TBD (Slot') || (m.teamBTag || '').startsWith('SLOT');
+      return !(isDummyA && isDummyB);
+    });
   };
 
   const loadMatches = useCallback(async () => {
-    const combined = getCombinedMatches(bracketFilter);
-    setMatches(combined);
+    let clean = getCleanMatches();
+    setMatches(clean);
 
     try {
       const [resMatches, resTeams] = await Promise.all([
@@ -79,21 +80,20 @@ export default function AdminScoreboardPage() {
       }
 
       if (resMatches?.success && Array.isArray(resMatches.data)) {
-        const transformed = resMatches.data.map(transformBackendMatch);
-        if (bracketFilter === '8-squad') {
-          setMatches(transformed);
-          setStoredMatches(transformed);
-        } else if (bracketFilter === '16-squad') {
-          setMatches(getStored16Matches());
-        } else {
-          setMatches([...getStored16Matches(), ...transformed]);
-        }
+        const transformed = resMatches.data.map(transformBackendMatch).filter((m) => {
+          const isDummyA = (m.teamAName || '').startsWith('TBD (Slot') || (m.teamATag || '').startsWith('SLOT');
+          const isDummyB = (m.teamBName || '').startsWith('TBD (Slot') || (m.teamBTag || '').startsWith('SLOT');
+          return !(isDummyA && isDummyB);
+        });
+        setMatches(transformed);
+        setStoredMatches(transformed);
+        clean = transformed;
       }
     } catch (e) {
-      // Backend offline: continue with local list
+      // Backend offline: continue with clean list
     }
-    return combined;
-  }, [bracketFilter]);
+    return clean;
+  }, []);
 
   useEffect(() => {
     loadMatches().then((list) => {
@@ -106,11 +106,15 @@ export default function AdminScoreboardPage() {
         setScoreB(active.scoreB);
         setStatus(active.status);
         setMvp(active.mvp || '');
+      } else {
+        setSelectedMatchId('');
+        setScoreA(0);
+        setScoreB(0);
       }
     });
 
     const handleUpdate = () => {
-      const updated = getCombinedMatches(bracketFilter);
+      const updated = getCleanMatches();
       setMatches(updated);
       const cur = updated.find((m) => m.id === selectedMatchId);
       if (cur) {
@@ -129,7 +133,7 @@ export default function AdminScoreboardPage() {
       window.removeEventListener('cst_16_matches_updated', handleUpdate);
       window.removeEventListener('storage', handleUpdate);
     };
-  }, [bracketFilter, selectedMatchId, loadMatches]);
+  }, [selectedMatchId, loadMatches]);
 
   const handleDeleteSelectedMatch = async () => {
     const current = matches.find((m) => m.id === selectedMatchId);
@@ -294,7 +298,7 @@ export default function AdminScoreboardPage() {
       await api.admin.generatePlayoffs().catch(() => null);
     } catch (e) {}
 
-    const updated = getCombinedMatches(bracketFilter);
+    const updated = getCleanMatches();
     setMatches(updated);
     showNotice(
       `✓ Playoff Tree generated! 1st round fixtures linked. Match wins will automatically advance winners down the tree.`
@@ -381,43 +385,6 @@ export default function AdminScoreboardPage() {
             <span>{actionNotice}</span>
           </div>
         )}
-
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-mono text-mutedKhaki uppercase font-bold mr-1">BRACKET POOL:</span>
-          <button
-            type="button"
-            onClick={() => setBracketFilter('16-squad')}
-            className={`px-3 py-1.5 font-mono text-xs uppercase font-bold border transition-colors ${
-              bracketFilter === '16-squad'
-                ? 'bg-olive text-tacticalWhite border-olive'
-                : 'bg-card text-mutedKhaki border-gunmetal hover:text-tacticalWhite'
-            }`}
-          >
-            16-SQUAD MAJOR DUAL-WING
-          </button>
-          <button
-            type="button"
-            onClick={() => setBracketFilter('8-squad')}
-            className={`px-3 py-1.5 font-mono text-xs uppercase font-bold border transition-colors ${
-              bracketFilter === '8-squad'
-                ? 'bg-olive text-tacticalWhite border-olive'
-                : 'bg-card text-mutedKhaki border-gunmetal hover:text-tacticalWhite'
-            }`}
-          >
-            8-SQUAD UWU
-          </button>
-          <button
-            type="button"
-            onClick={() => setBracketFilter('all')}
-            className={`px-3 py-1.5 font-mono text-xs uppercase font-bold border transition-colors ${
-              bracketFilter === 'all'
-                ? 'bg-sand text-military-black border-sand font-black'
-                : 'bg-card text-mutedKhaki border-gunmetal hover:text-tacticalWhite'
-            }`}
-          >
-            ALL FIXTURES ({getCombinedMatches('all').length})
-          </button>
-        </div>
 
         <div className="bg-card/90 border border-gunmetal p-4">
           <label className="block text-xs font-mono text-mutedKhaki uppercase tracking-wider mb-2">

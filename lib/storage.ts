@@ -158,7 +158,9 @@ export const getStored16Matches = (): Match[] => {
           m.teamBName === 'Shadow Vipers' ||
           m.teamAName === 'Apex Hunters' ||
           m.teamAName === 'Alpha Protocol' ||
-          m.teamAName === 'Cyber Strikers'
+          m.teamAName === 'Cyber Strikers' ||
+          m.teamAName?.startsWith('TBD (Slot') ||
+          m.teamATag?.startsWith('SLOT')
       );
     if (hasLegacyMockTeams) {
       localStorage.removeItem(MATCHES_16_KEY);
@@ -622,7 +624,9 @@ export const getStoredMatches = (): Match[] => {
             m.teamAName === 'Kill_X' ||
             m.teamAName === 'turbo plus' ||
             (m.id === 'm-qf-1' && m.mvp?.includes('Kasun')) ||
-            m.id === 'match-1'
+            m.id === 'match-1' ||
+            m.teamAName?.startsWith('TBD (Slot') ||
+            m.teamATag?.startsWith('SLOT')
         );
       if (hasSampleMatches) {
         const realMatches = list.filter(
@@ -632,7 +636,9 @@ export const getStoredMatches = (): Match[] => {
             m.teamAName !== 'Ghost Reapers' &&
             m.teamAName !== 'SAMI x' &&
             m.teamAName !== 'Kill_X' &&
-            m.teamAName !== 'turbo plus'
+            m.teamAName !== 'turbo plus' &&
+            !m.teamAName?.startsWith('TBD (Slot') &&
+            !m.teamATag?.startsWith('SLOT')
         );
         localStorage.setItem(MATCHES_KEY, JSON.stringify(realMatches));
         list = realMatches;
