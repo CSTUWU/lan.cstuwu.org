@@ -1,5 +1,7 @@
-export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const rawApiUrl =
+  process.env.NEXT_PUBLIC_API_URL || 'https://lan-chalange-backend.vercel.app/api';
+const cleanUrl = rawApiUrl.replace(/\/+$/, '');
+export const API_BASE_URL = cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;
 
 export interface ApiResponseWrapper<T = any> {
   success: boolean;
