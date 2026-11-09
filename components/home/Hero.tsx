@@ -5,8 +5,9 @@ import Link from 'next/link';
 import { gsap, ScrollTrigger } from '@/lib/gsap';
 import { Shield, Crosshair, Trophy, Clock, ChevronDown, Activity, Mouse, Sparkles } from 'lucide-react';
 import Button from '../ui/Button';
-import { getStoredCountdown } from '@/lib/storage';
+import { getStoredCountdown, saveCountdown } from '@/lib/storage';
 import { api } from '@/lib/api';
+import { transformBackendSettings } from '@/lib/transformers';
 import { useRegistrationStatus } from '@/hooks/useRegistrationStatus';
 
 const TOTAL_FRAMES = 199;
@@ -38,15 +39,13 @@ export default function Hero() {
   });
 
   useEffect(() => {
-    api.public.getSettings().then(() => {}).catch(() => {});
-
     const updateCountdown = () => {
       const active = getStoredCountdown();
       const target = new Date(active.tournamentDate).getTime();
       const now = new Date().getTime();
       const diff = target - now;
 
-      if (diff <= 0) {
+      if (isNaN(diff) || diff <= 0) {
         setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
         return;
       }
@@ -60,8 +59,26 @@ export default function Hero() {
     };
 
     updateCountdown();
+
+    // Query live database directly on mount and synchronize countdown
+    api.public.getSettings().then((res) => {
+      if (res?.success && res.data) {
+        const transformed = transformBackendSettings(res.data);
+        saveCountdown(transformed);
+        updateCountdown();
+      }
+    }).catch(() => {});
+
+    const handleUpdate = () => {
+      updateCountdown();
+    };
+    window.addEventListener('cst_countdown_updated', handleUpdate);
+
     const interval = setInterval(updateCountdown, 1000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('cst_countdown_updated', handleUpdate);
+    };
   }, []);
 
   const drawFrame = useCallback((frameIndex: number) => {

@@ -32,12 +32,14 @@ export default function CountdownSection() {
         const transformed = transformBackendSettings(res.data);
         setSettings(transformed);
         saveCountdown(transformed);
+        updateCountdown();
       }
     }).catch(() => {});
 
     // Listen for updates from admin
     const handleUpdate = () => {
       setSettings(getStoredCountdown());
+      updateCountdown();
     };
     window.addEventListener('cst_countdown_updated', handleUpdate);
 
