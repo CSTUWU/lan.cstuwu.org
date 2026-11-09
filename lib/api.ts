@@ -42,35 +42,64 @@ class ApiClient {
       }
     }
 
-    try {
-      const response = await fetch(url, {
-        ...options,
-        headers,
-        credentials: 'include', // Include HTTP-only cookies
-      });
-
-      const json = await response.json().catch(() => ({
-        success: false,
-        message: response.statusText || 'Network request failed',
-      }));
-
-      if (!response.ok) {
-        throw {
-          status: response.status,
-          message: json.message || 'API request failed',
-          errors: json.errors || [],
-        };
+    const targetUrls = [url];
+    if (typeof window !== 'undefined') {
+      const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      if (isLocalHost && !url.includes('localhost:5000')) {
+        targetUrls.push(`http://localhost:5000/api${endpoint}`);
+      } else if (url.includes('localhost:5000')) {
+        targetUrls.push(`https://lan-chalange-backend.vercel.app/api${endpoint}`);
       }
-
-      return json;
-    } catch (error: any) {
-      if (error.status) throw error;
-      throw {
-        status: 0,
-        message: error.message || 'Cannot connect to backend server. Ensure backend is running on port 5000.',
-        errors: [],
-      };
     }
+
+    let lastError: any = null;
+
+    for (const targetUrl of targetUrls) {
+      try {
+        const response = await fetch(targetUrl, {
+          ...options,
+          headers,
+          credentials: 'include', // Include HTTP-only cookies
+        });
+
+        const json = await response.json().catch(() => ({
+          success: false,
+          message: response.statusText || 'Network request failed',
+        }));
+
+        if (!response.ok) {
+          // If 5xx server error and there is another fallback URL, try it
+          if (response.status >= 500 && targetUrl !== targetUrls[targetUrls.length - 1]) {
+            lastError = {
+              status: response.status,
+              message: json.message || 'API request failed',
+              errors: json.errors || [],
+            };
+            continue;
+          }
+          throw {
+            status: response.status,
+            message: json.message || 'API request failed',
+            errors: json.errors || [],
+          };
+        }
+
+        return json;
+      } catch (error: any) {
+        lastError = error;
+        // If there's another target URL, continue loop
+        if (targetUrl !== targetUrls[targetUrls.length - 1]) {
+          continue;
+        }
+      }
+    }
+
+    if (lastError?.status) throw lastError;
+    throw {
+      status: 0,
+      message: lastError?.message || 'Cannot connect to backend server. Ensure backend is running.',
+      errors: [],
+    };
   }
 
   public auth = {
