@@ -4,7 +4,7 @@ import React from 'react';
 
 interface BadgeProps {
   children: React.ReactNode;
-  variant?: 'cyan' | 'orange' | 'green' | 'red' | 'neutral';
+  variant?: 'cyan' | 'orange' | 'olive' | 'sand' | 'green' | 'red' | 'neutral';
   size?: 'sm' | 'md';
   pulse?: boolean;
   className?: string;
@@ -18,19 +18,23 @@ export default function Badge({
   className = '',
 }: BadgeProps) {
   const styles = {
-    cyan: 'bg-cyan/10 text-cyan border-cyan/40',
-    orange: 'bg-orange/10 text-orange border-orange/40',
-    green: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/40',
-    red: 'bg-rose-500/10 text-rose-400 border-rose-500/40',
-    neutral: 'bg-tactical-surface2 text-secondaryText border-tactical-border',
+    cyan: 'bg-olive/20 text-sand border-olive/50',
+    olive: 'bg-olive/20 text-sand border-olive/50',
+    orange: 'bg-sand/15 text-sand border-sand/40',
+    sand: 'bg-sand/15 text-sand border-sand/40',
+    green: 'bg-emerald-900/30 text-emerald-300 border-emerald-700/50',
+    red: 'bg-rose-950/40 text-rose-300 border-rose-800/50',
+    neutral: 'bg-surface text-mutedText border-gunmetal',
   }[variant];
 
   const dotStyles = {
-    cyan: 'bg-cyan',
-    orange: 'bg-orange',
+    cyan: 'bg-olive-light',
+    olive: 'bg-olive-light',
+    orange: 'bg-sand',
+    sand: 'bg-sand',
     green: 'bg-emerald-400',
     red: 'bg-rose-400',
-    neutral: 'bg-secondaryText',
+    neutral: 'bg-khaki',
   }[variant];
 
   const sizeClass = size === 'sm' ? 'text-[10px] px-2.5 py-0.5' : 'text-xs px-3.5 py-1';

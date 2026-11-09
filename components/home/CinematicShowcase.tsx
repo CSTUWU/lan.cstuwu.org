@@ -71,8 +71,13 @@ export default function CinematicShowcase() {
     const rect = canvas.getBoundingClientRect();
     const width = rect.width || (typeof window !== 'undefined' ? window.innerWidth : 1920);
     const height = rect.height || (typeof window !== 'undefined' ? window.innerHeight : 1080);
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
+    const targetWidth = Math.round(width * dpr);
+    const targetHeight = Math.round(height * dpr);
+
+    if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+    }
 
     drawFrame(currentFrameRef.current);
   }, [drawFrame]);
@@ -83,7 +88,7 @@ export default function CinematicShowcase() {
 
     // Instant load Frame 1
     const firstImg = new Image();
-    firstImg.src = '/frames/home/frame_0001.webp';
+    firstImg.src = '/frames/home/frame_0001.webp?v=3';
     firstImg.onload = () => {
       if (isCancelled) return;
       images[0] = firstImg;
@@ -99,7 +104,7 @@ export default function CinematicShowcase() {
     for (let i = 1; i < TOTAL_FRAMES; i++) {
       const img = new Image();
       const frameNum = String(i + 1).padStart(4, '0');
-      img.src = `/frames/home/frame_${frameNum}.webp`;
+      img.src = `/frames/home/frame_${frameNum}.webp?v=3`;
       img.onload = () => {
         if (isCancelled) return;
         images[i] = img;
@@ -118,191 +123,200 @@ export default function CinematicShowcase() {
     };
   }, [handleResize, drawFrame]);
 
-  // 4. GSAP ScrollTrigger Sequence: Left -> Right -> Center
+  // 4. GSAP ScrollTrigger Sequence: Left -> Right -> Center with Mobile Responsiveness
   useEffect(() => {
     if (!containerRef.current || !canvasRef.current) return;
 
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (prefersReducedMotion) return;
 
-    const ctx = gsap.context(() => {
-      const frameObj = { frame: 0 };
+    const mm = gsap.matchMedia();
 
-      const scrubTimeline = gsap.timeline({
-        scrollTrigger: {
-          trigger: containerRef.current,
-          start: 'top top',
-          end: '+=1600',
-          pin: true,
-          scrub: 0.4,
-          anticipatePin: 1,
-          onUpdate: (self) => {
-            const currentFrame = Math.min(
-              TOTAL_FRAMES - 1,
-              Math.floor(self.progress * (TOTAL_FRAMES - 1))
-            );
-            drawFrame(currentFrame);
+    mm.add(
+      {
+        isDesktop: '(min-width: 768px)',
+        isMobile: '(max-width: 767px)',
+      },
+      (context) => {
+        const { isMobile } = context.conditions as { isDesktop: boolean; isMobile: boolean };
+        const frameObj = { frame: 0 };
 
-            // Update bottom telemetry bar
-            if (scrubBarRef.current) {
-              scrubBarRef.current.style.width = `${Math.round(self.progress * 100)}%`;
-            }
+        const scrubTimeline = gsap.timeline({
+          scrollTrigger: {
+            trigger: containerRef.current,
+            start: 'top top',
+            end: isMobile ? '+=900' : '+=1600',
+            pin: true,
+            scrub: isMobile ? 0.25 : 0.4,
+            anticipatePin: 1,
+            onUpdate: (self) => {
+              const currentFrame = Math.min(
+                TOTAL_FRAMES - 1,
+                Math.floor(self.progress * (TOTAL_FRAMES - 1))
+              );
+              drawFrame(currentFrame);
 
-            // Update phase tag
-            if (telemetryTagRef.current) {
-              if (self.progress < 0.35) {
-                telemetryTagRef.current.innerText = 'PHASE 1: CT VECTOR DEPLOYMENT // LEFT BRIEFING';
-              } else if (self.progress < 0.70) {
-                telemetryTagRef.current.innerText = 'PHASE 2: T RAPTOR MOBILIZATION // RIGHT BRIEFING';
-              } else {
-                telemetryTagRef.current.innerText = 'PHASE 3: CS2 SHOWDOWN // CENTER ARENA';
+              // Update bottom telemetry bar
+              if (scrubBarRef.current) {
+                scrubBarRef.current.style.width = `${Math.round(self.progress * 100)}%`;
               }
-            }
+
+              // Update phase tag
+              if (telemetryTagRef.current) {
+                if (self.progress < 0.35) {
+                  telemetryTagRef.current.innerText = 'PHASE 1: CT VECTOR DEPLOYMENT // LEFT BRIEFING';
+                } else if (self.progress < 0.70) {
+                  telemetryTagRef.current.innerText = 'PHASE 2: T RAPTOR MOBILIZATION // RIGHT BRIEFING';
+                } else {
+                  telemetryTagRef.current.innerText = 'PHASE 3: CS2 SHOWDOWN // CENTER ARENA';
+                }
+              }
+            },
           },
-        },
-      });
+        });
 
-      // Scrub frames 0 -> 198 across virtual duration 10
-      scrubTimeline.to(
-        frameObj,
-        {
-          frame: TOTAL_FRAMES - 1,
-          ease: 'none',
-          duration: 10,
-        },
-        0
-      );
+        // Scrub frames 0 -> 198 across virtual duration 10
+        scrubTimeline.to(
+          frameObj,
+          {
+            frame: TOTAL_FRAMES - 1,
+            ease: 'none',
+            duration: 10,
+          },
+          0
+        );
 
-      scrubTimeline.fromTo(
-        slideLeftRef.current,
-        {
-          x: -60,
-          opacity: 0,
-          scale: 0.94,
-          filter: 'blur(8px)',
-        },
-        {
-          x: 0,
-          opacity: 1,
-          scale: 1,
-          filter: 'blur(0px)',
-          ease: 'power3.out',
-          duration: 1.5,
-        },
-        0.3
-      );
+        scrubTimeline.fromTo(
+          slideLeftRef.current,
+          {
+            x: isMobile ? -30 : -60,
+            opacity: 0,
+            scale: 0.94,
+            filter: 'blur(8px)',
+          },
+          {
+            x: 0,
+            opacity: 1,
+            scale: 1,
+            filter: 'blur(0px)',
+            ease: 'power3.out',
+            duration: 1.5,
+          },
+          0.3
+        );
 
-      scrubTimeline.to(
-        slideLeftRef.current,
-        {
-          x: -40,
-          opacity: 0,
-          scale: 0.96,
-          filter: 'blur(6px)',
-          ease: 'power2.in',
-          duration: 1.0,
-        },
-        3.0
-      );
+        scrubTimeline.to(
+          slideLeftRef.current,
+          {
+            x: isMobile ? -20 : -40,
+            opacity: 0,
+            scale: 0.96,
+            filter: 'blur(6px)',
+            ease: 'power2.in',
+            duration: 1.0,
+          },
+          3.0
+        );
 
-      scrubTimeline.fromTo(
-        slideRightRef.current,
-        {
-          x: 60,
-          opacity: 0,
-          scale: 0.94,
-          filter: 'blur(8px)',
-        },
-        {
-          x: 0,
-          opacity: 1,
-          scale: 1,
-          filter: 'blur(0px)',
-          ease: 'power3.out',
-          duration: 1.5,
-        },
-        3.8
-      );
+        scrubTimeline.fromTo(
+          slideRightRef.current,
+          {
+            x: isMobile ? 30 : 60,
+            opacity: 0,
+            scale: 0.94,
+            filter: 'blur(8px)',
+          },
+          {
+            x: 0,
+            opacity: 1,
+            scale: 1,
+            filter: 'blur(0px)',
+            ease: 'power3.out',
+            duration: 1.5,
+          },
+          3.8
+        );
 
-      scrubTimeline.to(
-        slideRightRef.current,
-        {
-          x: 40,
-          opacity: 0,
-          scale: 0.96,
-          filter: 'blur(6px)',
-          ease: 'power2.in',
-          duration: 1.0,
-        },
-        6.5
-      );
+        scrubTimeline.to(
+          slideRightRef.current,
+          {
+            x: isMobile ? 20 : 40,
+            opacity: 0,
+            scale: 0.96,
+            filter: 'blur(6px)',
+            ease: 'power2.in',
+            duration: 1.0,
+          },
+          6.5
+        );
 
-      
-      scrubTimeline.fromTo(
-        slideCenterRef.current,
-        {
-          y: 50,
-          opacity: 0,
-          scale: 0.92,
-          filter: 'blur(10px)',
-        },
-        {
-          y: 0,
-          opacity: 1,
-          scale: 1,
-          filter: 'blur(0px)',
-          ease: 'power3.out',
-          duration: 1.8,
-        },
-        7.2
-      );
-    }, containerRef);
+        scrubTimeline.fromTo(
+          slideCenterRef.current,
+          {
+            y: isMobile ? 30 : 50,
+            opacity: 0,
+            scale: 0.92,
+            filter: 'blur(10px)',
+          },
+          {
+            y: 0,
+            opacity: 1,
+            scale: 1,
+            filter: 'blur(0px)',
+            ease: 'power3.out',
+            duration: 1.8,
+          },
+          7.2
+        );
+      }
+    );
 
-    return () => ctx.revert();
+    return () => mm.revert();
   }, [drawFrame]);
 
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-screen bg-[#080B10] overflow-hidden select-none border-b border-tactical-border"
+      className="relative w-full h-screen bg-military-black overflow-hidden select-none border-b border-gunmetal"
     >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/frames/home/frame_0001.webp"
-        alt="CS2 Cinematic Preview"
+        src="/frames/home/frame_0001.webp?v=3"
+        alt="Tactical Engagement Preview"
         className="absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
-        style={{ filter: 'contrast(1.08) brightness(0.92)' }}
+        style={{ filter: 'contrast(1.08) brightness(0.90)' }}
       />
       <canvas
         ref={canvasRef}
         className="absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
-        style={{ filter: 'contrast(1.08) brightness(0.92)' }}
+        style={{ filter: 'contrast(1.08) brightness(0.90)' }}
       />
 
       <div className="absolute inset-0 pointer-events-none z-[1]">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(8,11,16,0.1)_0%,rgba(8,11,16,0.85)_100%)]" />
-        <div className="absolute top-0 left-0 right-0 h-28 bg-gradient-to-b from-[#080B10] via-[#080B10]/70 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#080B10] via-[#080B10]/80 to-transparent" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(17,20,17,0.1)_0%,rgba(17,20,17,0.88)_100%)]" />
+        <div className="absolute top-0 left-0 right-0 h-28 bg-gradient-to-b from-military-black via-military-black/70 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-military-black via-military-black/80 to-transparent" />
 
         <div className="absolute inset-0 tactical-grid-bg opacity-15" />
       </div>
 
-      <div className="absolute inset-4 sm:inset-6 lg:inset-8 pointer-events-none border border-tactical-border/40 rounded-sm z-10">
-        <span className="absolute -top-[2px] -left-[2px] w-5 h-5 border-t-2 border-l-2 border-cyan shadow-[0_0_12px_rgba(0,213,255,0.7)]" />
-        <span className="absolute -top-[2px] -right-[2px] w-5 h-5 border-t-2 border-r-2 border-orange shadow-[0_0_12px_rgba(255,116,56,0.7)]" />
-        <span className="absolute -bottom-[2px] -left-[2px] w-5 h-5 border-b-2 border-l-2 border-cyan shadow-[0_0_12px_rgba(0,213,255,0.7)]" />
-        <span className="absolute -bottom-[2px] -right-[2px] w-5 h-5 border-b-2 border-r-2 border-orange shadow-[0_0_12px_rgba(255,116,56,0.7)]" />
+      <div className="absolute inset-4 sm:inset-6 lg:inset-8 pointer-events-none border border-gunmetal/50 rounded-sm z-10">
+        <span className="absolute -top-[2px] -left-[2px] w-5 h-5 border-t-2 border-l-2 border-olive shadow-[0_0_8px_rgba(89,99,74,0.6)]" />
+        <span className="absolute -top-[2px] -right-[2px] w-5 h-5 border-t-2 border-r-2 border-sand shadow-[0_0_8px_rgba(194,178,138,0.6)]" />
+        <span className="absolute -bottom-[2px] -left-[2px] w-5 h-5 border-b-2 border-l-2 border-olive shadow-[0_0_8px_rgba(89,99,74,0.6)]" />
+        <span className="absolute -bottom-[2px] -right-[2px] w-5 h-5 border-b-2 border-r-2 border-sand shadow-[0_0_8px_rgba(194,178,138,0.6)]" />
 
-        <div className="absolute -bottom-[6px] left-1/2 -translate-x-1/2 px-4 py-0.5 bg-[#080B10]/95 border border-tactical-border text-[9px] sm:text-[10px] font-mono text-secondaryText tracking-widest flex items-center gap-3 backdrop-blur-md">
-          <Activity className="w-3.5 h-3.5 text-cyan animate-pulse" />
-          <div className="w-20 sm:w-32 h-1 bg-surface border border-tactical-border rounded-full overflow-hidden">
+        <div className="absolute -bottom-[6px] left-1/2 -translate-x-1/2 px-4 py-0.5 bg-military-black/95 border border-gunmetal text-[9px] sm:text-[10px] font-mono text-mutedText tracking-widest flex items-center gap-3 backdrop-blur-md">
+          <Activity className="w-3.5 h-3.5 text-sand animate-pulse" />
+          <div className="w-20 sm:w-32 h-1 bg-surface border border-gunmetal rounded-full overflow-hidden">
             <div
               ref={scrubBarRef}
-              className="h-full bg-gradient-to-r from-cyan via-white to-orange transition-all duration-75"
+              className="h-full bg-gradient-to-r from-olive via-sand to-olive-light transition-all duration-75"
               style={{ width: '0%' }}
             />
           </div>
-          <span ref={telemetryTagRef} className="text-cyan font-bold uppercase truncate max-w-[200px] sm:max-w-none">
-            PHASE 1: CT VECTOR DEPLOYMENT // LEFT BRIEFING
+          <span ref={telemetryTagRef} className="text-sand font-bold uppercase truncate max-w-[200px] sm:max-w-none">
+            PHASE 1: TASK FORCE SECTOR // LEFT BRIEFING
           </span>
         </div>
       </div>
@@ -311,55 +325,55 @@ export default function CinematicShowcase() {
 
         <div
           ref={slideLeftRef}
-          className="absolute left-4 sm:left-8 lg:left-12 max-w-lg lg:max-w-xl w-full opacity-0 pointer-events-auto will-change-transform"
+          className="absolute left-3 right-3 sm:left-8 sm:right-auto lg:left-12 max-w-lg lg:max-w-xl opacity-0 pointer-events-auto will-change-transform"
         >
-          <div className="relative p-6 sm:p-8 bg-[#080B10]/90 border border-cyan/40 backdrop-blur-2xl rounded-md shadow-[0_0_45px_rgba(0,213,255,0.25)]">
-            <span className="absolute top-2 left-2 w-3.5 h-3.5 border-t-2 border-l-2 border-cyan" />
-            <span className="absolute top-2 right-2 w-3.5 h-3.5 border-t-2 border-r-2 border-cyan" />
-            <span className="absolute bottom-2 left-2 w-3.5 h-3.5 border-b-2 border-l-2 border-cyan" />
-            <span className="absolute bottom-2 right-2 w-3.5 h-3.5 border-b-2 border-r-2 border-cyan" />
+          <div className="relative p-6 sm:p-8 bg-card/90 border border-olive/50 backdrop-blur-2xl rounded-md shadow-[0_4px_30px_rgba(0,0,0,0.8)]">
+            <span className="absolute top-2 left-2 w-3.5 h-3.5 border-t-2 border-l-2 border-olive" />
+            <span className="absolute top-2 right-2 w-3.5 h-3.5 border-t-2 border-r-2 border-olive" />
+            <span className="absolute bottom-2 left-2 w-3.5 h-3.5 border-b-2 border-l-2 border-olive" />
+            <span className="absolute bottom-2 right-2 w-3.5 h-3.5 border-b-2 border-r-2 border-olive" />
 
-            <div className="flex items-center justify-between border-b border-tactical-border/60 pb-3 mb-4">
+            <div className="flex items-center justify-between border-b border-gunmetal pb-3 mb-4">
               <div className="inline-flex items-center gap-2">
-                <Shield className="w-4 h-4 text-cyan" />
-                <span className="text-[10px] font-mono text-cyan uppercase font-bold tracking-widest">
-                  FACTION 01 // CT VECTOR RECON
+                <Shield className="w-4 h-4 text-sand" />
+                <span className="text-[10px] font-mono text-sand uppercase font-bold tracking-widest">
+                  TASK FORCE 01 // TACTICAL RECON
                 </span>
               </div>
-              <span className="text-[9px] font-mono text-secondaryText px-2 py-0.5 bg-surface border border-tactical-border">
+              <span className="text-[9px] font-mono text-mutedText px-2 py-0.5 bg-surface border border-gunmetal">
                 DEFENSE MANDATE
               </span>
             </div>
 
-            <h2 className="font-display font-black text-2xl sm:text-4xl text-white tracking-tight uppercase leading-tight mb-2">
-              BATTLE FOR <span className="text-cyan">GLORY</span> &amp; TOURNAMENT <span className="text-tactical-gold">HONORS</span>
+            <h2 className="font-display font-black text-2xl sm:text-4xl text-tacticalWhite tracking-tight uppercase leading-tight mb-2">
+              BATTLE FOR <span className="text-sand">GLORY</span> &amp; TOURNAMENT <span className="text-olive-light">HONORS</span>
             </h2>
 
-            <p className="text-xs sm:text-sm font-mono text-secondaryText leading-relaxed mb-5">
-              The CST LAN Challenge 2026 brings elite student athletes together under Valve&apos;s Counter-Strike 2 sub-tick architecture.
+            <p className="text-xs sm:text-sm font-mono text-mutedText leading-relaxed mb-5">
+              The CST LAN Challenge 2026 brings elite collegiate tactical athletes together under competitive modern warfare regulations.
             </p>
 
-            <div className="p-3.5 bg-surface/70 border border-cyan/30 rounded mb-5 flex items-center justify-between">
+            <div className="p-3.5 bg-surface/70 border border-gunmetal rounded mb-5 flex items-center justify-between">
               <div>
-                <span className="text-[9px] font-mono text-secondaryText uppercase tracking-wider block">
+                <span className="text-[9px] font-mono text-mutedText uppercase tracking-wider block">
                   COMMITTED CHAMPION POOL
                 </span>
-                <span className="font-display font-black text-xl sm:text-2xl text-tactical-gold">
+                <span className="font-display font-black text-xl sm:text-2xl text-sand">
                   LKR 80,000 + GRAND TROPHY
                 </span>
               </div>
-              <div className="p-2.5 bg-cyan/10 border border-cyan/40 text-cyan shrink-0">
-                <Trophy className="w-5 h-5 text-tactical-gold" />
+              <div className="p-2.5 bg-olive/20 border border-olive/40 text-sand shrink-0">
+                <Trophy className="w-5 h-5 text-sand" />
               </div>
             </div>
 
-            <div className="space-y-2 font-mono text-xs text-white/90 mb-6">
+            <div className="space-y-2 font-mono text-xs text-tacticalWhite/90 mb-6">
               <div className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-cyan shrink-0" />
-                <span>Source 2 High-Precision Tickless LAN Environment</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-olive-light shrink-0" />
+                <span>Zero-Latency Military LAN Command Center</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-cyan shrink-0" />
+                <span className="w-1.5 h-1.5 rounded-full bg-sand shrink-0" />
                 <span>Collegiate Prestige &amp; Permanent Hall of Fame Entry</span>
               </div>
             </div>
@@ -370,7 +384,7 @@ export default function CinematicShowcase() {
                 variant="cyan"
                 size="md"
                 icon={<Trophy className="w-4 h-4" />}
-                className="font-bold text-xs uppercase shadow-[0_0_20px_rgba(0,213,255,0.4)]"
+                className="font-bold text-xs uppercase shadow-[0_2px_12px_rgba(37,44,36,0.8)]"
               >
                 VIEW FULL PRIZE POOL
               </Button>
@@ -380,61 +394,61 @@ export default function CinematicShowcase() {
 
         <div
           ref={slideRightRef}
-          className="absolute right-4 sm:right-8 lg:right-12 max-w-lg lg:max-w-xl w-full ml-auto opacity-0 pointer-events-auto will-change-transform"
+          className="absolute left-3 right-3 sm:left-auto sm:right-8 lg:right-12 max-w-lg lg:max-w-xl opacity-0 pointer-events-auto will-change-transform"
         >
-          <div className="relative p-6 sm:p-8 bg-[#080B10]/90 border border-orange/40 backdrop-blur-2xl rounded-md shadow-[0_0_45px_rgba(255,116,56,0.25)]">
-            <span className="absolute top-2 left-2 w-3.5 h-3.5 border-t-2 border-l-2 border-orange" />
-            <span className="absolute top-2 right-2 w-3.5 h-3.5 border-t-2 border-r-2 border-orange" />
-            <span className="absolute bottom-2 left-2 w-3.5 h-3.5 border-b-2 border-l-2 border-orange" />
-            <span className="absolute bottom-2 right-2 w-3.5 h-3.5 border-b-2 border-r-2 border-orange" />
+          <div className="relative p-6 sm:p-8 bg-card/90 border border-gunmetal backdrop-blur-2xl rounded-md shadow-[0_4px_30px_rgba(0,0,0,0.8)]">
+            <span className="absolute top-2 left-2 w-3.5 h-3.5 border-t-2 border-l-2 border-sand" />
+            <span className="absolute top-2 right-2 w-3.5 h-3.5 border-t-2 border-r-2 border-sand" />
+            <span className="absolute bottom-2 left-2 w-3.5 h-3.5 border-b-2 border-l-2 border-sand" />
+            <span className="absolute bottom-2 right-2 w-3.5 h-3.5 border-b-2 border-r-2 border-sand" />
 
-            <div className="flex items-center justify-between border-b border-tactical-border/60 pb-3 mb-4">
+            <div className="flex items-center justify-between border-b border-gunmetal pb-3 mb-4">
               <div className="inline-flex items-center gap-2">
-                <Flame className="w-4 h-4 text-orange" />
-                <span className="text-[10px] font-mono text-orange uppercase font-bold tracking-widest">
-                  FACTION 02 // T RAPTOR ASSAULT
+                <Flame className="w-4 h-4 text-sand" />
+                <span className="text-[10px] font-mono text-sand uppercase font-bold tracking-widest">
+                  OPFOR 02 // STRIKE PROTOCOL
                 </span>
               </div>
-              <span className="text-[9px] font-mono text-secondaryText px-2 py-0.5 bg-surface border border-tactical-border">
+              <span className="text-[9px] font-mono text-mutedText px-2 py-0.5 bg-surface border border-gunmetal">
                 OFFENSE PROTOCOL
               </span>
             </div>
 
-            <h2 className="font-display font-black text-2xl sm:text-4xl text-white tracking-tight uppercase leading-tight mb-2">
-              5v5 MR12 <span className="text-orange">COMPETITIVE</span> ESPORTS RULES
+            <h2 className="font-display font-black text-2xl sm:text-4xl text-tacticalWhite tracking-tight uppercase leading-tight mb-2">
+              5v5 <span className="text-sand">COMPETITIVE</span> TOURNAMENT RULES
             </h2>
 
-            <p className="text-xs sm:text-sm font-mono text-secondaryText leading-relaxed mb-5">
-              Strict competitive Valve rules apply. Teams navigate a tactical double-elimination bracket with map vetoes, overtime MR3 deciders, and strict anti-cheat verification.
+            <p className="text-xs sm:text-sm font-mono text-mutedText leading-relaxed mb-5">
+              Strict military tactical tournament rules apply. Teams navigate a tactical playoff bracket with operational vetoes and official referee oversight.
             </p>
 
             <div className="grid grid-cols-2 gap-3 mb-5 font-mono">
-              <div className="p-3 bg-surface/70 border border-orange/30 rounded">
-                <span className="text-[9px] text-secondaryText uppercase tracking-wider block">
+              <div className="p-3 bg-surface/70 border border-gunmetal rounded">
+                <span className="text-[9px] text-mutedText uppercase tracking-wider block">
                   ROUND STRUCTURE
                 </span>
-                <span className="font-display font-black text-lg text-white">
+                <span className="font-display font-black text-lg text-tacticalWhite">
                   MR12 (FIRST TO 13)
                 </span>
               </div>
-              <div className="p-3 bg-surface/70 border border-orange/30 rounded">
-                <span className="text-[9px] text-secondaryText uppercase tracking-wider block">
+              <div className="p-3 bg-surface/70 border border-gunmetal rounded">
+                <span className="text-[9px] text-mutedText uppercase tracking-wider block">
                   ROSTER SIZE
                 </span>
-                <span className="font-display font-black text-lg text-orange">
-                  5 PLAYERS
+                <span className="font-display font-black text-lg text-sand">
+                  5 OPERATIVES
                 </span>
               </div>
             </div>
 
-            <div className="space-y-2 font-mono text-xs text-white/90 mb-6">
+            <div className="space-y-2 font-mono text-xs text-tacticalWhite/90 mb-6">
               <div className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-orange shrink-0" />
-                <span>Valve Anti-Cheat (VAC) &amp; Verified Steam IDs required</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-sand shrink-0" />
+                <span>Verified University Student Eligibility &amp; Hardware Checks</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-orange shrink-0" />
-                <span>Double Elimination Championship Bracket</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-olive-light shrink-0" />
+                <span>Championship Elimination Playoff Bracket</span>
               </div>
             </div>
 
@@ -443,8 +457,8 @@ export default function CinematicShowcase() {
                 href="/about"
                 variant="outline"
                 size="md"
-                icon={<Crosshair className="w-4 h-4 text-orange" />}
-                className="font-bold text-xs uppercase border-orange/50 hover:border-orange hover:text-orange"
+                icon={<Crosshair className="w-4 h-4 text-sand" />}
+                className="font-bold text-xs uppercase border-gunmetal hover:border-sand hover:text-tacticalWhite"
               >
                 TOURNAMENT RULES &amp; FAQ
               </Button>
@@ -454,34 +468,33 @@ export default function CinematicShowcase() {
 
         <div
           ref={slideCenterRef}
-          className="absolute left-1/2 -translate-x-1/2 max-w-xl sm:max-w-2xl w-full px-4 text-center opacity-0 pointer-events-auto will-change-transform"
+          className="absolute left-1/2 -translate-x-1/2 w-[94vw] max-w-xl sm:max-w-2xl px-2 sm:px-4 text-center opacity-0 pointer-events-auto will-change-transform"
         >
-          <div className="relative p-6 sm:p-8 bg-[#080B10]/95 border border-tactical-gold/60 backdrop-blur-2xl rounded-md shadow-[0_0_60px_rgba(255,184,0,0.3)]">
-            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-tactical-gold via-yellow-300 to-tactical-gold text-background font-mono text-[10px] font-black uppercase tracking-widest clip-tactical shadow-lg flex items-center gap-1.5">
-              <Swords className="w-3.5 h-3.5 text-background" />
+          <div className="relative p-6 sm:p-8 bg-card/95 border border-sand/60 backdrop-blur-2xl rounded-md shadow-[0_4px_40px_rgba(0,0,0,0.85)]">
+            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 bg-sand text-military-black font-mono text-[10px] font-black uppercase tracking-widest clip-tactical shadow-lg flex items-center gap-1.5">
+              <Swords className="w-3.5 h-3.5 text-military-black" />
               <span>THE GRAND CONFRONTATION</span>
             </div>
 
-            <span className="absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2 border-tactical-gold" />
-            <span className="absolute top-2 right-2 w-4 h-4 border-t-2 border-r-2 border-tactical-gold" />
-            <span className="absolute bottom-2 left-2 w-4 h-4 border-b-2 border-l-2 border-tactical-gold" />
-            <span className="absolute bottom-2 right-2 w-4 h-4 border-b-2 border-r-2 border-tactical-gold" />
+            <span className="absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2 border-sand" />
+            <span className="absolute top-2 right-2 w-4 h-4 border-t-2 border-r-2 border-sand" />
+            <span className="absolute bottom-2 left-2 w-4 h-4 border-b-2 border-l-2 border-sand" />
+            <span className="absolute bottom-2 right-2 w-4 h-4 border-b-2 border-r-2 border-sand" />
 
-            <h2 className="font-display font-black text-2xl sm:text-4xl lg:text-5xl text-white tracking-tight uppercase leading-tight mb-2 mt-2">
-              CHOOSE YOUR <span className="text-cyan">SIDE</span>. PROVE YOUR <span className="text-orange">DOMINANCE</span>.
+            <h2 className="font-display font-black text-2xl sm:text-4xl lg:text-5xl text-tacticalWhite tracking-tight uppercase leading-tight mb-2 mt-2">
+              CHOOSE YOUR <span className="text-sand">SIDE</span>. PROVE YOUR <span className="text-olive-light">DOMINANCE</span>.
             </h2>
 
-            <p className="text-xs sm:text-sm font-mono text-secondaryText leading-relaxed mb-5 max-w-lg mx-auto">
-              7 Active Duty Maps. Full Sub-Tick 128 Telemetry. Ready your squad to enter the collegiate Counter-Strike 2 championship arena.
+            <p className="text-xs sm:text-sm font-mono text-mutedText leading-relaxed mb-5 max-w-lg mx-auto">
+              Active Duty Battlegrounds. Zero-Latency Military LAN Command. Ready your squad to enter the collegiate tactical championship arena.
             </p>
 
-            <div className="p-3 bg-surface/80 border border-tactical-border rounded mb-6 flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-[10px] sm:text-xs font-mono text-white">
-              <span className="px-2 py-0.5 bg-cyan/10 border border-cyan/40 text-cyan font-bold">ANCIENT</span>
-              <span className="px-2 py-0.5 bg-orange/10 border border-orange/40 text-orange font-bold">ANUBIS</span>
-              <span className="px-2 py-0.5 bg-cyan/10 border border-cyan/40 text-cyan font-bold">CACHE</span>
-              <span className="px-2 py-0.5 bg-orange/10 border border-orange/40 text-orange font-bold">DUST II</span>
-              <span className="px-2 py-0.5 bg-cyan/10 border border-cyan/40 text-cyan font-bold">NUKE</span>
-              <span className="px-2 py-0.5 bg-orange/10 border border-orange/40 text-orange font-bold">MIRAGE</span>
+            <div className="p-3 bg-surface/80 border border-gunmetal rounded mb-6 flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-[10px] sm:text-xs font-mono text-tacticalWhite">
+              <span className="px-2 py-0.5 bg-olive/20 border border-olive/50 text-sand font-bold">CRASH</span>
+              <span className="px-2 py-0.5 bg-surface border border-gunmetal text-tacticalWhite font-bold">CROSSFIRE</span>
+              <span className="px-2 py-0.5 bg-olive/20 border border-olive/50 text-sand font-bold">BACKLOT</span>
+              <span className="px-2 py-0.5 bg-surface border border-gunmetal text-tacticalWhite font-bold">STRIKE</span>
+              <span className="px-2 py-0.5 bg-olive/20 border border-olive/50 text-sand font-bold">CITYSTREET</span>
             </div>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -491,7 +504,7 @@ export default function CinematicShowcase() {
                   variant="cyan"
                   size="lg"
                   icon={<Crosshair className="w-4 h-4" />}
-                  className="w-full sm:w-auto font-black shadow-[0_0_25px_rgba(0,213,255,0.4)] text-xs sm:text-sm"
+                  className="w-full sm:w-auto font-black shadow-[0_2px_12px_rgba(37,44,36,0.8)] text-xs sm:text-sm"
                 >
                   REGISTER YOUR TEAM
                 </Button>
@@ -501,8 +514,8 @@ export default function CinematicShowcase() {
                 href="/#prizepool"
                 variant="outline"
                 size="lg"
-                icon={<Trophy className="w-4 h-4 text-tactical-gold" />}
-                className="w-full sm:w-auto hover:border-tactical-gold hover:text-tactical-gold bg-surface/70 text-xs sm:text-sm"
+                icon={<Trophy className="w-4 h-4 text-sand" />}
+                className="w-full sm:w-auto hover:border-sand hover:text-tacticalWhite bg-surface/70 text-xs sm:text-sm"
               >
                 VIEW PRIZE TIERS
               </Button>

@@ -16,23 +16,37 @@ export function transformBackendTeam(raw: any): Team {
     status = raw.isActive ? 'approved' : 'pending';
   }
 
+  const degreeProgram = raw.degreeProgram || raw.captain?.degreeProgram || raw.faculty || '';
+  const year = raw.year || raw.captain?.year ? String(raw.year || raw.captain?.year) : '';
+  const enrollmentNumber = raw.enrollmentNumber || raw.column1 || raw.captain?.enrollmentNumber || '';
+  const email = raw.email || raw.captain?.email || '';
+
   const captain = {
     name: raw.captain?.name || raw.captain?.fullName || 'Team Captain',
     whatsappNumber: raw.captain?.whatsappNumber || raw.captain?.phone || '',
     phone: raw.captain?.whatsappNumber || raw.captain?.phone || '',
-    faculty: raw.captain?.faculty || '',
-    email: raw.captain?.email || '',
+    faculty: raw.captain?.faculty || degreeProgram,
+    degreeProgram,
+    year,
+    enrollmentNumber,
+    email,
+    ign: raw.captain?.ign || raw.captain?.inGameName || raw.players?.[0]?.inGameName || raw.players?.[0]?.ign || '',
+    gamingName: raw.captain?.gamingName || raw.captain?.inGameName || raw.players?.[0]?.inGameName || raw.players?.[0]?.ign || '',
   };
 
   const players: Player[] = Array.isArray(raw.players)
     ? raw.players.map((p: any, idx: number) => ({
         id: p._id || p.id || `p-${idx}`,
         name: p.fullName || p.name || `Player ${idx + 1}`,
-        faculty: p.faculty || 'Faculty of Applied Sciences',
-        ign: p.inGameName || p.ign || '',
+        faculty: p.faculty || degreeProgram || 'Computer Science and Technology (CST)',
+        degreeProgram: p.degreeProgram || degreeProgram,
+        year: p.year ? String(p.year) : (raw.year ? String(raw.year) : '1'),
+        ign: p.inGameName || p.ign || p.gamingName || '',
+        gamingName: p.gamingName || p.inGameName || p.ign || '',
         steamId: p.steamId || '',
         email: p.email || '',
-        role: p.role || 'Player',
+        role: p.role || `Player 0${idx + 1}`,
+        enrollmentNumber: p.enrollmentNumber || enrollmentNumber,
       }))
     : [];
 
@@ -46,6 +60,11 @@ export function transformBackendTeam(raw: any): Team {
     createdAt: raw.createdAt ? new Date(raw.createdAt).toISOString() : new Date().toISOString(),
     captain,
     players,
+    degreeProgram,
+    year,
+    enrollmentNumber,
+    column1: enrollmentNumber,
+    email,
     matchesPlayed: raw.matchesPlayed ?? 0,
     wins: raw.wins ?? 0,
     losses: raw.losses ?? 0,

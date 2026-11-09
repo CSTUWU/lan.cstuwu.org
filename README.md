@@ -1,106 +1,69 @@
-# CST LAN Challenge 2026 – Frontend Application
+# CST LAN Challenge 2026 – Frontend
 
-Official Next.js esports tournament web platform for **CST LAN Challenge 2026 (Counter-Strike 2)**, hosted by the Computer Science and Technology Degree Programme, Faculty of Applied Sciences, Uva Wellassa University of Sri Lanka (UWU).
+The frontend for the CST LAN Challenge 2026 tournament website. It is built with Next.js 14, React, TypeScript, and Tailwind CSS.
 
----
+## Requirements
 
-## 1. Technologies
+- Node.js 18.17 or newer
+- npm (included with Node.js)
+- Git
 
-- **Framework**: Next.js 14 (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **Animations**: GSAP, GSAP ScrollTrigger
-- **Smooth Scroll**: Lenis
-- **Icons**: Lucide React
-- **Real-Time Projection**: Web Audio API Sound Cues, BroadcastChannel (<10ms sync), REST polling
+## Install and run locally
 
----
+1. Clone the repository:
 
-## 2. Directory Structure
+   ```bash
+   git clone https://github.com/ThinukaVinjaya/cst_lan_chalange_frontend.git
+   ```
 
-```
-frontend/
-├── app/
-│   ├── page.tsx                    # Cinematic Hero with Vector & Reaper, Countdown, Rules
-│   ├── about/                      # CST UWU collegiate mission, venue, rules
-│   ├── teams/                      # Participating squads & 5-man rosters
-│   ├── register/                   # 4-step tactical registration wizard with Cloudinary logo upload
-│   ├── schedule/                   # Tournament fixtures & CS2 map pool lineup
-│   ├── scoreboard/
-│   │   ├── page.tsx                # Audience scoreboard & standings matrix
-│   │   └── live/page.tsx           # Stage projector HUD with C4 strobe & sound cues
-│   ├── admin/
-│   │   ├── page.tsx                # Secured manual entry admin access gate
-│   │   ├── dashboard/              # Command telemetry & overview KPI
-│   │   ├── registrations/          # 5-man roster review, approve & reject controls
-│   │   ├── teams/                  # Team-wise squad & athlete dossier
-│   │   ├── matches/                # CS2 fixture scheduling desk
-│   │   ├── scoreboard/             # 1-click referee scoring desk & side switch
-│   │   └── countdown/              # Tournament target date chronometer
-│   └── layout.tsx                  # Root layout & navbar
-├── components/
-│   ├── admin/                      # AdminLayout, AdminNav, AdminLoginView
-│   ├── home/                       # HeroSection, CountdownSection, FormatSection, Commanders
-│   ├── layout/                     # Navbar, Footer
-│   └── ui/                         # Buttons, Badges, Glass Panels
-├── lib/
-│   ├── api.ts                      # Backend API client with HTTP-only credentials
-│   ├── storage.ts                  # Local fallback & cross-tab BroadcastChannel
-│   ├── transformers.ts             # Backend data payload normalizers
-│   └── types.ts                    # TypeScript domain definitions
-├── public/
-│   └── images/
-│       └── commanders/
-│           ├── vector.jpeg         # Commander Vector (CT)
-│           └── reaper.jpeg         # Commander Reaper (T)
-├── .env.local
-└── package.json
-```
+2. Open the project folder:
 
----
+   ```bash
+   cd cst_lan_chalange_frontend
+   ```
 
-## 3. Environment Variables
+3. Install the Node.js packages required by the project. Run this from the project folder; npm reads `package.json` and installs the dependencies into `node_modules`:
 
-Create `.env.local` inside `frontend/`:
+   ```bash
+   npm install
+   ```
 
-```env
-# URL pointing to your backend API
-NEXT_PUBLIC_API_URL=http://localhost:5000/api
-```
+   To install the exact versions recorded in `package-lock.json` (recommended for a clean, reproducible setup), use `npm ci` instead. Use one of these commands, not both.
 
-For production deployment (e.g., Vercel):
-Set `NEXT_PUBLIC_API_URL` to your production backend endpoint (e.g., `https://cst-lan-backend.onrender.com/api`).
+4. (Optional) Configure the backend API. The app defaults to `http://localhost:5000/api`. To use another API URL, create a `.env.local` file in the project root and add:
 
----
+   ```env
+   NEXT_PUBLIC_API_URL=http://localhost:5000/api
+   ```
 
-## 4. Scripts
+   Change the URL to your backend's API address if it is running elsewhere. The backend must be running for features that load or save server data.
 
-Inside `frontend/`:
+5. Start the development server:
+
+   ```bash
+   npm run dev
+   ```
+
+6. Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+Press `Ctrl+C` in the terminal to stop the server.
+
+## Available commands
+
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Start the development server on port 3000 |
+| `npm run build` | Create a production build |
+| `npm start` | Run the production build on port 3000 |
+| `npm run lint` | Run ESLint |
+
+To run a production build locally:
 
 ```bash
-# Install dependencies
-npm install
-
-# Start Next.js development server on port 3000
-npm run dev
-
-# Build production bundle
 npm run build
-
-# Start production server
 npm start
-
-# Run ESLint
-npm run lint
 ```
 
----
+## Deployment
 
-## 5. Production Deployment (Vercel)
-
-1. Connect your GitHub repository to [Vercel](https://vercel.com).
-2. Set the **Root Directory** setting in Vercel to `frontend`.
-3. Add the environment variable:
-   - `NEXT_PUBLIC_API_URL`: Your live backend API URL (e.g. `https://your-backend.onrender.com/api`).
-4. Click **Deploy**.
-
+This repository contains the frontend application. Import it into a Next.js-compatible host such as Vercel, then configure `NEXT_PUBLIC_API_URL` in the host's environment settings to point to your deployed backend API. Redeploy after changing environment variables.

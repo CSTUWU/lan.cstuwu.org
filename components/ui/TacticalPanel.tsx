@@ -20,15 +20,15 @@ export default function TacticalPanel({
   showCorners = true,
 }: TacticalPanelProps) {
   const accentBorder = {
-    cyan: 'border-cyan/30 hover:border-cyan/60 hover:shadow-[0_0_25px_rgba(0,213,255,0.15)]',
-    orange: 'border-orange/30 hover:border-orange/60 hover:shadow-[0_0_25px_rgba(255,116,56,0.15)]',
-    neutral: 'border-tactical-border hover:border-tactical-borderLight',
+    cyan: 'border-olive/50 hover:border-olive shadow-[0_4px_16px_rgba(24,30,24,0.6)]',
+    orange: 'border-sand/40 hover:border-sand/80 shadow-[0_4px_16px_rgba(32,39,32,0.6)]',
+    neutral: 'border-gunmetal hover:border-gunmetal-light',
   }[accent];
 
   const cornerColor = {
-    cyan: 'border-cyan',
-    orange: 'border-orange',
-    neutral: 'border-secondaryText/50',
+    cyan: 'border-olive-light',
+    orange: 'border-sand',
+    neutral: 'border-khaki/50',
   }[accent];
 
   return (
