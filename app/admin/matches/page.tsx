@@ -5,15 +5,21 @@ import Image from 'next/image';
 import AdminLayout from '@/components/admin/AdminLayout';
 import {
   getStoredTeams,
+  setStoredTeams,
   getStoredMatches,
+  setStoredMatches,
   createMatch,
+  deleteStoredMatch,
   generateAndStorePlayoffBracket,
   createAndSeedPlayoffTree,
+  isPlayoffTreePublished,
+  setPlayoffTreePublished,
 } from '@/lib/storage';
 import { api } from '@/lib/api';
 import { transformBackendMatch, transformBackendTeam } from '@/lib/transformers';
 import { Team, Match, CS2Map, MatchStatus } from '@/lib/types';
-import { Swords, Plus, Calendar, Clock, MapPin, CheckCircle2, Shield, RefreshCw, Trophy, GitBranch } from 'lucide-react';
+import { CS2_MAP_POOL, getMapImage } from '@/lib/mockData';
+import { Swords, Plus, Calendar, Clock, MapPin, CheckCircle2, Shield, RefreshCw, Trophy, GitBranch, Radio, Lock, Trash2 } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 
@@ -23,11 +29,12 @@ export default function AdminMatchesPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [isTreePublished, setIsTreePublished] = useState<boolean>(() => isPlayoffTreePublished());
 
   // Form State
   const [teamAId, setTeamAId] = useState('');
   const [teamBId, setTeamBId] = useState('');
-  const [map, setMap] = useState<CS2Map>('Mirage');
+  const [map, setMap] = useState<CS2Map>('Crash');
   const [dateTime, setDateTime] = useState('2026-11-20T14:00:00');
   const [stage, setStage] = useState('Quarterfinal Match');
   const [status, setStatus] = useState<MatchStatus>('upcoming');
@@ -35,19 +42,30 @@ export default function AdminMatchesPage() {
   const loadData = async () => {
     setTeams(getStoredTeams());
     setMatches(getStoredMatches());
+    setIsTreePublished(isPlayoffTreePublished());
 
     try {
-      const [resTeams, resMatches] = await Promise.all([
+      const [resTeams, resMatches, resSettings] = await Promise.all([
         api.admin.getTeams().catch(() => null),
         api.admin.getMatches().catch(() => null),
+        api.admin.getSettings().catch(() => null),
       ]);
 
-      if (resTeams?.success && Array.isArray(resTeams.data) && resTeams.data.length > 0) {
-        setTeams(resTeams.data.map(transformBackendTeam));
+      if (resTeams?.success && Array.isArray(resTeams.data)) {
+        const transformedTeams = resTeams.data.map(transformBackendTeam);
+        setTeams(transformedTeams);
+        setStoredTeams(transformedTeams);
       }
 
-      if (resMatches?.success && Array.isArray(resMatches.data) && resMatches.data.length > 0) {
-        setMatches(resMatches.data.map(transformBackendMatch));
+      if (resMatches?.success && Array.isArray(resMatches.data)) {
+        const transformedMatches = resMatches.data.map(transformBackendMatch);
+        setMatches(transformedMatches);
+        setStoredMatches(transformedMatches);
+      }
+
+      if (resSettings?.data?.playoffTreePublished !== undefined) {
+        setIsTreePublished(resSettings.data.playoffTreePublished);
+        setPlayoffTreePublished(resSettings.data.playoffTreePublished);
       }
     } catch (e) {
       // Backend offline: use local state
@@ -89,8 +107,45 @@ export default function AdminMatchesPage() {
 
     if (!teamA || !teamB) return;
 
+    let bracketRound: 'quarterfinals' | 'semifinals' | 'final' | 'third_place' | undefined;
+    let bracketPosition: number | undefined;
+    let matchNumber: number | undefined;
+    let nextMatchNumber: number | undefined;
+    let nextMatchSlot: 'teamA' | 'teamB' | undefined;
+    let nextMatchId: string | undefined;
+
+    if (stage.includes('Quarterfinal 1') || stage.includes('Quarterfinal 01')) {
+      bracketRound = 'quarterfinals';
+      bracketPosition = 1;
+      matchNumber = 101;
+      nextMatchNumber = 105;
+      nextMatchSlot = 'teamA';
+      nextMatchId = 'm-sf-1';
+    } else if (stage.includes('Quarterfinal 2') || stage.includes('Quarterfinal 02')) {
+      bracketRound = 'quarterfinals';
+      bracketPosition = 2;
+      matchNumber = 102;
+      nextMatchNumber = 105;
+      nextMatchSlot = 'teamB';
+      nextMatchId = 'm-sf-1';
+    } else if (stage.includes('Quarterfinal 3') || stage.includes('Quarterfinal 03')) {
+      bracketRound = 'quarterfinals';
+      bracketPosition = 3;
+      matchNumber = 103;
+      nextMatchNumber = 106;
+      nextMatchSlot = 'teamA';
+      nextMatchId = 'm-sf-2';
+    } else if (stage.includes('Quarterfinal 4') || stage.includes('Quarterfinal 04')) {
+      bracketRound = 'quarterfinals';
+      bracketPosition = 4;
+      matchNumber = 104;
+      nextMatchNumber = 106;
+      nextMatchSlot = 'teamB';
+      nextMatchId = 'm-sf-2';
+    }
+
     // Backend payload
-    const backendData = {
+    const backendData: any = {
       teamA: teamA.id,
       teamB: teamB.id,
       teamAName: teamA.name,
@@ -103,18 +158,26 @@ export default function AdminMatchesPage() {
       scheduledAt: new Date(dateTime).toISOString(),
       stage,
       status: status.toUpperCase(),
+      bracketRound,
+      bracketPosition,
+      matchNumber,
+      nextMatchNumber,
+      nextMatchSlot,
     };
 
+    let backendId: string | undefined;
     try {
-      await api.admin.createMatch(backendData);
-      setNotice(`Fixture created on tournament database: ${teamA.tag} vs ${teamB.tag}`);
+      const res = await api.admin.createMatch(backendData);
+      backendId = res?.data?._id || res?.data?.id;
+      setNotice(`✓ Fixture created on tournament database: ${teamA.tag} vs ${teamB.tag}`);
     } catch (err) {
       console.warn('Backend match creation fallback to local', err);
-      setNotice(`Fixture saved locally: ${teamA.tag} vs ${teamB.tag}`);
+      setNotice(`✓ Fixture saved locally: ${teamA.tag} vs ${teamB.tag}`);
     }
 
     // Save locally
     createMatch({
+      id: backendId,
       teamAId: teamA.id,
       teamBId: teamB.id,
       teamAName: teamA.name,
@@ -129,11 +192,38 @@ export default function AdminMatchesPage() {
       scoreA: 0,
       scoreB: 0,
       stage,
+      bracketRound,
+      bracketPosition,
+      matchNumber,
+      nextMatchId,
+      nextMatchSlot,
     });
 
     setShowCreateModal(false);
     setTimeout(() => setNotice(null), 3000);
-    loadData();
+    await loadData();
+  };
+
+  const handleDeleteMatch = async (match: Match) => {
+    const confirmDelete = window.confirm(
+      `DELETE MATCH FIXTURE?\n\n` +
+      `Are you sure you want to permanently remove this match?\n` +
+      `[${match.teamATag}] ${match.teamAName} vs [${match.teamBTag}] ${match.teamBName}\n` +
+      `Stage: ${match.stage} | Map: ${match.map}`
+    );
+    if (!confirmDelete) return;
+
+    try {
+      await api.admin.deleteMatch(match.id);
+      setNotice(`✓ Match fixture [${match.teamATag}] vs [${match.teamBTag}] deleted from database.`);
+    } catch (e) {
+      console.warn('Backend match delete fallback to local', e);
+      setNotice(`✓ Match fixture [${match.teamATag}] vs [${match.teamBTag}] deleted locally.`);
+    }
+
+    deleteStoredMatch(match.id);
+    setTimeout(() => setNotice(null), 3000);
+    await loadData();
   };
 
   const handleAutoGeneratePlayoffs = async () => {
@@ -144,32 +234,26 @@ export default function AdminMatchesPage() {
     }
     const isEightSquad = candidateTeams.length <= 8;
     const confirmSeed = window.confirm(
-      `CREATE PLAYOFF TREE from ${candidateTeams.length} registered squads?\n\n` +
-      (isEightSquad
-        ? `• 8-TEAM DUAL-WING BRACKET:\n` +
-          `  - Left Wing: 4 squads (2 Quarterfinal matches)\n` +
-          `  - Right Wing: 4 squads (2 Quarterfinal matches)\n` +
-          `  - Round 2 (Semifinals) and Grand Final will be completely free.\n`
-        : `• 16-TEAM DUAL-WING BRACKET:\n` +
-          `  - Left Wing: 8 squads (4 Round of 16 matches)\n` +
-          `  - Right Wing: 8 squads (4 Round of 16 matches)\n` +
-          `  - Round 2 (Quarterfinals), Semifinals & Grand Final will be completely free.\n`) +
-      `• Match wins will automatically advance winners down the tree to the trophy!`
+      `GENERATE OFFICIAL PLAYOFF TREE?\n\n` +
+      `• Any 1st round matches you manually scheduled will be preserved and linked into the tree.\n` +
+      `• Remaining slots will be filled from registered approved squads.\n` +
+      `• Semifinals, Grand Final & Bronze decider start free awaiting match winners.\n` +
+      `• When any match is won, the winner will automatically advance into the playoff tree!`
     );
     if (!confirmSeed) return;
 
     setLoading(true);
     try {
       createAndSeedPlayoffTree(candidateTeams);
-      setNotice(
-        `✓ ${isEightSquad ? '8-Squad Dual-Wing' : '16-Squad Major'} Playoff Tree created! Seeded with ${candidateTeams.length} squads; downstream rounds are free.`
-      );
       try {
         await api.admin.generatePlayoffs().catch(() => null);
       } catch (e) {}
+      setNotice(
+        `✓ Playoff Tree generated! 1st round fixtures linked. Match wins will automatically advance winners down the tree.`
+      );
     } catch (e) {
       createAndSeedPlayoffTree(candidateTeams);
-      setNotice('✓ Playoff tree created locally.');
+      setNotice('✓ Playoff tree generated locally.');
     } finally {
       await loadData();
       setLoading(false);
@@ -177,21 +261,36 @@ export default function AdminMatchesPage() {
     }
   };
 
+  const handleTogglePublish = async () => {
+    const nextState = !isTreePublished;
+    setIsTreePublished(nextState);
+    setPlayoffTreePublished(nextState);
+    try {
+      await api.admin.updateSettings({ playoffTreePublished: nextState });
+    } catch (e) {}
+    setNotice(
+      nextState
+        ? '✓ Playoff Championship Tree PUBLISHED to live public scoreboard!'
+        : '✓ Playoff Championship Tree UNPUBLISHED (Standby screen active for public).'
+    );
+    setTimeout(() => setNotice(null), 4000);
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
         
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-tactical-border">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-gunmetal">
           <div>
             <div className="inline-flex items-center gap-2 mb-1">
-              <Badge variant="orange" size="sm">FIXTURE CONTROL</Badge>
-              <span className="text-[11px] font-mono text-secondaryText">{`// ${matches.length} FIXTURES`}</span>
+              <Badge variant="sand" size="sm">FIXTURE CONTROL</Badge>
+              <span className="text-[11px] font-mono text-mutedKhaki">{`// ${matches.length} FIXTURES`}</span>
             </div>
-            <h1 className="font-display font-black text-2xl sm:text-3xl uppercase text-white tracking-wider">
+            <h1 className="font-display font-black text-2xl sm:text-3xl uppercase text-tacticalWhite tracking-wider">
               MATCH SCHEDULING & MANAGEMENT
             </h1>
-            <p className="text-xs font-mono text-secondaryText">
-              Coordinate team pairings, designate CS2 maps, and schedule auditorium stage rounds.
+            <p className="text-xs font-mono text-mutedKhaki">
+              Coordinate squad pairings, designate combat theaters, and schedule auditorium stage rounds.
             </p>
           </div>
 
@@ -201,22 +300,30 @@ export default function AdminMatchesPage() {
                 setLoading(true);
                 loadData().finally(() => setLoading(false));
               }}
-              className="p-2 bg-surface border border-tactical-border text-cyan hover:border-cyan transition-colors"
+              className="p-2 bg-surface border border-gunmetal text-sand hover:border-sand transition-colors"
               title="Refresh matches"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             </button>
             <Button
               onClick={handleAutoGeneratePlayoffs}
-              variant="orange"
+              variant="sand"
               size="md"
-              icon={<Trophy className="w-4 h-4 text-background" />}
+              icon={<Trophy className="w-4 h-4 text-military-black" />}
             >
               CREATE PLAYOFF TREE
             </Button>
             <Button
+              onClick={handleTogglePublish}
+              variant={isTreePublished ? "outline" : "sand"}
+              size="md"
+              icon={isTreePublished ? <Lock className="w-4 h-4 text-rose-400" /> : <Radio className="w-4 h-4 text-military-black animate-pulse" />}
+            >
+              {isTreePublished ? "UNPUBLISH BRACKET" : "PUBLISH PLAYOFF TREE"}
+            </Button>
+            <Button
               onClick={() => setShowCreateModal(true)}
-              variant="cyan"
+              variant="olive"
               size="md"
               icon={<Plus className="w-4 h-4" />}
             >
@@ -226,53 +333,75 @@ export default function AdminMatchesPage() {
         </div>
 
         {notice && (
-          <div className="p-3 bg-cyan/10 border border-cyan/40 text-xs font-mono text-cyan flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-cyan" />
+          <div className="p-3 bg-olive/20 border border-olive text-xs font-mono text-sand flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-olive" />
             <span>{notice}</span>
           </div>
         )}
 
         <div className="space-y-4">
-          {matches.map((m) => (
+          {matches.length === 0 ? (
+            <div className="bg-card/80 border border-gunmetal p-12 text-center">
+              <Swords className="w-12 h-12 text-mutedKhaki/40 mx-auto mb-3" />
+              <h3 className="font-display font-black text-lg text-tacticalWhite uppercase mb-1">
+                No Match Fixtures Scheduled Yet
+              </h3>
+              <p className="text-xs font-mono text-mutedKhaki max-w-md mx-auto mb-6">
+                No active fixtures found. Use &quot;+ CREATE NEW FIXTURE&quot; above to schedule 1st round matches manually, or click &quot;CREATE PLAYOFF TREE&quot; to seed approved squads automatically.
+              </p>
+              <Button
+                onClick={() => setShowCreateModal(true)}
+                variant="olive"
+                size="sm"
+                icon={<Plus className="w-4 h-4" />}
+              >
+                CREATE NEW FIXTURE
+              </Button>
+            </div>
+          ) : (
+            matches.map((m) => (
             <div
               key={m.id}
-              className="bg-card/90 border border-tactical-border p-5 backdrop-blur-md flex flex-col md:flex-row items-center justify-between gap-6"
+              className="bg-card/90 border border-gunmetal p-5 backdrop-blur-md flex flex-col md:flex-row items-center justify-between gap-6"
             >
               <div>
-                <span className="text-[10px] font-mono uppercase tracking-widest text-cyan px-2 py-0.5 bg-surface border border-cyan/30 inline-block mb-1">
+                <span className="text-[10px] font-mono uppercase tracking-widest text-sand px-2 py-0.5 bg-surface border border-gunmetal inline-block mb-1">
                   {m.stage}
                 </span>
-                <div className="text-xs font-mono text-white font-bold flex items-center gap-2">
-                  <Calendar className="w-3.5 h-3.5 text-orange" />
+                <div className="text-xs font-mono text-tacticalWhite font-bold flex items-center gap-2">
+                  <Calendar className="w-3.5 h-3.5 text-sand" />
                   {new Date(m.dateTime).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                 </div>
-                <div className="text-[11px] font-mono text-secondaryText mt-0.5">
-                  MAP: <strong className="text-white">{m.map}</strong>
+                <div className="flex items-center gap-2 text-[11px] font-mono text-mutedKhaki mt-1">
+                  <div className="relative w-6 h-4 overflow-hidden border border-gunmetal shrink-0 clip-tactical">
+                    <Image src={getMapImage(m.map)} alt={m.map} fill className="object-cover" sizes="24px" />
+                  </div>
+                  <span>THEATER: <strong className="text-tacticalWhite">{m.map}</strong></span>
                 </div>
               </div>
 
               <div className="flex items-center gap-6">
                 <div className="flex items-center gap-2.5 text-right">
                   <div>
-                    <span className="text-[10px] font-mono text-cyan block">[{m.teamATag}]</span>
-                    <span className="font-display font-bold text-base text-white uppercase">{m.teamAName}</span>
+                    <span className="text-[10px] font-mono text-sand block">[{m.teamATag}]</span>
+                    <span className="font-display font-bold text-base text-tacticalWhite uppercase">{m.teamAName}</span>
                   </div>
-                  <div className="relative w-10 h-10 bg-surface border border-tactical-border shrink-0 overflow-hidden">
+                  <div className="relative w-10 h-10 bg-surface border border-gunmetal shrink-0 overflow-hidden">
                     <Image src={m.teamALogo} alt={m.teamAName} fill className="object-cover" sizes="40px" />
                   </div>
                 </div>
 
-                <div className="px-3 py-1.5 bg-surface border border-tactical-border font-display font-black text-lg">
+                <div className="px-3 py-1.5 bg-surface border border-gunmetal font-display font-black text-lg text-tacticalWhite">
                   {m.status === 'completed' ? `${m.scoreA} : ${m.scoreB}` : 'VS'}
                 </div>
 
                 <div className="flex items-center gap-2.5 text-left">
-                  <div className="relative w-10 h-10 bg-surface border border-tactical-border shrink-0 overflow-hidden">
+                  <div className="relative w-10 h-10 bg-surface border border-gunmetal shrink-0 overflow-hidden">
                     <Image src={m.teamBLogo} alt={m.teamBName} fill className="object-cover" sizes="40px" />
                   </div>
                   <div>
-                    <span className="text-[10px] font-mono text-orange block">[{m.teamBTag}]</span>
-                    <span className="font-display font-bold text-base text-white uppercase">{m.teamBName}</span>
+                    <span className="text-[10px] font-mono text-khaki block">[{m.teamBTag}]</span>
+                    <span className="font-display font-bold text-base text-tacticalWhite uppercase">{m.teamBName}</span>
                   </div>
                 </div>
               </div>
@@ -280,10 +409,10 @@ export default function AdminMatchesPage() {
               <div className="text-right flex items-center gap-3">
                 <span className={`text-[10px] font-mono uppercase font-bold px-2.5 py-1 border ${
                   m.status === 'completed'
-                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                    ? 'bg-olive/20 text-sand border-olive'
                     : m.status === 'live'
                     ? 'bg-rose-500/10 text-rose-400 border-rose-500/30 animate-pulse'
-                    : 'bg-cyan/10 text-cyan border-cyan/30'
+                    : 'bg-card text-mutedKhaki border-gunmetal'
                 }`}>
                   {m.status}
                 </span>
@@ -291,27 +420,37 @@ export default function AdminMatchesPage() {
                 <Button href="/admin/scoreboard" variant="outline" size="sm">
                   SCORE
                 </Button>
+
+                <button
+                  type="button"
+                  onClick={() => handleDeleteMatch(m)}
+                  className="p-2 bg-surface hover:bg-rose-950/60 border border-gunmetal hover:border-rose-600/60 text-mutedKhaki hover:text-rose-400 transition-colors"
+                  title="Delete match fixture"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
               </div>
             </div>
-          ))}
+            ))
+          )}
         </div>
 
       </div>
 
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/85 backdrop-blur-md">
-          <div className="relative bg-card border border-cyan/50 max-w-lg w-full p-6 sm:p-8 shadow-2xl">
-            <h2 className="font-display font-black text-xl text-white uppercase tracking-wider mb-4 border-b border-tactical-border pb-3">
-              SCHEDULE NEW CS2 FIXTURE
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-military-black/85 backdrop-blur-md">
+          <div className="relative bg-card border border-gunmetal max-w-lg w-full p-6 sm:p-8 shadow-2xl">
+            <h2 className="font-display font-black text-xl text-tacticalWhite uppercase tracking-wider mb-4 border-b border-gunmetal pb-3">
+              SCHEDULE NEW COD4 FIXTURE
             </h2>
 
             <form onSubmit={handleCreateMatch} className="space-y-4 font-mono text-xs">
               <div>
-                <label className="block text-secondaryText uppercase mb-1">TEAM A (CT SEED)</label>
+                <label className="block text-mutedKhaki uppercase mb-1">SQUAD A (TASK FORCE SEED)</label>
                 <select
                   value={teamAId}
                   onChange={(e) => setTeamAId(e.target.value)}
-                  className="w-full bg-surface border border-tactical-border p-2.5 text-white focus:outline-none focus:border-cyan"
+                  className="w-full bg-surface border border-gunmetal p-2.5 text-tacticalWhite focus:outline-none focus:border-olive"
                   required
                 >
                   <option value="">-- Select Team A --</option>
@@ -324,11 +463,11 @@ export default function AdminMatchesPage() {
               </div>
 
               <div>
-                <label className="block text-secondaryText uppercase mb-1">TEAM B (T SEED)</label>
+                <label className="block text-mutedKhaki uppercase mb-1">SQUAD B (OPFOR SEED)</label>
                 <select
                   value={teamBId}
                   onChange={(e) => setTeamBId(e.target.value)}
-                  className="w-full bg-surface border border-tactical-border p-2.5 text-white focus:outline-none focus:border-cyan"
+                  className="w-full bg-surface border border-gunmetal p-2.5 text-tacticalWhite focus:outline-none focus:border-olive"
                   required
                 >
                   <option value="">-- Select Team B --</option>
@@ -342,51 +481,55 @@ export default function AdminMatchesPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-secondaryText uppercase mb-1">CS2 MAP</label>
+                  <label className="block text-mutedKhaki uppercase mb-1">COMBAT THEATER</label>
                   <select
                     value={map}
                     onChange={(e) => setMap(e.target.value as CS2Map)}
-                    className="w-full bg-surface border border-tactical-border p-2.5 text-white focus:outline-none focus:border-cyan"
+                    className="w-full bg-surface border border-gunmetal p-2.5 text-tacticalWhite focus:outline-none focus:border-olive"
                   >
-                    <option value="Mirage">Mirage</option>
-                    <option value="Dust II">Dust II</option>
-                    <option value="Inferno">Inferno</option>
-                    <option value="Ancient">Ancient</option>
-                    <option value="Nuke">Nuke</option>
-                    <option value="Anubis">Anubis</option>
-                    <option value="Vertigo">Vertigo</option>
+                    {CS2_MAP_POOL.map((m) => (
+                      <option key={m.callsign} value={m.name}>
+                        {m.name} ({m.callsign})
+                      </option>
+                    ))}
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-secondaryText uppercase mb-1">STAGE / ROUND</label>
-                  <input
-                    type="text"
+                  <label className="block text-mutedKhaki uppercase mb-1">STAGE / 1ST ROUND SLOT</label>
+                  <select
                     value={stage}
                     onChange={(e) => setStage(e.target.value)}
-                    placeholder="e.g. Upper Semifinal 1"
-                    className="w-full bg-surface border border-tactical-border p-2.5 text-white focus:outline-none focus:border-cyan"
-                    required
-                  />
+                    className="w-full bg-surface border border-gunmetal p-2.5 text-tacticalWhite focus:outline-none focus:border-olive"
+                  >
+                    <option value="Quarterfinal 1 (MR12)">Quarterfinal 1 (1st Round • Left Wing Top)</option>
+                    <option value="Quarterfinal 2 (MR12)">Quarterfinal 2 (1st Round • Left Wing Bottom)</option>
+                    <option value="Quarterfinal 3 (MR12)">Quarterfinal 3 (1st Round • Right Wing Top)</option>
+                    <option value="Quarterfinal 4 (MR12)">Quarterfinal 4 (1st Round • Right Wing Bottom)</option>
+                    <option value="Semifinal 1 (MR12)">Semifinal 1 (MR12)</option>
+                    <option value="Semifinal 2 (MR12)">Semifinal 2 (MR12)</option>
+                    <option value="Grand Final (LAN Main Auditorium Stage)">Grand Final (Auditorium Stage)</option>
+                    <option value="Exhibition Match">Exhibition / Group Stage Match</option>
+                  </select>
                 </div>
               </div>
 
               <div>
-                <label className="block text-secondaryText uppercase mb-1">MATCH DATE & TIME</label>
+                <label className="block text-mutedKhaki uppercase mb-1">MATCH DATE & TIME</label>
                 <input
                   type="datetime-local"
                   value={dateTime.slice(0, 16)}
                   onChange={(e) => setDateTime(e.target.value)}
-                  className="w-full bg-surface border border-tactical-border p-2.5 text-white focus:outline-none focus:border-cyan"
+                  className="w-full bg-surface border border-gunmetal p-2.5 text-tacticalWhite focus:outline-none focus:border-olive"
                   required
                 />
               </div>
 
-              <div className="pt-4 border-t border-tactical-border flex justify-end gap-3">
+              <div className="pt-4 border-t border-gunmetal flex justify-end gap-3">
                 <Button type="button" onClick={() => setShowCreateModal(false)} variant="ghost" size="sm">
                   CANCEL
                 </Button>
-                <Button type="submit" variant="cyan" size="sm">
+                <Button type="submit" variant="olive" size="sm">
                   PUBLISH FIXTURE
                 </Button>
               </div>

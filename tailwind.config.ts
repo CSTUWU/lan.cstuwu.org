@@ -9,63 +9,100 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "#080B10",
-        surface: "#101820",
-        card: "#151E27",
+        // COD4 Military Base Palette
+        background: "#111411", // Military Black
+        surface: "#181E18",    // Tactical Dark Green Surface
+        card: "#202720",       // Operation Panel Card
+
+        // Specified COD4 Colors
+        olive: {
+          DEFAULT: "#59634A",  // Military Olive Green
+          light: "#707D5D",
+          hover: "#667254",
+          dark: "#3B4231",
+          muted: "rgba(89, 99, 74, 0.2)",
+        },
+        darkGreen: {
+          DEFAULT: "#252C24",  // Tactical Dark Green
+          light: "#303A2F",
+          dark: "#1A2019",
+        },
+        sand: {
+          DEFAULT: "#C2B28A",  // Desert Sand
+          light: "#D5C8A6",
+          hover: "#D0C39E",
+          dark: "#9E8E68",
+          muted: "rgba(194, 178, 138, 0.2)",
+        },
+        khaki: {
+          DEFAULT: "#8C876B",  // Muted Khaki
+          light: "#A49F83",
+          dark: "#68644E",
+          muted: "rgba(140, 135, 107, 0.2)",
+        },
+        gunmetal: {
+          DEFAULT: "#343936",  // Gunmetal Grey
+          light: "#4B524E",
+          border: "#3F4642",
+          dark: "#262A28",
+        },
+        tacticalWhite: "#E5E5DC", // Tactical White
+
+        // Aliased tokens for backwards compatibility (no neon cyan or orange)
         cyan: {
-          DEFAULT: "#00D5FF",
-          glow: "rgba(0, 213, 255, 0.4)",
-          muted: "rgba(0, 213, 255, 0.15)",
-          dark: "#008ba8",
+          DEFAULT: "#59634A",  // Mapped to Military Olive Green
+          glow: "rgba(89, 99, 74, 0.35)",
+          muted: "rgba(89, 99, 74, 0.18)",
+          dark: "#3B4231",
         },
         orange: {
-          DEFAULT: "#FF7438",
-          glow: "rgba(255, 116, 56, 0.4)",
-          muted: "rgba(255, 116, 56, 0.15)",
-          dark: "#b84715",
+          DEFAULT: "#C2B28A",  // Mapped to Desert Sand
+          glow: "rgba(194, 178, 138, 0.35)",
+          muted: "rgba(194, 178, 138, 0.18)",
+          dark: "#9E8E68",
         },
+
         tactical: {
-          border: "#1E2B38",
-          borderLight: "#2A3B4D",
-          grid: "rgba(255, 255, 255, 0.03)",
-          surface2: "#18232E",
-          hover: "#1E2B38",
-          gold: "#F5A623",
-          green: "#00E599",
-          red: "#FF3355",
+          border: "#343936",       // Gunmetal Grey
+          borderLight: "#474E4A",
+          grid: "rgba(89, 99, 74, 0.05)",
+          surface2: "#252C24",     // Tactical Dark Green
+          hover: "#2A3229",
+          gold: "#C2B28A",         // Desert Sand
+          green: "#59634A",        // Military Olive Green
+          red: "#8F3434",          // Muted Alert Crimson
         },
-        primaryText: "#F5F7FA",
-        secondaryText: "#8996A3",
+        primaryText: "#E5E5DC",    // Tactical White
+        secondaryText: "#8C876B",  // Muted Khaki
       },
       fontFamily: {
         sans: [
           "Rajdhani",
-          "Montserrat",
+          "Inter",
+          "Roboto Condensed",
           "system-ui",
           "-apple-system",
-          "Segoe UI",
-          "Roboto",
           "sans-serif",
         ],
         display: [
-          "Chakra Petch",
           "Rajdhani",
-          "Impact",
+          "Oswald",
+          "Chakra Petch",
           "sans-serif",
         ],
         mono: [
+          "JetBrains Mono",
           "Consolas",
-          "Courier New",
           "monospace",
         ],
       },
       boxShadow: {
-        "cyan-glow": "0 0 25px rgba(0, 213, 255, 0.35)",
-        "orange-glow": "0 0 25px rgba(255, 116, 56, 0.35)",
-        "tactical-card": "0 10px 30px -10px rgba(0, 0, 0, 0.7)",
+        "olive-glow": "0 0 20px rgba(89, 99, 74, 0.35)",
+        "sand-glow": "0 0 20px rgba(194, 178, 138, 0.35)",
+        "military-card": "0 10px 30px -10px rgba(0, 0, 0, 0.85)",
       },
       clipPath: {
-        slant: "polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 15px 100%, 0 calc(100% - 15px))",
+        slant: "polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px))",
       },
     },
   },

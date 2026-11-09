@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'cyan' | 'orange' | 'outline' | 'ghost' | 'danger';
+  variant?: 'cyan' | 'orange' | 'olive' | 'sand' | 'outline' | 'ghost' | 'danger';
   size?: 'sm' | 'md' | 'lg';
   href?: string;
   icon?: React.ReactNode;
@@ -33,11 +33,13 @@ export default function Button({
   }[size];
 
   const variantClasses = {
-    cyan: 'bg-cyan text-background hover:bg-white hover:text-background shadow-[0_0_20px_rgba(0,213,255,0.4)] hover:shadow-[0_0_30px_rgba(0,213,255,0.7)]',
-    orange: 'bg-orange text-background hover:bg-white hover:text-background shadow-[0_0_20px_rgba(255,116,56,0.4)] hover:shadow-[0_0_30px_rgba(255,116,56,0.7)]',
-    outline: 'border border-cyan/50 text-cyan hover:bg-cyan/10 hover:border-cyan hover:shadow-[0_0_15px_rgba(0,213,255,0.25)]',
-    ghost: 'border border-tactical-border text-secondaryText hover:text-white hover:border-tactical-borderLight hover:bg-surface/50',
-    danger: 'bg-red-600 text-white hover:bg-red-500 shadow-[0_0_20px_rgba(239,68,68,0.4)]',
+    cyan: 'bg-olive text-tacticalWhite hover:bg-olive-light border border-olive-light/50 shadow-[0_2px_12px_rgba(37,44,36,0.7)] active:translate-y-0.5',
+    olive: 'bg-olive text-tacticalWhite hover:bg-olive-light border border-olive-light/50 shadow-[0_2px_12px_rgba(37,44,36,0.7)] active:translate-y-0.5',
+    orange: 'bg-sand text-military-black hover:bg-sand-light border border-sand-light/60 font-bold shadow-[0_2px_12px_rgba(194,178,138,0.25)] active:translate-y-0.5',
+    sand: 'bg-sand text-military-black hover:bg-sand-light border border-sand-light/60 font-bold shadow-[0_2px_12px_rgba(194,178,138,0.25)] active:translate-y-0.5',
+    outline: 'border border-gunmetal text-sand hover:bg-olive/20 hover:border-olive-light/60 hover:text-tacticalWhite shadow-sm',
+    ghost: 'border border-gunmetal/60 text-mutedText hover:text-tacticalWhite hover:border-gunmetal hover:bg-darkGreen/40',
+    danger: 'bg-red-900/90 text-tacticalWhite border border-red-700/60 hover:bg-red-800 shadow-[0_2px_10px_rgba(153,27,27,0.4)]',
   }[variant];
 
   const content = (

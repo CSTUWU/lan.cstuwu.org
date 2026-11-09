@@ -8,22 +8,55 @@ export const UWU_FACULTIES = [
 
 export type UWUFaculty = (typeof UWU_FACULTIES)[number];
 
+export const UWU_DEGREE_PROGRAMMES = [
+  'Computer Science and Technology (CST)',
+  'Industrial Information Technology (IIT)',
+  'Science and Technology (SCT)',
+  'Mineral Resources and Technology (MRT)',
+  'Information and Communication Technology (BICT)',
+  'Engineering Technology (BET)',
+  'Biosystems Technology (BST)',
+  'Entrepreneurship and Management (ENM)',
+  'Hospitality, Tourism and Events Management (HTE)',
+  'Human Resource Development (HRD)',
+  'Animal Science (ANS)',
+  'Aquatic Resources Technology (AQT)',
+  'Export Agriculture (EAG)',
+  'Plantation Management Technology (PMT)',
+  'English Language & Applied Linguistics (ELAL)',
+  'Bachelor of Medicine and Bachelor of Surgery (MBBS)',
+] as const;
+
+export type UWUDegreeProgram = (typeof UWU_DEGREE_PROGRAMMES)[number];
+
+export const ACADEMIC_YEARS = ['1', '2', '3', '4'] as const;
+export type AcademicYear = (typeof ACADEMIC_YEARS)[number];
+
 export interface Player {
   id: string;
   name: string;
-  faculty: string;
-  ign?: string; // in-game name (optional)
-  steamId?: string; // steam ID (optional)
+  faculty?: string;
+  degreeProgram?: string;
+  year?: string;
+  ign?: string; // in-game name / Gaming Name
+  gamingName?: string;
+  steamId?: string; // steam ID / callsign
   email?: string;
   role?: string;
+  enrollmentNumber?: string;
 }
 
 export interface Captain {
   name: string;
   whatsappNumber: string;
   faculty?: string;
+  degreeProgram?: string;
+  year?: string;
+  enrollmentNumber?: string;
   email?: string;
   phone?: string;
+  ign?: string;
+  gamingName?: string;
 }
 
 export type ApprovalStatus = 'approved' | 'pending' | 'rejected';
@@ -39,6 +72,11 @@ export interface Team {
   captain: Captain;
   players: Player[]; // exactly 5 players
   faculty?: string;
+  degreeProgram?: string;
+  year?: string;
+  enrollmentNumber?: string;
+  email?: string;
+  column1?: string;
   matchesPlayed?: number;
   wins?: number;
   losses?: number;
@@ -52,7 +90,25 @@ export interface Team {
 
 export type MatchStatus = 'upcoming' | 'live' | 'completed';
 
-export type CS2Map = 'Mirage' | 'Dust II' | 'Inferno' | 'Ancient' | 'Nuke' | 'Anubis' | 'Vertigo';
+export type CS2Map =
+  | 'Crash'
+  | 'Crossfire'
+  | 'Backlot'
+  | 'Citystreets'
+  | 'Strike'
+  | 'District'
+  | 'mp_crash'
+  | 'mp_crossfire'
+  | 'mp_backlot'
+  | 'mp_citystreet'
+  | 'mp_strike'
+  | 'Mirage'
+  | 'Dust II'
+  | 'Inferno'
+  | 'Ancient'
+  | 'Nuke'
+  | 'Anubis'
+  | 'Vertigo';
 
 export interface Match {
   id: string;
