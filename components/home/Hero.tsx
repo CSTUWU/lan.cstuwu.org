@@ -331,6 +331,7 @@ export default function Hero() {
       ref={containerRef}
       className="relative w-full h-screen bg-military-black overflow-hidden select-none"
     >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/frames/hero/frame_0001.webp?v=3"
         alt="Battlefield Standoff Preview"

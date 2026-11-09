@@ -4,7 +4,9 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { getStoredTeams } from '@/lib/storage';
+import { getStoredTeams, setStoredTeams } from '@/lib/storage';
+import { api } from '@/lib/api';
+import { transformBackendTeam } from '@/lib/transformers';
 import { Team, Player } from '@/lib/types';
 import { Search, Shield, Copy, Check, Users, Crosshair, Crown, ArrowRight, LayoutGrid, List, FileSpreadsheet, Download } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
@@ -17,7 +19,21 @@ export default function AdminPlayersPage() {
   const [viewMode, setViewMode] = useState<'team-wise' | 'flat'>('team-wise');
 
   useEffect(() => {
-    setTeams(getStoredTeams());
+    const loadData = async () => {
+      setTeams(getStoredTeams());
+      try {
+        const res = await api.admin.getTeams();
+        if (res.success && Array.isArray(res.data)) {
+          const transformed = res.data.map(transformBackendTeam);
+          setTeams(transformed);
+          setStoredTeams(transformed);
+        }
+      } catch (e) {
+        // Backend offline: use local state
+      }
+    };
+
+    loadData();
     const handleUpdate = () => setTeams(getStoredTeams());
     window.addEventListener('cst_teams_updated', handleUpdate);
     return () => window.removeEventListener('cst_teams_updated', handleUpdate);

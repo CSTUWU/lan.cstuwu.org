@@ -266,6 +266,7 @@ export default function CinematicShowcase() {
       ref={containerRef}
       className="relative w-full h-screen bg-military-black overflow-hidden select-none border-b border-gunmetal"
     >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/frames/home/frame_0001.webp?v=3"
         alt="Tactical Engagement Preview"

@@ -5,15 +5,20 @@ import Image from 'next/image';
 import AdminLayout from '@/components/admin/AdminLayout';
 import {
   getStoredTeams,
+  setStoredTeams,
   getStoredMatches,
+  setStoredMatches,
   createMatch,
+  deleteStoredMatch,
   generateAndStorePlayoffBracket,
   createAndSeedPlayoffTree,
+  isPlayoffTreePublished,
+  setPlayoffTreePublished,
 } from '@/lib/storage';
 import { api } from '@/lib/api';
 import { transformBackendMatch, transformBackendTeam } from '@/lib/transformers';
 import { Team, Match, CS2Map, MatchStatus } from '@/lib/types';
-import { Swords, Plus, Calendar, Clock, MapPin, CheckCircle2, Shield, RefreshCw, Trophy, GitBranch } from 'lucide-react';
+import { Swords, Plus, Calendar, Clock, MapPin, CheckCircle2, Shield, RefreshCw, Trophy, GitBranch, Radio, Lock, Trash2 } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 
@@ -23,6 +28,7 @@ export default function AdminMatchesPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [isTreePublished, setIsTreePublished] = useState<boolean>(() => isPlayoffTreePublished());
 
   // Form State
   const [teamAId, setTeamAId] = useState('');
@@ -35,19 +41,30 @@ export default function AdminMatchesPage() {
   const loadData = async () => {
     setTeams(getStoredTeams());
     setMatches(getStoredMatches());
+    setIsTreePublished(isPlayoffTreePublished());
 
     try {
-      const [resTeams, resMatches] = await Promise.all([
+      const [resTeams, resMatches, resSettings] = await Promise.all([
         api.admin.getTeams().catch(() => null),
         api.admin.getMatches().catch(() => null),
+        api.admin.getSettings().catch(() => null),
       ]);
 
-      if (resTeams?.success && Array.isArray(resTeams.data) && resTeams.data.length > 0) {
-        setTeams(resTeams.data.map(transformBackendTeam));
+      if (resTeams?.success && Array.isArray(resTeams.data)) {
+        const transformedTeams = resTeams.data.map(transformBackendTeam);
+        setTeams(transformedTeams);
+        setStoredTeams(transformedTeams);
       }
 
-      if (resMatches?.success && Array.isArray(resMatches.data) && resMatches.data.length > 0) {
-        setMatches(resMatches.data.map(transformBackendMatch));
+      if (resMatches?.success && Array.isArray(resMatches.data)) {
+        const transformedMatches = resMatches.data.map(transformBackendMatch);
+        setMatches(transformedMatches);
+        setStoredMatches(transformedMatches);
+      }
+
+      if (resSettings?.data?.playoffTreePublished !== undefined) {
+        setIsTreePublished(resSettings.data.playoffTreePublished);
+        setPlayoffTreePublished(resSettings.data.playoffTreePublished);
       }
     } catch (e) {
       // Backend offline: use local state
@@ -147,16 +164,19 @@ export default function AdminMatchesPage() {
       nextMatchSlot,
     };
 
+    let backendId: string | undefined;
     try {
-      await api.admin.createMatch(backendData);
-      setNotice(`Fixture created on tournament database: ${teamA.tag} vs ${teamB.tag}`);
+      const res = await api.admin.createMatch(backendData);
+      backendId = res?.data?._id || res?.data?.id;
+      setNotice(`✓ Fixture created on tournament database: ${teamA.tag} vs ${teamB.tag}`);
     } catch (err) {
       console.warn('Backend match creation fallback to local', err);
-      setNotice(`Fixture saved locally: ${teamA.tag} vs ${teamB.tag}`);
+      setNotice(`✓ Fixture saved locally: ${teamA.tag} vs ${teamB.tag}`);
     }
 
     // Save locally
     createMatch({
+      id: backendId,
       teamAId: teamA.id,
       teamBId: teamB.id,
       teamAName: teamA.name,
@@ -180,7 +200,29 @@ export default function AdminMatchesPage() {
 
     setShowCreateModal(false);
     setTimeout(() => setNotice(null), 3000);
-    loadData();
+    await loadData();
+  };
+
+  const handleDeleteMatch = async (match: Match) => {
+    const confirmDelete = window.confirm(
+      `DELETE MATCH FIXTURE?\n\n` +
+      `Are you sure you want to permanently remove this match?\n` +
+      `[${match.teamATag}] ${match.teamAName} vs [${match.teamBTag}] ${match.teamBName}\n` +
+      `Stage: ${match.stage} | Map: ${match.map}`
+    );
+    if (!confirmDelete) return;
+
+    try {
+      await api.admin.deleteMatch(match.id);
+      setNotice(`✓ Match fixture [${match.teamATag}] vs [${match.teamBTag}] deleted from database.`);
+    } catch (e) {
+      console.warn('Backend match delete fallback to local', e);
+      setNotice(`✓ Match fixture [${match.teamATag}] vs [${match.teamBTag}] deleted locally.`);
+    }
+
+    deleteStoredMatch(match.id);
+    setTimeout(() => setNotice(null), 3000);
+    await loadData();
   };
 
   const handleAutoGeneratePlayoffs = async () => {
@@ -216,6 +258,21 @@ export default function AdminMatchesPage() {
       setLoading(false);
       setTimeout(() => setNotice(null), 5000);
     }
+  };
+
+  const handleTogglePublish = async () => {
+    const nextState = !isTreePublished;
+    setIsTreePublished(nextState);
+    setPlayoffTreePublished(nextState);
+    try {
+      await api.admin.updateSettings({ playoffTreePublished: nextState });
+    } catch (e) {}
+    setNotice(
+      nextState
+        ? '✓ Playoff Championship Tree PUBLISHED to live public scoreboard!'
+        : '✓ Playoff Championship Tree UNPUBLISHED (Standby screen active for public).'
+    );
+    setTimeout(() => setNotice(null), 4000);
   };
 
   return (
@@ -254,6 +311,14 @@ export default function AdminMatchesPage() {
               icon={<Trophy className="w-4 h-4 text-military-black" />}
             >
               CREATE PLAYOFF TREE
+            </Button>
+            <Button
+              onClick={handleTogglePublish}
+              variant={isTreePublished ? "outline" : "sand"}
+              size="md"
+              icon={isTreePublished ? <Lock className="w-4 h-4 text-rose-400" /> : <Radio className="w-4 h-4 text-military-black animate-pulse" />}
+            >
+              {isTreePublished ? "UNPUBLISH BRACKET" : "PUBLISH PLAYOFF TREE"}
             </Button>
             <Button
               onClick={() => setShowCreateModal(true)}
@@ -351,6 +416,15 @@ export default function AdminMatchesPage() {
                 <Button href="/admin/scoreboard" variant="outline" size="sm">
                   SCORE
                 </Button>
+
+                <button
+                  type="button"
+                  onClick={() => handleDeleteMatch(m)}
+                  className="p-2 bg-surface hover:bg-rose-950/60 border border-gunmetal hover:border-rose-600/60 text-mutedKhaki hover:text-rose-400 transition-colors"
+                  title="Delete match fixture"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
               </div>
             </div>
             ))

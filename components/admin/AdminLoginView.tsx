@@ -50,8 +50,8 @@ export default function AdminLoginView() {
     } catch (err: any) {
       console.warn('Backend login notice:', err);
       if (
-        (user.toLowerCase() === 'admin' && (pass === 'admin12345' || pass === 'cst2026')) ||
-        user.toLowerCase() === 'admin@cst.uwu.ac.lk'
+        (user.toLowerCase() === 'cst26lan' && pass === 'cstlan@2026') ||
+        (user.toLowerCase() === 'cst26lan@cst.uwu.ac.lk' && pass === 'cstlan@2026')
       ) {
         setAdminAuth(true);
         setIsSuccess(true);
@@ -100,7 +100,7 @@ export default function AdminLoginView() {
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} autoComplete="off" className="space-y-4">
             <div>
               <label className="block text-[11px] font-mono text-mutedText uppercase tracking-wider mb-1.5 flex items-center justify-between">
                 <span>OPERATOR USERNAME</span>
@@ -111,9 +111,9 @@ export default function AdminLoginView() {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Enter callsign or username"
+                  placeholder="Enter username"
                   required
-                  autoComplete="username"
+                  autoComplete="off"
                   className="w-full bg-surface border border-gunmetal pl-10 pr-4 py-2.5 text-xs font-mono text-tacticalWhite focus:outline-none focus:border-sand"
                 />
               </div>
@@ -131,7 +131,7 @@ export default function AdminLoginView() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter password"
                   required
-                  autoComplete="current-password"
+                  autoComplete="off"
                   className="w-full bg-surface border border-gunmetal pl-10 pr-4 py-2.5 text-xs font-mono text-tacticalWhite focus:outline-none focus:border-sand"
                 />
               </div>

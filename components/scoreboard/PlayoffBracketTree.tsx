@@ -32,9 +32,11 @@ import {
   MapPin,
   Eye,
   SlidersHorizontal,
+  Lock,
 } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
+import { api } from '@/lib/api';
 import { Match, Team, PlayoffBracket, CS2Map } from '@/lib/types';
 import {
   getPlayoffBracket,
@@ -58,6 +60,9 @@ import {
   createAndSeedPlayoffTree,
   getActiveBracketMode,
   setActiveBracketMode,
+  isPlayoffTreePublished,
+  setPlayoffTreePublished,
+  checkAdminAuth,
 } from '@/lib/storage';
 
 interface PlayoffBracketTreeProps {
@@ -155,10 +160,8 @@ export default function PlayoffBracketTree({
   defaultMode,
   showAdminControls = false,
 }: PlayoffBracketTreeProps) {
-  const [layoutMode, setLayoutMode] = useState<BracketLayoutMode>(() => {
-    if (defaultMode) return defaultMode;
-    return getActiveBracketMode();
-  });
+  const [isAdmin, setIsAdmin] = useState<boolean>(() => showAdminControls || checkAdminAuth());
+  const [isPublished, setIsPublished] = useState<boolean>(() => isPlayoffTreePublished());
   const [scale, setScale] = useState(1);
   const [activeHoverTeam, setActiveHoverTeam] = useState<string | null>(null);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
@@ -170,29 +173,63 @@ export default function PlayoffBracketTree({
   const [sixteenMatches, setSixteenMatches] = useState<Match[]>(() => getStored16Matches());
   const [isSimulatingAll, setIsSimulatingAll] = useState(false);
 
-  const eightBracket = useMemo(() => getPlayoffBracket(matches, teams), [matches, teams]);
+  // Dynamic automatic bracket sizing: 16-squad vs 8-squad based on scheduled matches
+  const has16Matches = useMemo(() => {
+    if (sixteenMatches.some((m) => m.bracketRound === 'round_of_16' && (m.teamAId || m.teamBId || m.teamAName))) {
+      return true;
+    }
+    if (matches.some((m) => m.bracketRound === 'round_of_16') || matches.length > 7) {
+      return true;
+    }
+    return getActiveBracketMode() === '16-squad';
+  }, [sixteenMatches, matches]);
 
+  const [viewStyle, setViewStyle] = useState<'bracket' | 'linear'>('bracket');
+  const activeLayout: BracketLayoutMode = viewStyle === 'linear' ? 'linear' : (has16Matches ? '16-squad' : '8-squad');
+
+  const eightBracket = useMemo(() => getPlayoffBracket(matches, teams), [matches, teams]);
   const sixteenBracket = useMemo(() => getPlayoffBracket(sixteenMatches, teams), [sixteenMatches, teams]);
 
   useEffect(() => {
-    // Listen for bracket mode changes triggered from Admin or other tabs
-    const handleModeChange = (e: Event) => {
-      const customEvent = e as CustomEvent<{ mode: BracketLayoutMode }>;
-      if (customEvent.detail?.mode) {
-        setLayoutMode(customEvent.detail.mode);
+    setIsAdmin(showAdminControls || checkAdminAuth());
+    setIsPublished(isPlayoffTreePublished());
+
+    api.public.getSettings().then((res: any) => {
+      if (res?.data?.playoffTreePublished !== undefined) {
+        setIsPublished(res.data.playoffTreePublished);
+        setPlayoffTreePublished(res.data.playoffTreePublished);
+      }
+    }).catch(() => null);
+
+    const handlePubChange = (e: Event) => {
+      const customEvent = e as CustomEvent<{ published: boolean }>;
+      if (typeof customEvent.detail?.published === 'boolean') {
+        setIsPublished(customEvent.detail.published);
+      } else {
+        setIsPublished(isPlayoffTreePublished());
       }
     };
-    window.addEventListener('cst_bracket_mode_changed', handleModeChange);
-    return () => window.removeEventListener('cst_bracket_mode_changed', handleModeChange);
-  }, []);
+    window.addEventListener('cst_playoff_published_changed', handlePubChange);
 
-  useEffect(() => {
-    // Only initialize 16-squad tree if empty and currently in 16-squad mode
-    if (layoutMode === '16-squad' && sixteenMatches.length === 0 && teams && teams.length > 0) {
-      const refreshed = refresh16PlayoffTreeFromApprovedTeams(teams);
-      setSixteenMatches(refreshed);
-    }
-  }, [teams, layoutMode]);
+    const handleAuthChange = () => {
+      setIsAdmin(showAdminControls || checkAdminAuth());
+    };
+    window.addEventListener('cst_admin_auth_changed', handleAuthChange);
+
+    const channel = getLiveBroadcastChannel();
+    const handleChannelMsg = (event: MessageEvent) => {
+      if (event.data?.type === 'CST_PLAYOFF_PUBLISHED_UPDATE') {
+        setIsPublished(event.data.published);
+      }
+    };
+    channel?.addEventListener('message', handleChannelMsg);
+
+    return () => {
+      window.removeEventListener('cst_playoff_published_changed', handlePubChange);
+      window.removeEventListener('cst_admin_auth_changed', handleAuthChange);
+      channel?.removeEventListener('message', handleChannelMsg);
+    };
+  }, [showAdminControls]);
 
   useEffect(() => {
     const sync16 = () => {
@@ -346,6 +383,65 @@ export default function PlayoffBracketTree({
     triggerNotice('👑 TOURNAMENT CHAMPION CROWNED ON THE TROPHY PODIUM!');
   };
 
+  // If playoff bracket is disabled/unpublished and viewer is NOT using admin controls:
+  if (!isPublished && !showAdminControls) {
+    return (
+      <div className="space-y-6 select-none font-sans" ref={containerRef}>
+        <div className="bg-card border-2 border-gunmetal p-8 sm:p-14 text-center relative overflow-hidden clip-tactical shadow-2xl backdrop-blur-md">
+          <div className="absolute inset-0 tactical-grid-bg opacity-20 pointer-events-none" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-sand/5 rounded-full blur-[140px] pointer-events-none" />
+
+          <div className="relative z-10 max-w-xl mx-auto">
+            <div className="w-20 h-20 mx-auto mb-6 bg-surface border-2 border-sand/40 flex items-center justify-center text-sand clip-tactical shadow-[0_2px_16px_rgba(194,178,138,0.2)]">
+              <Shield className="w-10 h-10 animate-pulse text-sand" />
+            </div>
+
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-surface border border-gunmetal text-sand text-xs font-mono uppercase tracking-widest font-bold mb-4">
+              <span className="w-2 h-2 rounded-full bg-sand animate-ping" />
+              <span>PLAYOFF TREE // DISABLED (STANDBY)</span>
+            </div>
+
+            <h2 className="font-display font-black text-2xl sm:text-3xl uppercase text-tacticalWhite tracking-wider mb-3">
+              PLAYOFF BRACKET CURRENTLY DISABLED
+            </h2>
+
+            <p className="text-xs sm:text-sm font-mono text-mutedKhaki leading-relaxed mb-6">
+              The official championship playoff tree has not yet been published by tournament command.
+              1st round fixture scheduling and squad bracket seeds are currently being calibrated.
+              When tournament administrators publish the bracket, the live interactive dual-wing championship tree will broadcast here automatically.
+            </p>
+
+            <div className="p-4 bg-surface/80 border border-gunmetal flex flex-wrap justify-center items-center gap-6 text-xs font-mono text-mutedKhaki">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-amber-400" />
+                <span>STATUS: AWAITING ADMIN PUBLICATION</span>
+              </div>
+              <div>• FORMAT: COD4 MW 5v5 S&amp;D SINGLE ELIMINATION</div>
+              <div>• VENUE: UWU MAIN AUDITORIUM</div>
+            </div>
+
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+              <Link
+                href="/scoreboard/live"
+                className="px-4 py-2 bg-surface hover:bg-card border border-gunmetal text-sand font-mono text-xs uppercase font-bold flex items-center gap-2 transition-colors"
+              >
+                <Radio className="w-4 h-4" />
+                <span>VIEW STAGE TELEMETRY HUD</span>
+              </Link>
+              <Link
+                href="/schedule"
+                className="px-4 py-2 bg-surface hover:bg-card border border-gunmetal text-mutedKhaki hover:text-tacticalWhite font-mono text-xs uppercase font-bold flex items-center gap-2 transition-colors"
+              >
+                <Calendar className="w-4 h-4" />
+                <span>VIEW SCHEDULED MATCHES</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 select-none font-sans" ref={containerRef}>
       
@@ -374,43 +470,33 @@ export default function PlayoffBracketTree({
 
           <div className="flex flex-wrap items-center gap-3">
             
+            {/* Dynamic Bracket Pool Indicator (No manual 16 vs 8 toggle needed - depends on fixtures created) */}
+            <div className="bg-surface/90 border border-gunmetal px-3 py-1.5 flex items-center gap-2 text-xs font-mono">
+              <span className="text-mutedKhaki font-bold uppercase">BRACKET POOL:</span>
+              <Badge variant={has16Matches ? 'cyan' : 'sand'} size="sm">
+                {has16Matches ? '16-SQUAD MAJOR (AUTO)' : '8-SQUAD BRACKET (AUTO)'}
+              </Badge>
+            </div>
+
+            {/* Layout representation: Symmetrical Dual-Wing Tree vs Linear Stages */}
             <div className="bg-surface/90 border border-gunmetal p-1 flex items-center gap-1">
               <button
-                onClick={() => {
-                  setLayoutMode('16-squad');
-                  setActiveBracketMode('16-squad');
-                }}
+                onClick={() => setViewStyle('bracket')}
                 className={`px-3 py-1.5 font-mono text-xs uppercase font-bold flex items-center gap-1.5 transition-all ${
-                  layoutMode === '16-squad'
+                  viewStyle === 'bracket'
                     ? 'bg-olive text-tacticalWhite shadow-[0_2px_10px_rgba(37,44,36,0.8)]'
                     : 'text-mutedText hover:text-tacticalWhite'
                 }`}
-                title="16-Squad Major Tournament Bracket"
+                title="Dual-Wing Symmetrical Tactical Championship Tree"
               >
                 <Layers className="w-3.5 h-3.5" />
-                <span>16-SQUAD MAJOR</span>
+                <span>DUAL-WING TREE</span>
               </button>
 
               <button
-                onClick={() => {
-                  setLayoutMode('8-squad');
-                  setActiveBracketMode('8-squad');
-                }}
+                onClick={() => setViewStyle('linear')}
                 className={`px-3 py-1.5 font-mono text-xs uppercase font-bold flex items-center gap-1.5 transition-all ${
-                  layoutMode === '8-squad'
-                    ? 'bg-sand text-military-black font-black shadow-[0_2px_10px_rgba(194,178,138,0.3)]'
-                    : 'text-mutedText hover:text-tacticalWhite'
-                }`}
-                title="8-Squad UWU Inter-Faculty Tournament Bracket"
-              >
-                <Swords className="w-3.5 h-3.5" />
-                <span>8-SQUAD UWU</span>
-              </button>
-
-              <button
-                onClick={() => setLayoutMode('linear')}
-                className={`px-3 py-1.5 font-mono text-xs uppercase font-bold flex items-center gap-1.5 transition-all ${
-                  layoutMode === 'linear'
+                  viewStyle === 'linear'
                     ? 'bg-gunmetal text-tacticalWhite font-black shadow-sm'
                     : 'text-mutedText hover:text-tacticalWhite'
                 }`}
@@ -463,7 +549,7 @@ export default function PlayoffBracketTree({
                   <span>CREATE PLAYOFF TREE</span>
                 </button>
 
-                {layoutMode === '16-squad' ? (
+                {activeLayout === '16-squad' ? (
                   <>
                     <button
                       onClick={handleAutoSimulateChampionship}
@@ -523,148 +609,148 @@ export default function PlayoffBracketTree({
 
       <div className="bg-military-black border-2 border-gunmetal p-4 sm:p-8 relative overflow-x-auto overflow-y-hidden shadow-2xl min-h-[720px]">
         <div className="absolute inset-0 tactical-grid-bg opacity-15 pointer-events-none" />
-        <div className="absolute top-10 left-10 w-96 h-96 bg-olive/5 rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute bottom-10 left-10 w-96 h-96 bg-sand/5 rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute top-10 right-10 w-96 h-96 bg-darkGreen/10 rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute bottom-10 right-10 w-96 h-96 bg-olive/5 rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[480px] h-[480px] bg-sand/5 rounded-full blur-[140px] pointer-events-none" />
+          <div className="absolute top-10 left-10 w-96 h-96 bg-olive/5 rounded-full blur-[120px] pointer-events-none" />
+          <div className="absolute bottom-10 left-10 w-96 h-96 bg-sand/5 rounded-full blur-[120px] pointer-events-none" />
+          <div className="absolute top-10 right-10 w-96 h-96 bg-darkGreen/10 rounded-full blur-[120px] pointer-events-none" />
+          <div className="absolute bottom-10 right-10 w-96 h-96 bg-olive/5 rounded-full blur-[120px] pointer-events-none" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[480px] h-[480px] bg-sand/5 rounded-full blur-[140px] pointer-events-none" />
 
-        <div
-          className="transition-transform duration-200 origin-top-center flex items-center justify-center min-w-[1260px] py-4"
-          style={{ transform: `scale(${scale})` }}
-        >
-          {layoutMode === '16-squad' && (
-            sixteenMatches.length === 0 ? (
-              <div className="py-24 text-center max-w-xl mx-auto px-4">
-                <div className="w-16 h-16 bg-surface border-2 border-gunmetal flex items-center justify-center mx-auto mb-4 clip-tactical">
-                  <Trophy className="w-8 h-8 text-sand/60" />
+          <div
+            className="transition-transform duration-200 origin-top-center flex items-center justify-center min-w-[1260px] py-4"
+            style={{ transform: `scale(${scale})` }}
+          >
+            {activeLayout === '16-squad' && (
+              sixteenMatches.length === 0 ? (
+                <div className="py-24 text-center max-w-xl mx-auto px-4">
+                  <div className="w-16 h-16 bg-surface border-2 border-gunmetal flex items-center justify-center mx-auto mb-4 clip-tactical">
+                    <Trophy className="w-8 h-8 text-sand/60" />
+                  </div>
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-surface border border-gunmetal text-sand text-xs font-mono uppercase tracking-widest font-bold mb-3">
+                    <span>PLAYOFF BRACKET // STANDBY</span>
+                  </div>
+                  <h3 className="font-display font-black text-2xl sm:text-3xl uppercase text-tacticalWhite tracking-wider mb-2">
+                    TOURNAMENT PLAYOFF TREE PENDING
+                  </h3>
+                  <p className="text-xs sm:text-sm font-mono text-mutedKhaki leading-relaxed max-w-md mx-auto mb-6">
+                    The official championship playoff bracket will be revealed once initial schedule rounds are locked and the bracket tree is generated by tournament command.
+                  </p>
+                  {(showAdminControls || isAdmin) && (
+                    <button
+                      onClick={handleCreatePlayoffTree}
+                      className="px-5 py-2.5 bg-olive hover:bg-olive/90 text-tacticalWhite font-mono text-xs uppercase font-bold tracking-wider transition-all flex items-center gap-2 mx-auto border border-gunmetal shadow-lg"
+                    >
+                      <Trophy className="w-4 h-4 text-sand" />
+                      <span>GENERATE PLAYOFF TREE NOW</span>
+                    </button>
+                  )}
                 </div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 bg-surface border border-gunmetal text-sand text-xs font-mono uppercase tracking-widest font-bold mb-3">
-                  <span>PLAYOFF BRACKET // STANDBY</span>
-                </div>
-                <h3 className="font-display font-black text-2xl sm:text-3xl uppercase text-tacticalWhite tracking-wider mb-2">
-                  TOURNAMENT PLAYOFF TREE PENDING
-                </h3>
-                <p className="text-xs sm:text-sm font-mono text-mutedKhaki leading-relaxed max-w-md mx-auto mb-6">
-                  The official championship playoff bracket will be revealed once initial schedule rounds are locked and the bracket tree is generated by tournament command.
-                </p>
-                {showAdminControls && (
-                  <button
-                    onClick={handleCreatePlayoffTree}
-                    className="px-5 py-2.5 bg-olive hover:bg-olive/90 text-tacticalWhite font-mono text-xs uppercase font-bold tracking-wider transition-all flex items-center gap-2 mx-auto border border-gunmetal shadow-lg"
-                  >
-                    <Trophy className="w-4 h-4 text-sand" />
-                    <span>GENERATE PLAYOFF TREE NOW</span>
-                  </button>
-                )}
-              </div>
-            ) : (
-              <DualWingBracket16View
-                bracket={sixteenBracket}
-                matches={sixteenMatches}
-                activeHoverTeam={activeHoverTeam}
-                setActiveHoverTeam={setActiveHoverTeam}
-                onSelectMatch={setSelectedMatch}
-                onSimulateWin={showAdminControls ? handleSimulate16Win : undefined}
-                onSimulateRound={showAdminControls ? handleSimulate16Round : undefined}
-              />
-            )
-          )}
+              ) : (
+                <DualWingBracket16View
+                  bracket={sixteenBracket}
+                  matches={sixteenMatches}
+                  activeHoverTeam={activeHoverTeam}
+                  setActiveHoverTeam={setActiveHoverTeam}
+                  onSelectMatch={setSelectedMatch}
+                  onSimulateWin={(showAdminControls || isAdmin) ? handleSimulate16Win : undefined}
+                  onSimulateRound={(showAdminControls || isAdmin) ? handleSimulate16Round : undefined}
+                />
+              )
+            )}
 
-          {layoutMode === '8-squad' && (
-            (!matches || matches.length === 0 || !eightBracket.quarterfinals || eightBracket.quarterfinals.length === 0) ? (
-              <div className="py-24 text-center max-w-xl mx-auto px-4">
-                <div className="w-16 h-16 bg-surface border-2 border-gunmetal flex items-center justify-center mx-auto mb-4 clip-tactical">
-                  <Trophy className="w-8 h-8 text-sand/60" />
+            {activeLayout === '8-squad' && (
+              (!matches || matches.length === 0 || !eightBracket.quarterfinals || eightBracket.quarterfinals.length === 0) ? (
+                <div className="py-24 text-center max-w-xl mx-auto px-4">
+                  <div className="w-16 h-16 bg-surface border-2 border-gunmetal flex items-center justify-center mx-auto mb-4 clip-tactical">
+                    <Trophy className="w-8 h-8 text-sand/60" />
+                  </div>
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-surface border border-gunmetal text-sand text-xs font-mono uppercase tracking-widest font-bold mb-3">
+                    <span>PLAYOFF BRACKET // STANDBY</span>
+                  </div>
+                  <h3 className="font-display font-black text-2xl sm:text-3xl uppercase text-tacticalWhite tracking-wider mb-2">
+                    TOURNAMENT PLAYOFF TREE PENDING
+                  </h3>
+                  <p className="text-xs sm:text-sm font-mono text-mutedKhaki leading-relaxed max-w-md mx-auto mb-6">
+                    The official 8-squad playoff bracket will be revealed once fixtures are scheduled and seeded by tournament command.
+                  </p>
+                  {(showAdminControls || isAdmin) && (
+                    <button
+                      onClick={() => {
+                        createAndSeedPlayoffTree(teams);
+                        if (onRefresh) onRefresh();
+                        triggerNotice('✓ Seeded official 8-squad playoff tree!');
+                      }}
+                      className="px-5 py-2.5 bg-olive hover:bg-olive/90 text-tacticalWhite font-mono text-xs uppercase font-bold tracking-wider transition-all flex items-center gap-2 mx-auto border border-gunmetal shadow-lg"
+                    >
+                      <Trophy className="w-4 h-4 text-sand" />
+                      <span>GENERATE PLAYOFF TREE NOW</span>
+                    </button>
+                  )}
                 </div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 bg-surface border border-gunmetal text-sand text-xs font-mono uppercase tracking-widest font-bold mb-3">
-                  <span>PLAYOFF BRACKET // STANDBY</span>
-                </div>
-                <h3 className="font-display font-black text-2xl sm:text-3xl uppercase text-tacticalWhite tracking-wider mb-2">
-                  TOURNAMENT PLAYOFF TREE PENDING
-                </h3>
-                <p className="text-xs sm:text-sm font-mono text-mutedKhaki leading-relaxed max-w-md mx-auto mb-6">
-                  The official 8-squad playoff bracket will be revealed once fixtures are scheduled and seeded by tournament command.
-                </p>
-                {showAdminControls && (
-                  <button
-                    onClick={() => {
-                      createAndSeedPlayoffTree(teams);
-                      if (onRefresh) onRefresh();
-                      triggerNotice('✓ Seeded official 8-squad playoff tree!');
-                    }}
-                    className="px-5 py-2.5 bg-olive hover:bg-olive/90 text-tacticalWhite font-mono text-xs uppercase font-bold tracking-wider transition-all flex items-center gap-2 mx-auto border border-gunmetal shadow-lg"
-                  >
-                    <Trophy className="w-4 h-4 text-sand" />
-                    <span>GENERATE PLAYOFF TREE NOW</span>
-                  </button>
-                )}
-              </div>
-            ) : (
-              <DualWingBracket8View
-                bracket={eightBracket}
-                matches={matches}
-                activeHoverTeam={activeHoverTeam}
-                setActiveHoverTeam={setActiveHoverTeam}
-                onSelectMatch={setSelectedMatch}
-                onSimulateWin={showAdminControls ? handleSimulate8Win : undefined}
-                onSimulateRound={showAdminControls ? handleSimulate8Round : undefined}
-              />
-            )
-          )}
+              ) : (
+                <DualWingBracket8View
+                  bracket={eightBracket}
+                  matches={matches}
+                  activeHoverTeam={activeHoverTeam}
+                  setActiveHoverTeam={setActiveHoverTeam}
+                  onSelectMatch={setSelectedMatch}
+                  onSimulateWin={(showAdminControls || isAdmin) ? handleSimulate8Win : undefined}
+                  onSimulateRound={(showAdminControls || isAdmin) ? handleSimulate8Round : undefined}
+                />
+              )
+            )}
 
-          {layoutMode === 'linear' && (
-            (!matches || matches.length === 0 || !eightBracket.quarterfinals || eightBracket.quarterfinals.length === 0) ? (
-              <div className="py-24 text-center max-w-xl mx-auto px-4">
-                <div className="w-16 h-16 bg-surface border-2 border-gunmetal flex items-center justify-center mx-auto mb-4 clip-tactical">
-                  <Trophy className="w-8 h-8 text-sand/60" />
+            {activeLayout === 'linear' && (
+              (!matches || matches.length === 0 || !eightBracket.quarterfinals || eightBracket.quarterfinals.length === 0) ? (
+                <div className="py-24 text-center max-w-xl mx-auto px-4">
+                  <div className="w-16 h-16 bg-surface border-2 border-gunmetal flex items-center justify-center mx-auto mb-4 clip-tactical">
+                    <Trophy className="w-8 h-8 text-sand/60" />
+                  </div>
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-surface border border-gunmetal text-sand text-xs font-mono uppercase tracking-widest font-bold mb-3">
+                    <span>PLAYOFF BRACKET // STANDBY</span>
+                  </div>
+                  <h3 className="font-display font-black text-2xl sm:text-3xl uppercase text-tacticalWhite tracking-wider mb-2">
+                    TOURNAMENT PLAYOFF TREE PENDING
+                  </h3>
+                  <p className="text-xs sm:text-sm font-mono text-mutedKhaki leading-relaxed max-w-md mx-auto mb-6">
+                    The official linear stage bracket will be published once fixtures are scheduled and seeded by tournament command.
+                  </p>
+                  {(showAdminControls || isAdmin) && (
+                    <button
+                      onClick={() => {
+                        createAndSeedPlayoffTree(teams);
+                        if (onRefresh) onRefresh();
+                        triggerNotice('✓ Seeded official playoff tree!');
+                      }}
+                      className="px-5 py-2.5 bg-olive hover:bg-olive/90 text-tacticalWhite font-mono text-xs uppercase font-bold tracking-wider transition-all flex items-center gap-2 mx-auto border border-gunmetal shadow-lg"
+                    >
+                      <Trophy className="w-4 h-4 text-sand" />
+                      <span>GENERATE PLAYOFF TREE NOW</span>
+                    </button>
+                  )}
                 </div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 bg-surface border border-gunmetal text-sand text-xs font-mono uppercase tracking-widest font-bold mb-3">
-                  <span>PLAYOFF BRACKET // STANDBY</span>
-                </div>
-                <h3 className="font-display font-black text-2xl sm:text-3xl uppercase text-tacticalWhite tracking-wider mb-2">
-                  TOURNAMENT PLAYOFF TREE PENDING
-                </h3>
-                <p className="text-xs sm:text-sm font-mono text-mutedKhaki leading-relaxed max-w-md mx-auto mb-6">
-                  The official linear stage bracket will be published once fixtures are scheduled and seeded by tournament command.
-                </p>
-                {showAdminControls && (
-                  <button
-                    onClick={() => {
-                      createAndSeedPlayoffTree(teams);
-                      if (onRefresh) onRefresh();
-                      triggerNotice('✓ Seeded official playoff tree!');
-                    }}
-                    className="px-5 py-2.5 bg-olive hover:bg-olive/90 text-tacticalWhite font-mono text-xs uppercase font-bold tracking-wider transition-all flex items-center gap-2 mx-auto border border-gunmetal shadow-lg"
-                  >
-                    <Trophy className="w-4 h-4 text-sand" />
-                    <span>GENERATE PLAYOFF TREE NOW</span>
-                  </button>
-                )}
-              </div>
-            ) : (
-              <LinearStageBracketView
-                bracket={eightBracket}
-                onSelectMatch={setSelectedMatch}
-                onSimulateWin={showAdminControls ? handleSimulate8Win : undefined}
-                onSimulateRound={showAdminControls ? handleSimulate8Round : undefined}
-              />
-            )
-          )}
+              ) : (
+                <LinearStageBracketView
+                  bracket={eightBracket}
+                  onSelectMatch={setSelectedMatch}
+                  onSimulateWin={(showAdminControls || isAdmin) ? handleSimulate8Win : undefined}
+                  onSimulateRound={(showAdminControls || isAdmin) ? handleSimulate8Round : undefined}
+                />
+              )
+            )}
+          </div>
         </div>
-      </div>
 
       {selectedMatch && (
         <MatchDossierModal
           match={selectedMatch}
-          showAdminControls={showAdminControls}
+          showAdminControls={showAdminControls || isAdmin}
           onClose={() => setSelectedMatch(null)}
           onSimulateWin={(side) => {
-            if (layoutMode === '16-squad') handleSimulate16Win(selectedMatch.id, side);
+            if (activeLayout === '16-squad') handleSimulate16Win(selectedMatch.id, side);
             else handleSimulate8Win(selectedMatch.id, side);
           }}
           onSimulateRound={(side) => {
-            if (layoutMode === '16-squad') handleSimulate16Round(selectedMatch.id, side);
+            if (activeLayout === '16-squad') handleSimulate16Round(selectedMatch.id, side);
             else handleSimulate8Round(selectedMatch.id, side);
           }}
         />

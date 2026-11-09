@@ -17,21 +17,58 @@ const COUNTDOWN_KEY = 'cst_lan_countdown_2026';
 const AUTH_KEY = 'cst_lan_admin_auth';
 const LIVE_CHANNEL_NAME = 'cst_cs2_live_channel';
 const ACTIVE_BRACKET_MODE_KEY = 'cst_lan_active_bracket_mode';
+const PLAYOFF_PUBLISHED_KEY = 'cst_lan_playoff_published_2026';
+
+export const isPlayoffTreePublished = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  try {
+    const raw = localStorage.getItem(PLAYOFF_PUBLISHED_KEY);
+    if (raw !== null) {
+      return raw === 'true';
+    }
+    return false;
+  } catch {
+    return false;
+  }
+};
+
+export const setPlayoffTreePublished = (published: boolean) => {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(PLAYOFF_PUBLISHED_KEY, published ? 'true' : 'false');
+    window.dispatchEvent(new CustomEvent('cst_playoff_published_changed', { detail: { published } }));
+    const channel = getLiveBroadcastChannel();
+    channel?.postMessage({
+      type: 'CST_PLAYOFF_PUBLISHED_UPDATE',
+      published,
+      timestamp: Date.now(),
+    });
+  } catch (e) {
+    console.warn('Failed setting playoff tree published state', e);
+  }
+};
 
 export type ActiveBracketMode = '8-squad' | '16-squad';
 
 export const getActiveBracketMode = (): ActiveBracketMode => {
   if (typeof window === 'undefined') return '8-squad';
   try {
-    const stored = localStorage.getItem(ACTIVE_BRACKET_MODE_KEY);
-    if (stored === '8-squad' || stored === '16-squad') return stored;
-    // Auto-detect based on registered teams count
+    // 1. Dynamic check based on created/scheduled matches
+    const rawMatches16 = localStorage.getItem(MATCHES_16_KEY);
+    const m16: Match[] = rawMatches16 ? JSON.parse(rawMatches16) : [];
+    if (m16.length > 7 || m16.some((m) => m.bracketRound === 'round_of_16' && (m.teamAId || m.teamBId))) {
+      return '16-squad';
+    }
+    const rawMatches = localStorage.getItem(MATCHES_KEY);
+    const matches: Match[] = rawMatches ? JSON.parse(rawMatches) : [];
+    if (matches.some((m) => m.bracketRound === 'round_of_16') || matches.length > 7) {
+      return '16-squad';
+    }
+    // 2. Check registered candidate squads
     const rawTeams = localStorage.getItem(TEAMS_KEY);
     const teams: Team[] = rawTeams ? JSON.parse(rawTeams) : [];
     const sourceTeams = teams.filter((t) => (t.status || '').toLowerCase() !== 'rejected');
-    const mode: ActiveBracketMode = sourceTeams.length > 8 ? '16-squad' : '8-squad';
-    localStorage.setItem(ACTIVE_BRACKET_MODE_KEY, mode);
-    return mode;
+    return sourceTeams.length > 8 ? '16-squad' : '8-squad';
   } catch {
     return '8-squad';
   }
@@ -501,6 +538,10 @@ export const setStoredTeams = (newTeams: Team[]): void => {
   }
 };
 
+export const setStoredMatches = (newMatches: Match[]): void => {
+  notifyMatchesUpdated(newMatches);
+};
+
 export const saveTeam = (newTeam: Omit<Team, 'id' | 'createdAt' | 'status'>): Team => {
   const teams = getStoredTeams();
   const created: Team = {
@@ -636,11 +677,11 @@ export const getActiveLiveMatch = (): Match | undefined => {
   return matches.find((m) => m.status === 'live') || getStored16Matches().find((m) => m.status === 'live') || matches[0];
 };
 
-export const createMatch = (matchData: Omit<Match, 'id'>): Match => {
+export const createMatch = (matchData: Omit<Match, 'id'> & { id?: string }): Match => {
   const matches = getStoredMatches();
   const newMatch: Match = {
     ...matchData,
-    id: `match-${Date.now()}`,
+    id: matchData.id || `match-${Date.now()}`,
     currentRound: matchData.currentRound ?? 0,
     half: matchData.half ?? 1,
     c4Planted: matchData.c4Planted ?? false,
@@ -648,9 +689,28 @@ export const createMatch = (matchData: Omit<Match, 'id'>): Match => {
     teamASide: matchData.teamASide ?? 'CT',
     teamBSide: matchData.teamBSide ?? 'T',
   };
-  const updated = [newMatch, ...matches];
+  const updated = [newMatch, ...matches.filter((m) => m.id !== newMatch.id)];
   notifyMatchesUpdated(updated, newMatch.id);
   return newMatch;
+};
+
+export const deleteStoredMatch = (matchId: string): boolean => {
+  if (typeof window === 'undefined') return false;
+  try {
+    const matches8 = getStoredMatches().filter((m) => m.id !== matchId);
+    localStorage.setItem(MATCHES_KEY, JSON.stringify(matches8));
+
+    const matches16 = getStored16Matches().filter((m) => m.id !== matchId);
+    localStorage.setItem(MATCHES_16_KEY, JSON.stringify(matches16));
+
+    notifyMatchesUpdated(matches8, matchId);
+    window.dispatchEvent(new Event('cst_16_matches_updated'));
+    recalculateStandings(matches8);
+    return true;
+  } catch (e) {
+    console.error('Failed to delete stored match:', e);
+    return false;
+  }
 };
 
 export const updateMatchScore = (
@@ -925,11 +985,6 @@ export const saveCountdown = (settings: CountdownSettings) => {
     localStorage.setItem(COUNTDOWN_KEY, JSON.stringify(settings));
     window.dispatchEvent(new Event('cst_countdown_updated'));
     window.dispatchEvent(new CustomEvent('cst_registration_status_changed', { detail: { settings } }));
-    
-    // If registration is closed, lock in real approved teams to the 1st layer of playoff tree
-    if (!settings.isRegistrationOpen) {
-      refresh16PlayoffTreeFromApprovedTeams();
-    }
   }
 };
 
@@ -949,9 +1004,6 @@ export const setRegistrationOpen = (isOpen: boolean): CountdownSettings => {
     eventStatus: isOpen ? 'REGISTRATIONS OPEN' : (current.eventStatus === 'REGISTRATIONS OPEN' ? 'CHECK-IN PHASE' : current.eventStatus),
   };
   saveCountdown(updated);
-
-  // Automatically refresh and lock 1st layer of playoff tree
-  refresh16PlayoffTreeFromApprovedTeams();
 
   try {
     const channel = getLiveBroadcastChannel();
@@ -1000,8 +1052,8 @@ export const resetAllData = () => {
   if (typeof window !== 'undefined') {
     localStorage.setItem(TEAMS_KEY, JSON.stringify(INITIAL_TEAMS));
     localStorage.setItem(MATCHES_KEY, JSON.stringify(INITIAL_MATCHES));
-    const fresh16 = generate16TeamPlayoffTree([]);
-    localStorage.setItem(MATCHES_16_KEY, JSON.stringify(fresh16));
+    localStorage.removeItem(MATCHES_16_KEY);
+    setPlayoffTreePublished(false);
     localStorage.setItem(COUNTDOWN_KEY, JSON.stringify(INITIAL_COUNTDOWN));
     window.dispatchEvent(new Event('cst_teams_updated'));
     window.dispatchEvent(new Event('cst_matches_updated'));

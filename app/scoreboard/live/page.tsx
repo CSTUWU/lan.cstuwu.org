@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
-import { getStoredMatches, getLiveBroadcastChannel, getActiveLiveMatch, getStoredTeams } from '@/lib/storage';
+import { getStoredMatches, getLiveBroadcastChannel, getActiveLiveMatch, getStoredTeams, isPlayoffTreePublished, setPlayoffTreePublished } from '@/lib/storage';
 import { INITIAL_MATCHES, INITIAL_TEAMS } from '@/lib/mockData';
 import { api } from '@/lib/api';
 import { transformBackendMatch } from '@/lib/transformers';
@@ -36,6 +36,7 @@ function StageProjectorScoreboardContent() {
     return INITIAL_MATCHES.find((m) => m.status === 'live') || INITIAL_MATCHES[0];
   });
   const [displayMode, setDisplayMode] = useState<'match' | 'bracket'>('match');
+  const [isTreePublished, setIsTreePublished] = useState<boolean>(() => isPlayoffTreePublished());
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [cleanMode, setCleanMode] = useState(false);
   const [lastUpdateEffect, setLastUpdateEffect] = useState(false);
@@ -62,6 +63,9 @@ function StageProjectorScoreboardContent() {
   }, [soundEnabled]);
 
   const syncMatchState = useCallback(() => {
+    const pub = isPlayoffTreePublished();
+    setIsTreePublished(pub);
+
     const allMatches = getStoredMatches();
     setMatches(allMatches);
     setTeams(getStoredTeams());
@@ -105,18 +109,45 @@ function StageProjectorScoreboardContent() {
   useEffect(() => {
     syncMatchState();
 
+    // Check backend settings for playoffTreePublished
+    api.public.getSettings().then((res) => {
+      if (res?.data?.playoffTreePublished !== undefined) {
+        setIsTreePublished(res.data.playoffTreePublished);
+        setPlayoffTreePublished(res.data.playoffTreePublished);
+        if (!res.data.playoffTreePublished) {
+          setDisplayMode((prev) => (prev === 'bracket' ? 'match' : prev));
+        }
+      }
+    }).catch(() => {});
+
     const channel = getLiveBroadcastChannel();
     const handleBroadcast = (event: MessageEvent) => {
       if (event.data?.type === 'CST_LIVE_MATCH_UPDATE' || event.data?.type === 'CST_16_MATCHES_UPDATE') {
         syncMatchState();
       }
+      if (event.data?.type === 'CST_PLAYOFF_PUBLISHED_UPDATE') {
+        const pub = typeof event.data.published === 'boolean' ? event.data.published : isPlayoffTreePublished();
+        setIsTreePublished(pub);
+        if (!pub) {
+          setDisplayMode((prev) => (prev === 'bracket' ? 'match' : prev));
+        }
+      }
     };
     channel?.addEventListener('message', handleBroadcast);
 
     const handleStorage = () => syncMatchState();
+    const handlePubChange = () => {
+      const pub = isPlayoffTreePublished();
+      setIsTreePublished(pub);
+      if (!pub) {
+        setDisplayMode((prev) => (prev === 'bracket' ? 'match' : prev));
+      }
+    };
+
     window.addEventListener('storage', handleStorage);
     window.addEventListener('cst_matches_updated', handleStorage);
     window.addEventListener('cst_16_matches_updated', handleStorage);
+    window.addEventListener('cst_playoff_published_changed', handlePubChange);
 
     const interval = setInterval(syncMatchState, 2000);
 
@@ -125,6 +156,7 @@ function StageProjectorScoreboardContent() {
       window.removeEventListener('storage', handleStorage);
       window.removeEventListener('cst_matches_updated', handleStorage);
       window.removeEventListener('cst_16_matches_updated', handleStorage);
+      window.removeEventListener('cst_playoff_published_changed', handlePubChange);
       clearInterval(interval);
     };
   }, [syncMatchState]);
@@ -200,17 +232,19 @@ function StageProjectorScoreboardContent() {
               >
                 🔴 ARENA HUD
               </button>
-              <button
-                onClick={() => setDisplayMode('bracket')}
-                className={`px-2.5 py-1 font-mono text-[11px] uppercase font-bold transition-all flex items-center gap-1 ${
-                  displayMode === 'bracket'
-                    ? 'bg-sand text-military-black font-black'
-                    : 'text-mutedKhaki hover:text-tacticalWhite'
-                }`}
-              >
-                <Trophy className="w-3 h-3" />
-                <span>BRACKET HUD</span>
-              </button>
+              {isTreePublished && (
+                <button
+                  onClick={() => setDisplayMode('bracket')}
+                  className={`px-2.5 py-1 font-mono text-[11px] uppercase font-bold transition-all flex items-center gap-1 ${
+                    displayMode === 'bracket'
+                      ? 'bg-sand text-military-black font-black'
+                      : 'text-mutedKhaki hover:text-tacticalWhite'
+                  }`}
+                >
+                  <Trophy className="w-3 h-3" />
+                  <span>BRACKET HUD</span>
+                </button>
+              )}
             </div>
 
             <button
@@ -254,7 +288,7 @@ function StageProjectorScoreboardContent() {
 
       <main className="relative z-20 flex-1 flex flex-col justify-center max-w-7xl w-full mx-auto px-4 sm:px-8 py-6">
         
-        {displayMode === 'bracket' ? (
+        {displayMode === 'bracket' && isTreePublished ? (
           <div className="py-4">
             <PlayoffBracketTree
               matches={matches}
@@ -280,13 +314,15 @@ function StageProjectorScoreboardContent() {
               Auditorium live projector feed is online. When a tournament match begins or is launched by the referee desk, live round telemetry, ordnance timers, and round streaks will broadcast here automatically in real time.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4">
-              <button
-                onClick={() => setDisplayMode('bracket')}
-                className="px-5 py-2.5 bg-olive text-tacticalWhite font-mono text-xs font-bold uppercase tracking-wider hover:bg-olive/90 transition-all flex items-center gap-2 border border-gunmetal"
-              >
-                <Trophy className="w-4 h-4 text-sand" />
-                <span>VIEW PLAYOFF BRACKET</span>
-              </button>
+              {isTreePublished && (
+                <button
+                  onClick={() => setDisplayMode('bracket')}
+                  className="px-5 py-2.5 bg-olive text-tacticalWhite font-mono text-xs font-bold uppercase tracking-wider hover:bg-olive/90 transition-all flex items-center gap-2 border border-gunmetal"
+                >
+                  <Trophy className="w-4 h-4 text-sand" />
+                  <span>VIEW PLAYOFF BRACKET</span>
+                </button>
+              )}
               <Link
                 href="/scoreboard"
                 className="px-5 py-2.5 bg-surface border border-gunmetal text-tacticalWhite font-mono text-xs font-bold uppercase tracking-wider hover:border-sand transition-all"

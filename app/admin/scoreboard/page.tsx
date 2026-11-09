@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import AdminLayout from '@/components/admin/AdminLayout';
@@ -9,6 +9,8 @@ import {
   getStored16Matches,
   getStoredTeams,
   setStoredTeams,
+  setStoredMatches,
+  deleteStoredMatch,
   updateMatchScore,
   incrementMatchScore,
   switchMatchSides,
@@ -16,6 +18,8 @@ import {
   setMatchLiveStatus,
   updateLiveMatch,
   createAndSeedPlayoffTree,
+  isPlayoffTreePublished,
+  setPlayoffTreePublished,
 } from '@/lib/storage';
 import { api } from '@/lib/api';
 import { transformBackendMatch, transformBackendTeam } from '@/lib/transformers';
@@ -34,6 +38,8 @@ import {
   Flame,
   Shield,
   Zap,
+  Lock,
+  Trash2,
 } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
@@ -48,6 +54,7 @@ export default function AdminScoreboardPage() {
   const [mvp, setMvp] = useState<string>('');
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
+  const [isTreePublished, setIsTreePublished] = useState<boolean>(() => isPlayoffTreePublished());
 
   const getCombinedMatches = (filter: '16-squad' | '8-squad' | 'all') => {
     const list8 = getStoredMatches();
@@ -57,7 +64,7 @@ export default function AdminScoreboardPage() {
     return [...list16, ...list8];
   };
 
-  const loadMatches = async () => {
+  const loadMatches = useCallback(async () => {
     const combined = getCombinedMatches(bracketFilter);
     setMatches(combined);
 
@@ -67,21 +74,26 @@ export default function AdminScoreboardPage() {
         api.admin.getTeams().catch(() => null),
       ]);
 
-      if (resTeams?.success && Array.isArray(resTeams.data) && resTeams.data.length > 0) {
+      if (resTeams?.success && Array.isArray(resTeams.data)) {
         setStoredTeams(resTeams.data.map(transformBackendTeam));
       }
 
-      if (resMatches?.success && Array.isArray(resMatches.data) && resMatches.data.length > 0) {
+      if (resMatches?.success && Array.isArray(resMatches.data)) {
         const transformed = resMatches.data.map(transformBackendMatch);
-        if (bracketFilter === '8-squad' || bracketFilter === 'all') {
-          setMatches(bracketFilter === '8-squad' ? transformed : [...getStored16Matches(), ...transformed]);
+        if (bracketFilter === '8-squad') {
+          setMatches(transformed);
+          setStoredMatches(transformed);
+        } else if (bracketFilter === '16-squad') {
+          setMatches(getStored16Matches());
+        } else {
+          setMatches([...getStored16Matches(), ...transformed]);
         }
       }
     } catch (e) {
       // Backend offline: continue with local list
     }
     return combined;
-  };
+  }, [bracketFilter]);
 
   useEffect(() => {
     loadMatches().then((list) => {
@@ -117,7 +129,31 @@ export default function AdminScoreboardPage() {
       window.removeEventListener('cst_16_matches_updated', handleUpdate);
       window.removeEventListener('storage', handleUpdate);
     };
-  }, [bracketFilter, selectedMatchId]);
+  }, [bracketFilter, selectedMatchId, loadMatches]);
+
+  const handleDeleteSelectedMatch = async () => {
+    const current = matches.find((m) => m.id === selectedMatchId);
+    if (!current) return;
+
+    const confirmDelete = window.confirm(
+      `DELETE MATCH FIXTURE?\n\n` +
+      `Are you sure you want to permanently delete this match fixture?\n` +
+      `[${current.teamATag}] ${current.teamAName} vs [${current.teamBTag}] ${current.teamBName}\n` +
+      `Stage: ${current.stage} | Map: ${current.map}`
+    );
+    if (!confirmDelete) return;
+
+    try {
+      await api.admin.deleteMatch(current.id);
+      showNotice(`✓ Match [${current.teamATag}] vs [${current.teamBTag}] deleted from database.`);
+    } catch (e) {
+      showNotice(`✓ Match [${current.teamATag}] vs [${current.teamBTag}] deleted locally.`);
+    }
+
+    deleteStoredMatch(current.id);
+    setSelectedMatchId('');
+    await loadMatches();
+  };
 
   const handleSelectMatch = (matchId: string) => {
     setSelectedMatchId(matchId);
@@ -265,6 +301,20 @@ export default function AdminScoreboardPage() {
     );
   };
 
+  const handleTogglePublish = async () => {
+    const nextState = !isTreePublished;
+    setIsTreePublished(nextState);
+    setPlayoffTreePublished(nextState);
+    try {
+      await api.admin.updateSettings({ playoffTreePublished: nextState });
+    } catch (e) {}
+    showNotice(
+      nextState
+        ? '✓ Playoff Championship Tree PUBLISHED to live public scoreboard!'
+        : '✓ Playoff Championship Tree UNPUBLISHED (Standby screen active).'
+    );
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6 max-w-5xl">
@@ -291,6 +341,28 @@ export default function AdminScoreboardPage() {
             >
               <Trophy className="w-4 h-4 text-military-black" />
               <span>CREATE PLAYOFF TREE</span>
+            </button>
+
+            <button
+              onClick={handleTogglePublish}
+              className={`px-4 py-2.5 font-display font-black text-xs uppercase tracking-wider flex items-center gap-2 border transition-all shrink-0 ${
+                isTreePublished
+                  ? 'bg-rose-950/80 border-rose-700 text-rose-300 hover:bg-rose-900 shadow-sm'
+                  : 'bg-emerald-600 hover:bg-emerald-500 text-tacticalWhite border-emerald-500 shadow-[0_2px_12px_rgba(16,185,129,0.4)]'
+              }`}
+              title={isTreePublished ? 'Unpublish bracket from public scoreboard' : 'Publish bracket to public scoreboard'}
+            >
+              {isTreePublished ? (
+                <>
+                  <Lock className="w-4 h-4 text-rose-300" />
+                  <span>UNPUBLISH BRACKET</span>
+                </>
+              ) : (
+                <>
+                  <Radio className="w-4 h-4 text-tacticalWhite animate-pulse" />
+                  <span>PUBLISH PLAYOFF TREE</span>
+                </>
+              )}
             </button>
 
             <button
@@ -583,9 +655,21 @@ export default function AdminScoreboardPage() {
                   </span>
                 )}
 
-                <Button type="submit" variant="olive" size="md" icon={<CheckCircle2 className="w-4 h-4" />}>
-                  RATIFY & PUBLISH OFFICIAL RESULT
-                </Button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleDeleteSelectedMatch}
+                    className="px-3.5 py-2.5 bg-surface hover:bg-rose-950/60 border border-gunmetal hover:border-rose-700 text-rose-300 font-mono text-xs flex items-center gap-1.5 transition-colors"
+                    title="Delete this match fixture"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>DELETE FIXTURE</span>
+                  </button>
+
+                  <Button type="submit" variant="olive" size="md" icon={<CheckCircle2 className="w-4 h-4" />}>
+                    RATIFY & PUBLISH OFFICIAL RESULT
+                  </Button>
+                </div>
               </div>
             </form>
 

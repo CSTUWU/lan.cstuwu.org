@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { getStoredTeams, getStoredMatches, updateTeamStatus } from '@/lib/storage';
+import { getStoredTeams, setStoredTeams, getStoredMatches, setStoredMatches, updateTeamStatus } from '@/lib/storage';
 import { api } from '@/lib/api';
 import { transformBackendRegistration, transformBackendMatch } from '@/lib/transformers';
 import { Team, Match } from '@/lib/types';
@@ -54,12 +54,16 @@ export default function AdminDashboardPage() {
         setActivityLogs(resActivity.data);
       }
 
-      if (resRegs?.success && Array.isArray(resRegs.data) && resRegs.data.length > 0) {
-        setTeams(resRegs.data.map(transformBackendRegistration));
+      if (resRegs?.success && Array.isArray(resRegs.data)) {
+        const transformedRegs = resRegs.data.map(transformBackendRegistration);
+        setTeams(transformedRegs);
+        setStoredTeams(transformedRegs);
       }
 
-      if (resMatches?.success && Array.isArray(resMatches.data) && resMatches.data.length > 0) {
-        setMatches(resMatches.data.map(transformBackendMatch));
+      if (resMatches?.success && Array.isArray(resMatches.data)) {
+        const transformedMatches = resMatches.data.map(transformBackendMatch);
+        setMatches(transformedMatches);
+        setStoredMatches(transformedMatches);
       }
     } catch (e) {
       // Backend offline or starting: continue with localStorage

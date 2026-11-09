@@ -3,12 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { getStoredMatches } from '@/lib/storage';
+import { getStoredMatches, isPlayoffTreePublished, setPlayoffTreePublished, getLiveBroadcastChannel } from '@/lib/storage';
 import { INITIAL_MATCHES } from '@/lib/mockData';
 import { api } from '@/lib/api';
 import { transformBackendMatch } from '@/lib/transformers';
 import { Match, MatchStatus } from '@/lib/types';
-import { Calendar, Clock, MapPin, Tv, Shield, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { Calendar, Clock, MapPin, Tv, Shield, ChevronRight, CheckCircle2, Trophy } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import { useRegistrationStatus } from '@/hooks/useRegistrationStatus';
@@ -17,9 +17,18 @@ export default function SchedulePage() {
   const { isOpen } = useRegistrationStatus();
   const [matches, setMatches] = useState<Match[]>(INITIAL_MATCHES);
   const [filter, setFilter] = useState<'all' | 'upcoming' | 'completed'>('all');
+  const [isTreePublished, setIsTreePublished] = useState<boolean>(() => isPlayoffTreePublished());
 
   useEffect(() => {
     setMatches(getStoredMatches());
+    setIsTreePublished(isPlayoffTreePublished());
+
+    api.public.getSettings().then((res) => {
+      if (res?.data?.playoffTreePublished !== undefined) {
+        setIsTreePublished(Boolean(res.data.playoffTreePublished));
+        setPlayoffTreePublished(Boolean(res.data.playoffTreePublished));
+      }
+    }).catch(() => {});
 
     api.public.getMatches().then((res) => {
       if (res?.success && Array.isArray(res.data) && res.data.length > 0) {
@@ -28,8 +37,24 @@ export default function SchedulePage() {
     }).catch(() => {});
 
     const handleUpdate = () => setMatches(getStoredMatches());
+    const handlePub = () => setIsTreePublished(isPlayoffTreePublished());
+
     window.addEventListener('cst_matches_updated', handleUpdate);
-    return () => window.removeEventListener('cst_matches_updated', handleUpdate);
+    window.addEventListener('cst_playoff_published_changed', handlePub);
+
+    const channel = getLiveBroadcastChannel();
+    const handleBroadcast = (event: MessageEvent) => {
+      if (event.data?.type === 'CST_PLAYOFF_PUBLISHED_UPDATE') {
+        setIsTreePublished(typeof event.data.published === 'boolean' ? event.data.published : isPlayoffTreePublished());
+      }
+    };
+    channel?.addEventListener('message', handleBroadcast);
+
+    return () => {
+      window.removeEventListener('cst_matches_updated', handleUpdate);
+      window.removeEventListener('cst_playoff_published_changed', handlePub);
+      channel?.removeEventListener('message', handleBroadcast);
+    };
   }, []);
 
   const filteredMatches = matches.filter((m) => {
@@ -65,6 +90,11 @@ export default function SchedulePage() {
           </div>
 
           <div className="flex items-center gap-3">
+            {isTreePublished && (
+              <Button href="/scoreboard" variant="sand" size="sm" icon={<Trophy className="w-3.5 h-3.5 text-military-black" />}>
+                PLAYOFF BRACKET
+              </Button>
+            )}
             <Button href="/scoreboard" variant="outline" size="sm">
               VIEW STANDINGS
             </Button>
@@ -75,6 +105,31 @@ export default function SchedulePage() {
             )}
           </div>
         </div>
+
+        {/* Live Playoff Bracket Banner when Published */}
+        {isTreePublished && (
+          <div className="mb-8 p-4 bg-surface/90 border border-sand/40 flex flex-col sm:flex-row items-center justify-between gap-4 clip-tactical shadow-lg">
+            <div className="flex items-center gap-3">
+              <span className="w-2.5 h-2.5 rounded-full bg-sand animate-ping shrink-0" />
+              <div>
+                <div className="text-xs font-mono uppercase font-black text-sand tracking-wider flex items-center gap-2">
+                  <Trophy className="w-3.5 h-3.5 text-sand" />
+                  <span>OFFICIAL PLAYOFF CHAMPIONSHIP TREE IS LIVE</span>
+                </div>
+                <div className="text-[11px] font-mono text-mutedText mt-0.5">
+                  The tournament bracket is published by operations command. Follow squad routes from Round 1 to the Grand Final.
+                </div>
+              </div>
+            </div>
+            <Link
+              href="/scoreboard"
+              className="px-4 py-2 bg-sand hover:bg-sand/90 text-military-black font-display font-black text-xs uppercase tracking-wider flex items-center gap-2 shrink-0 transition-all clip-tactical"
+            >
+              <span>VIEW INTERACTIVE BRACKET</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        )}
 
         {/* Filter bar */}
         <div className="bg-card/70 border border-gunmetal p-4 mb-8 flex flex-col sm:flex-row items-center justify-between gap-4">

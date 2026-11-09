@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { getStoredTeams, updateTeamStatus, createAndSeedPlayoffTree } from '@/lib/storage';
+import { getStoredTeams, setStoredTeams, updateTeamStatus, createAndSeedPlayoffTree } from '@/lib/storage';
 import { api } from '@/lib/api';
 import { transformBackendTeam } from '@/lib/transformers';
 import { Team, ApprovalStatus, Player } from '@/lib/types';
@@ -47,9 +47,10 @@ export default function AdminTeamsPage() {
 
     try {
       const res = await api.admin.getTeams();
-      if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+      if (res.success && Array.isArray(res.data)) {
         const transformed = res.data.map(transformBackendTeam);
         setTeams(transformed);
+        setStoredTeams(transformed);
         
         const expandedMap: Record<string, boolean> = {};
         transformed.forEach((t) => {

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { getStoredTeams, updateTeamStatus } from '@/lib/storage';
+import { getStoredTeams, setStoredTeams, updateTeamStatus } from '@/lib/storage';
 import { api } from '@/lib/api';
 import { transformBackendRegistration } from '@/lib/transformers';
 import { Team, ApprovalStatus } from '@/lib/types';
@@ -26,8 +26,10 @@ export default function AdminRegistrationsPage() {
 
     try {
       const res = await api.admin.getRegistrations();
-      if (res.success && Array.isArray(res.data) && res.data.length > 0) {
-        setTeams(res.data.map(transformBackendRegistration));
+      if (res.success && Array.isArray(res.data)) {
+        const transformed = res.data.map(transformBackendRegistration);
+        setTeams(transformed);
+        setStoredTeams(transformed);
       }
     } catch (e) {
       // Backend not running: use local storage

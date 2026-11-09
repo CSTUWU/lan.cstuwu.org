@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { getStoredTeams, setStoredTeams, getStoredMatches, getActiveLiveMatch } from '@/lib/storage';
+import { getStoredTeams, setStoredTeams, getStoredMatches, getActiveLiveMatch, isPlayoffTreePublished, setPlayoffTreePublished, getLiveBroadcastChannel } from '@/lib/storage';
 import { INITIAL_TEAMS, INITIAL_MATCHES } from '@/lib/mockData';
 import { api } from '@/lib/api';
 import { transformBackendTeam, transformBackendMatch } from '@/lib/transformers';
@@ -33,11 +33,15 @@ export default function ScoreboardPage() {
   const { isOpen } = useRegistrationStatus();
   const [teams, setTeams] = useState<Team[]>(INITIAL_TEAMS);
   const [matches, setMatches] = useState<Match[]>(INITIAL_MATCHES);
-  const [activeTab, setActiveTab] = useState<'playoffs' | 'standings' | 'completed' | 'upcoming'>('playoffs');
+  const [isTreePublished, setIsTreePublished] = useState<boolean>(() => isPlayoffTreePublished());
+  const [activeTab, setActiveTab] = useState<'playoffs' | 'standings' | 'completed' | 'upcoming'>(() =>
+    isPlayoffTreePublished() ? 'playoffs' : 'standings'
+  );
 
   const reloadData = () => {
     setTeams(getStoredTeams());
     setMatches(getStoredMatches());
+    setIsTreePublished(isPlayoffTreePublished());
 
     // Fetch all registered collegiate squads from API
     api.public.getTeams().then((res) => {
@@ -48,9 +52,33 @@ export default function ScoreboardPage() {
       }
     }).catch(() => {});
 
+    // Sync public settings including playoffTreePublished
+    api.public.getSettings().then((res) => {
+      if (res?.data?.playoffTreePublished !== undefined) {
+        const isPub = Boolean(res.data.playoffTreePublished);
+        setIsTreePublished(isPub);
+        setPlayoffTreePublished(isPub);
+        if (isPub) {
+          setActiveTab((prev) => (prev === 'standings' ? 'playoffs' : prev));
+        } else {
+          setActiveTab((prev) => (prev === 'playoffs' ? 'standings' : prev));
+        }
+      }
+    }).catch(() => {});
+
     // Fetch live scoreboard & standings from API
     api.public.getScoreboard().then((res) => {
       if (res?.success && res.data) {
+        if (res.data.playoffTreePublished !== undefined) {
+          const isPub = Boolean(res.data.playoffTreePublished);
+          setIsTreePublished(isPub);
+          setPlayoffTreePublished(isPub);
+          if (isPub) {
+            setActiveTab((prev) => (prev === 'standings' ? 'playoffs' : prev));
+          } else {
+            setActiveTab((prev) => (prev === 'playoffs' ? 'standings' : prev));
+          }
+        }
         if (Array.isArray(res.data.standings) && res.data.standings.length > 0) {
           setTeams(res.data.standings.map(transformBackendTeam));
         }
@@ -64,6 +92,14 @@ export default function ScoreboardPage() {
         if (Array.isArray(res.data.completedMatches)) {
           apiMatches.push(...res.data.completedMatches.map(transformBackendMatch));
         }
+        if (Array.isArray(res.data.playoffMatches)) {
+          const playoffBackend = res.data.playoffMatches.map(transformBackendMatch);
+          for (const pm of playoffBackend) {
+            if (!apiMatches.some((m) => m.id === pm.id)) {
+              apiMatches.push(pm);
+            }
+          }
+        }
         if (apiMatches.length > 0) {
           setMatches(apiMatches);
         }
@@ -76,16 +112,45 @@ export default function ScoreboardPage() {
 
     const handleTeamsUpdate = () => setTeams(getStoredTeams());
     const handleMatchesUpdate = () => setMatches(getStoredMatches());
+    const handlePubChange = (e?: Event) => {
+      const customEvent = e as CustomEvent<{ published: boolean }>;
+      const pub = typeof customEvent?.detail?.published === 'boolean'
+        ? customEvent.detail.published
+        : isPlayoffTreePublished();
+      setIsTreePublished(pub);
+      if (pub) {
+        setActiveTab('playoffs');
+      } else {
+        setActiveTab((prev) => (prev === 'playoffs' ? 'standings' : prev));
+      }
+    };
+
+    const channel = getLiveBroadcastChannel();
+    const handleBroadcast = (event: MessageEvent) => {
+      if (event.data?.type === 'CST_PLAYOFF_PUBLISHED_UPDATE') {
+        const pub = typeof event.data.published === 'boolean' ? event.data.published : isPlayoffTreePublished();
+        setIsTreePublished(pub);
+        if (pub) {
+          setActiveTab('playoffs');
+        } else {
+          setActiveTab((prev) => (prev === 'playoffs' ? 'standings' : prev));
+        }
+      }
+    };
+    channel?.addEventListener('message', handleBroadcast);
 
     window.addEventListener('cst_teams_updated', handleTeamsUpdate);
     window.addEventListener('cst_matches_updated', handleMatchesUpdate);
     window.addEventListener('cst_16_matches_updated', handleMatchesUpdate);
+    window.addEventListener('cst_playoff_published_changed', handlePubChange);
     window.addEventListener('storage', reloadData);
 
     return () => {
+      channel?.removeEventListener('message', handleBroadcast);
       window.removeEventListener('cst_teams_updated', handleTeamsUpdate);
       window.removeEventListener('cst_matches_updated', handleMatchesUpdate);
       window.removeEventListener('cst_16_matches_updated', handleMatchesUpdate);
+      window.removeEventListener('cst_playoff_published_changed', handlePubChange);
       window.removeEventListener('storage', reloadData);
     };
   }, []);
@@ -246,22 +311,24 @@ export default function ScoreboardPage() {
 
         {/* Navigation Tabs */}
         <div className="flex flex-wrap items-center gap-3 mb-8 border-b border-gunmetal pb-4">
-          <button
-            onClick={() => setActiveTab('playoffs')}
-            className={`px-4 py-2.5 font-mono text-xs uppercase font-bold tracking-wider transition-all border flex items-center gap-2 ${
-              activeTab === 'playoffs'
-                ? 'bg-olive text-tacticalWhite border-olive'
-                : 'bg-card text-mutedKhaki border-gunmetal hover:text-tacticalWhite hover:border-sand/40'
-            }`}
-          >
-            <Trophy className="w-3.5 h-3.5 text-sand" />
-            <span>PLAYOFF BRACKET TREE</span>
-            <span className="w-2 h-2 rounded-full bg-sand animate-ping" />
-          </button>
+          {isTreePublished && (
+            <button
+              onClick={() => setActiveTab('playoffs')}
+              className={`px-4 py-2.5 font-mono text-xs uppercase font-bold tracking-wider transition-all border flex items-center gap-2 ${
+                activeTab === 'playoffs'
+                  ? 'bg-olive text-tacticalWhite border-olive'
+                  : 'bg-card text-mutedKhaki border-gunmetal hover:text-tacticalWhite hover:border-sand/40'
+              }`}
+            >
+              <Trophy className="w-3.5 h-3.5 text-sand" />
+              <span>PLAYOFF BRACKET</span>
+              <span className="w-2 h-2 rounded-full bg-sand animate-ping" />
+            </button>
+          )}
           <button
             onClick={() => setActiveTab('standings')}
             className={`px-4 py-2.5 font-mono text-xs uppercase font-bold tracking-wider transition-all border flex items-center gap-2 ${
-              activeTab === 'standings'
+              activeTab === 'standings' || (!isTreePublished && activeTab === 'playoffs')
                 ? 'bg-olive text-tacticalWhite border-olive'
                 : 'bg-card text-mutedKhaki border-gunmetal hover:text-tacticalWhite hover:border-sand/40'
             }`}
@@ -293,8 +360,8 @@ export default function ScoreboardPage() {
           </button>
         </div>
 
-        {/* TAB 0: PLAYOFF BRACKET TREE */}
-        {activeTab === 'playoffs' && (
+        {/* TAB 0: PLAYOFF BRACKET TREE (ONLY WHEN PUBLISHED) */}
+        {isTreePublished && activeTab === 'playoffs' && (
           <div className="mb-12">
             <PlayoffBracketTree
               matches={matches}
