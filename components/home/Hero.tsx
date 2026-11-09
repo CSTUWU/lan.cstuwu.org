@@ -194,6 +194,7 @@ export default function Hero() {
         const { isMobile } = context.conditions as { isDesktop: boolean; isMobile: boolean };
         const frameObj = { frame: 0 };
         let lastNotifiedVisible: boolean | null = null;
+        let enterTl: gsap.core.Timeline | null = null;
 
         const scrubTimeline = gsap.timeline({
           scrollTrigger: {
@@ -219,6 +220,20 @@ export default function Hero() {
                 progressTextRef.current.innerText = `00:0${sec}s // ${(self.progress * 100).toFixed(0)}%`;
               }
 
+              // Ensure scroll down button never fights or overlaps when scrolling
+              if (self.progress > 0.02) {
+                if (enterTl && enterTl.isActive()) {
+                  enterTl.kill();
+                }
+                if (scrollHintRef.current) {
+                  scrollHintRef.current.style.pointerEvents = 'none';
+                }
+              } else {
+                if (scrollHintRef.current) {
+                  scrollHintRef.current.style.pointerEvents = 'auto';
+                }
+              }
+
               const isTextVisible = self.progress >= (isMobile ? 0.32 : 0.40);
               if (lastNotifiedVisible !== isTextVisible) {
                 lastNotifiedVisible = isTextVisible;
@@ -240,44 +255,38 @@ export default function Hero() {
           0
         );
 
+        // Immediate bulletproof disappearance of the scroll hint on scrub
         scrubTimeline.to(
           [scrollHintRef.current, topStandoffBadgeRef.current],
           {
-            opacity: 0,
+            autoAlpha: 0,
             y: -20,
-            duration: 1.4,
+            duration: 0.5,
             ease: 'power2.in',
+            pointerEvents: 'none',
           },
-          0.4
+          0.05
         );
 
         scrubTimeline.fromTo(
           contentWrapperRef.current,
           {
-            opacity: 0,
+            autoAlpha: 0,
             scale: isMobile ? 0.94 : 0.90,
             y: isMobile ? 20 : 35,
             filter: 'blur(8px)',
+            pointerEvents: 'none',
           },
           {
-            opacity: 1,
+            autoAlpha: 1,
             scale: 1,
             y: 0,
             filter: 'blur(0px)',
+            pointerEvents: 'auto',
             ease: 'power3.out',
             duration: 2.4,
-            onStart: () => {
-              if (contentWrapperRef.current) {
-                contentWrapperRef.current.style.pointerEvents = 'auto';
-              }
-            },
-            onReverseComplete: () => {
-              if (contentWrapperRef.current) {
-                contentWrapperRef.current.style.pointerEvents = 'none';
-              }
-            },
           },
-          isMobile ? 3.2 : 3.8
+          isMobile ? 3.0 : 3.6
         );
 
         scrubTimeline.fromTo(
@@ -294,7 +303,7 @@ export default function Hero() {
             duration: 2.0,
             ease: 'back.out(1.4)',
           },
-          isMobile ? 4.0 : 4.6
+          isMobile ? 3.8 : 4.4
         );
 
         scrubTimeline.fromTo(
@@ -311,10 +320,10 @@ export default function Hero() {
             duration: 1.6,
             ease: 'power3.out',
           },
-          isMobile ? 4.6 : 5.2
+          isMobile ? 4.4 : 5.0
         );
 
-        const enterTl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+        enterTl = gsap.timeline({ defaults: { ease: 'power3.out' } });
 
         enterTl.fromTo(
           frameRef.current,
@@ -331,17 +340,22 @@ export default function Hero() {
 
         enterTl.fromTo(
           topStandoffBadgeRef.current,
-          { opacity: 0, y: -15 },
-          { opacity: 1, y: 0, duration: 0.8 },
+          { autoAlpha: 0, y: -15 },
+          { autoAlpha: 1, y: 0, duration: 0.8 },
           '-=0.6'
         );
 
-        enterTl.fromTo(
-          scrollHintRef.current,
-          { opacity: 0, y: 25, scale: 0.95 },
-          { opacity: 1, y: 0, scale: 1, duration: 0.9 },
-          '-=0.5'
-        );
+        // Only run entrance reveal if at page top
+        if (typeof window !== 'undefined' && (window.scrollY || 0) < 30) {
+          enterTl.fromTo(
+            scrollHintRef.current,
+            { autoAlpha: 0, y: 25, scale: 0.95 },
+            { autoAlpha: 1, y: 0, scale: 1, duration: 0.9 },
+            '-=0.5'
+          );
+        } else {
+          gsap.set(scrollHintRef.current, { autoAlpha: 0, pointerEvents: 'none' });
+        }
       }
     );
 
@@ -455,16 +469,16 @@ export default function Hero() {
       <div
         ref={scrollHintRef}
         onClick={handleScrollToContent}
-        className="absolute bottom-6 sm:bottom-10 lg:bottom-14 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-2 sm:gap-3 text-center cursor-pointer group max-w-[95vw] px-2"
+        className="absolute bottom-6 sm:bottom-10 lg:bottom-12 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 sm:gap-3 text-center cursor-pointer group max-w-[95vw] px-2"
       >
-        <div className="relative px-4 sm:px-7 py-2.5 sm:py-3 bg-military-black/95 border border-olive/50 backdrop-blur-xl rounded-md shadow-[0_4px_24px_rgba(0,0,0,0.8)] transition-all duration-300 group-hover:border-sand group-hover:scale-105 flex items-center gap-3 sm:gap-3.5">
+        <div className="relative px-3.5 sm:px-7 py-2 sm:py-3 bg-military-black/95 border border-olive/50 backdrop-blur-xl rounded-md shadow-[0_4px_24px_rgba(0,0,0,0.8)] transition-all duration-300 group-hover:border-sand group-hover:scale-105 flex items-center gap-2.5 sm:gap-3.5">
           <span className="absolute -top-1 -left-1 w-2.5 h-2.5 border-t-2 border-l-2 border-olive" />
           <span className="absolute -top-1 -right-1 w-2.5 h-2.5 border-t-2 border-r-2 border-sand" />
           <span className="absolute -bottom-1 -left-1 w-2.5 h-2.5 border-b-2 border-l-2 border-olive" />
           <span className="absolute -bottom-1 -right-1 w-2.5 h-2.5 border-b-2 border-r-2 border-sand" />
 
-          <div className="w-4 sm:w-5 h-7 sm:h-8 rounded-full border-2 border-olive-light/80 flex items-start justify-center p-1 bg-surface/80 shrink-0">
-            <div className="w-1.5 h-2 rounded-full bg-sand animate-bounce" />
+          <div className="w-4 sm:w-5 h-6 sm:h-8 rounded-full border-2 border-olive-light/80 flex items-start justify-center p-0.5 sm:p-1 bg-surface/80 shrink-0">
+            <div className="w-1.5 h-1.5 sm:h-2 rounded-full bg-sand animate-bounce" />
           </div>
 
           <div className="text-left font-mono">
@@ -478,7 +492,7 @@ export default function Hero() {
           </div>
         </div>
 
-        <span className="text-[9px] sm:text-[10px] font-mono text-sand/80 tracking-widest uppercase flex items-center gap-1.5">
+        <span className="text-[8px] sm:text-[10px] font-mono text-sand/80 tracking-widest uppercase flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-sand animate-ping" />
           SCROLL WHEEL • SWIPE • OR CLICK TO ENTER
         </span>
@@ -486,7 +500,7 @@ export default function Hero() {
 
       <div
         ref={contentWrapperRef}
-        className="relative z-20 h-full max-w-4xl w-full mx-auto px-4 sm:px-6 flex flex-col items-center justify-center text-center pt-20 sm:pt-28 lg:pt-32 pb-8 opacity-0 pointer-events-none will-change-transform"
+        className="relative z-30 h-full max-w-4xl w-full mx-auto px-4 sm:px-6 flex flex-col items-center justify-center text-center pt-20 sm:pt-28 lg:pt-32 pb-8 opacity-0 pointer-events-none will-change-transform"
       >
         <div className="inline-flex items-center gap-2 px-3 py-1 bg-surface/90 border border-gunmetal text-[11px] sm:text-xs font-mono text-sand uppercase tracking-wider mb-3 backdrop-blur-md shadow-xl">
           <Shield className="w-3.5 h-3.5 text-sand shrink-0" />
@@ -584,25 +598,6 @@ export default function Hero() {
           >
             VIEW PRIZE POOL
           </Button>
-        </div>
-
-        <div
-          onClick={() => {
-            if (typeof window !== 'undefined') {
-              const el = document.getElementById('prizepool');
-              if (el) {
-                el.scrollIntoView({ behavior: 'smooth' });
-              } else {
-                window.scrollTo({ top: 3500, behavior: 'smooth' });
-              }
-            }
-          }}
-          className="mt-4 sm:mt-5 flex flex-col items-center gap-1 text-[9px] sm:text-[10px] font-mono tracking-widest text-mutedText cursor-pointer hover:text-sand transition-colors"
-        >
-          <span className="flex items-center gap-1.5 text-sand">
-            <span>SCROLL DOWN FOR PRIZE POOL</span>
-            <ChevronDown className="w-3 h-3 text-sand animate-bounce" />
-          </span>
         </div>
 
       </div>

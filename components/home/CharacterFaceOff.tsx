@@ -38,6 +38,7 @@ export default function CharacterFaceOff() {
   const confrontationTextRef = useRef<HTMLDivElement>(null);
   const finalCalloutRef = useRef<HTMLDivElement>(null);
   const cameraRigRef = useRef<HTMLDivElement>(null);
+  const scrollHintRef = useRef<HTMLDivElement>(null);
 
   // Progress Indicators
   const progressBarRef = useRef<HTMLDivElement>(null);
@@ -205,6 +206,20 @@ export default function CharacterFaceOff() {
         gsap.set(finalCalloutRef.current, { opacity: 0, y: 60, scale: 0.95 });
         gsap.set(vectorGazeLightRef.current, { opacity: 0, scale: 0.5 });
         gsap.set(raptorGazeLightRef.current, { opacity: 0, scale: 0.5 });
+        gsap.set(scrollHintRef.current, { autoAlpha: 1, y: 0 });
+
+        // Hide scroll hint immediately on scrub start so it never overlaps buttons or cards
+        masterTl.to(
+          scrollHintRef.current,
+          {
+            autoAlpha: 0,
+            y: 12,
+            duration: 0.8,
+            ease: 'power2.in',
+            pointerEvents: 'none',
+          },
+          0
+        );
 
         // SCENE 1: CINEMATIC ENTRANCE FROM LEFT & RIGHT (0% -> 25%)
         masterTl
@@ -638,7 +653,10 @@ export default function CharacterFaceOff() {
         </div>
       </div>
 
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 text-[10px] font-mono text-mutedText tracking-widest pointer-events-none">
+      <div
+        ref={scrollHintRef}
+        className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 text-[10px] font-mono text-mutedText tracking-widest pointer-events-none z-10"
+      >
         <span>SCROLL TO CONTROL DUEL</span>
         <ChevronDown className="w-3.5 h-3.5 text-sand animate-bounce" />
       </div>

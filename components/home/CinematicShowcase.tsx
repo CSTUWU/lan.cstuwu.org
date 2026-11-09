@@ -175,6 +175,10 @@ export default function CinematicShowcase() {
           },
         });
 
+        gsap.set(slideLeftRef.current, { autoAlpha: 0, pointerEvents: 'none' });
+        gsap.set(slideRightRef.current, { autoAlpha: 0, pointerEvents: 'none' });
+        gsap.set(slideCenterRef.current, { autoAlpha: 0, pointerEvents: 'none' });
+
         // Scrub frames 0 -> 198 across virtual duration 10
         scrubTimeline.to(
           frameObj,
@@ -190,15 +194,17 @@ export default function CinematicShowcase() {
           slideLeftRef.current,
           {
             x: isMobile ? -30 : -60,
-            opacity: 0,
+            autoAlpha: 0,
             scale: 0.94,
             filter: 'blur(8px)',
+            pointerEvents: 'none',
           },
           {
             x: 0,
-            opacity: 1,
+            autoAlpha: 1,
             scale: 1,
             filter: 'blur(0px)',
+            pointerEvents: 'auto',
             ease: 'power3.out',
             duration: 1.5,
           },
@@ -209,9 +215,10 @@ export default function CinematicShowcase() {
           slideLeftRef.current,
           {
             x: isMobile ? -20 : -40,
-            opacity: 0,
+            autoAlpha: 0,
             scale: 0.96,
             filter: 'blur(6px)',
+            pointerEvents: 'none',
             ease: 'power2.in',
             duration: 1.0,
           },
@@ -222,15 +229,17 @@ export default function CinematicShowcase() {
           slideRightRef.current,
           {
             x: isMobile ? 30 : 60,
-            opacity: 0,
+            autoAlpha: 0,
             scale: 0.94,
             filter: 'blur(8px)',
+            pointerEvents: 'none',
           },
           {
             x: 0,
-            opacity: 1,
+            autoAlpha: 1,
             scale: 1,
             filter: 'blur(0px)',
+            pointerEvents: 'auto',
             ease: 'power3.out',
             duration: 1.5,
           },
@@ -241,9 +250,10 @@ export default function CinematicShowcase() {
           slideRightRef.current,
           {
             x: isMobile ? 20 : 40,
-            opacity: 0,
+            autoAlpha: 0,
             scale: 0.96,
             filter: 'blur(6px)',
+            pointerEvents: 'none',
             ease: 'power2.in',
             duration: 1.0,
           },
@@ -254,15 +264,17 @@ export default function CinematicShowcase() {
           slideCenterRef.current,
           {
             y: isMobile ? 30 : 50,
-            opacity: 0,
+            autoAlpha: 0,
             scale: 0.92,
             filter: 'blur(10px)',
+            pointerEvents: 'none',
           },
           {
             y: 0,
-            opacity: 1,
+            autoAlpha: 1,
             scale: 1,
             filter: 'blur(0px)',
+            pointerEvents: 'auto',
             ease: 'power3.out',
             duration: 1.8,
           },
@@ -325,7 +337,7 @@ export default function CinematicShowcase() {
 
         <div
           ref={slideLeftRef}
-          className="absolute left-3 right-3 sm:left-8 sm:right-auto lg:left-12 max-w-lg lg:max-w-xl opacity-0 pointer-events-auto will-change-transform"
+          className="absolute left-3 right-3 sm:left-8 sm:right-auto lg:left-12 max-w-lg lg:max-w-xl opacity-0 pointer-events-none will-change-transform"
         >
           <div className="relative p-6 sm:p-8 bg-card/90 border border-olive/50 backdrop-blur-2xl rounded-md shadow-[0_4px_30px_rgba(0,0,0,0.8)]">
             <span className="absolute top-2 left-2 w-3.5 h-3.5 border-t-2 border-l-2 border-olive" />
@@ -394,7 +406,7 @@ export default function CinematicShowcase() {
 
         <div
           ref={slideRightRef}
-          className="absolute left-3 right-3 sm:left-auto sm:right-8 lg:right-12 max-w-lg lg:max-w-xl opacity-0 pointer-events-auto will-change-transform"
+          className="absolute left-3 right-3 sm:left-auto sm:right-8 lg:right-12 max-w-lg lg:max-w-xl opacity-0 pointer-events-none will-change-transform"
         >
           <div className="relative p-6 sm:p-8 bg-card/90 border border-gunmetal backdrop-blur-2xl rounded-md shadow-[0_4px_30px_rgba(0,0,0,0.8)]">
             <span className="absolute top-2 left-2 w-3.5 h-3.5 border-t-2 border-l-2 border-sand" />
@@ -468,7 +480,7 @@ export default function CinematicShowcase() {
 
         <div
           ref={slideCenterRef}
-          className="absolute left-1/2 -translate-x-1/2 w-[94vw] max-w-xl sm:max-w-2xl px-2 sm:px-4 text-center opacity-0 pointer-events-auto will-change-transform"
+          className="absolute left-1/2 -translate-x-1/2 w-[94vw] max-w-xl sm:max-w-2xl px-2 sm:px-4 text-center opacity-0 pointer-events-none will-change-transform"
         >
           <div className="relative p-6 sm:p-8 bg-card/95 border border-sand/60 backdrop-blur-2xl rounded-md shadow-[0_4px_40px_rgba(0,0,0,0.85)]">
             <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 bg-sand text-military-black font-mono text-[10px] font-black uppercase tracking-widest clip-tactical shadow-lg flex items-center gap-1.5">
