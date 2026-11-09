@@ -10,8 +10,8 @@ import Badge from '../ui/Badge';
 
 export default function AdminLoginView() {
   const router = useRouter();
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('admin12345');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -65,21 +65,6 @@ export default function AdminLoginView() {
     }
   };
 
-  const handleQuickLogin = async () => {
-    setUsername('admin');
-    setPassword('admin12345');
-    try {
-      await api.auth.login('admin', 'admin12345');
-    } catch (e) {
-      // fallback
-    }
-    setAdminAuth(true);
-    setIsSuccess(true);
-    setTimeout(() => {
-      window.location.href = '/admin/dashboard';
-    }, 200);
-  };
-
   return (
     <div className="min-h-screen bg-military-black flex items-center justify-center p-4 relative overflow-hidden font-sans">
       <div className="absolute inset-0 tactical-grid-bg opacity-20 pointer-events-none" />
@@ -115,25 +100,10 @@ export default function AdminLoginView() {
             </div>
           )}
 
-          <div className="mb-6 pb-5 border-b border-gunmetal text-center">
-            <button
-              type="button"
-              onClick={handleQuickLogin}
-              className="w-full py-3.5 px-4 bg-sand text-military-black font-mono font-black text-xs uppercase tracking-wider hover:bg-sand-light transition-all shadow-[0_2px_14px_rgba(194,178,138,0.25)] clip-tactical flex items-center justify-center gap-2 group cursor-pointer"
-            >
-              <Zap className="w-4 h-4 text-military-black group-hover:scale-125 transition-transform" />
-              <span>⚡ 1-CLICK INSTANT COMMAND LOGIN</span>
-            </button>
-            <p className="text-[10px] font-mono text-mutedText mt-2">
-              Pre-authorized for competition organizers &amp; referees.
-            </p>
-          </div>
-
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="block text-[11px] font-mono text-mutedText uppercase tracking-wider mb-1.5 flex items-center justify-between">
                 <span>OPERATOR USERNAME</span>
-                <span className="text-[10px] text-sand">DEFAULT: admin</span>
               </label>
               <div className="relative">
                 <User className="w-4 h-4 text-mutedText absolute left-3 top-1/2 -translate-y-1/2" />
@@ -141,8 +111,9 @@ export default function AdminLoginView() {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="admin"
+                  placeholder="Enter callsign or username"
                   required
+                  autoComplete="username"
                   className="w-full bg-surface border border-gunmetal pl-10 pr-4 py-2.5 text-xs font-mono text-tacticalWhite focus:outline-none focus:border-sand"
                 />
               </div>
@@ -151,7 +122,6 @@ export default function AdminLoginView() {
             <div>
               <label className="block text-[11px] font-mono text-mutedText uppercase tracking-wider mb-1.5 flex items-center justify-between">
                 <span>SECURITY PASSPHRASE</span>
-                <span className="text-[10px] text-sand">DEFAULT: cst2026</span>
               </label>
               <div className="relative">
                 <Lock className="w-4 h-4 text-mutedText absolute left-3 top-1/2 -translate-y-1/2" />
@@ -159,8 +129,9 @@ export default function AdminLoginView() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="cst2026"
+                  placeholder="Enter password"
                   required
+                  autoComplete="current-password"
                   className="w-full bg-surface border border-gunmetal pl-10 pr-4 py-2.5 text-xs font-mono text-tacticalWhite focus:outline-none focus:border-sand"
                 />
               </div>
@@ -176,22 +147,12 @@ export default function AdminLoginView() {
             <button
               type="submit"
               disabled={isSubmitting || isSuccess}
-              className="w-full py-3 px-4 bg-olive hover:bg-olive-light text-tacticalWhite border border-olive-light/50 text-xs font-mono uppercase font-black tracking-wider transition-all flex items-center justify-center gap-2 clip-tactical cursor-pointer mt-2 shadow-[0_2px_12px_rgba(37,44,36,0.8)]"
+              className="w-full py-3 px-4 bg-olive hover:bg-olive-light text-tacticalWhite border border-olive-light/50 text-xs font-mono uppercase font-black tracking-wider transition-all flex items-center justify-center gap-2 clip-tactical cursor-pointer mt-4 shadow-[0_2px_12px_rgba(37,44,36,0.8)]"
             >
               <span>{isSuccess ? 'ENTERING DASHBOARD...' : isSubmitting ? 'AUTHENTICATING...' : 'AUTHENTICATE & ENTER'}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
-
-          <div className="mt-5 pt-4 border-t border-gunmetal text-center">
-            <button
-              type="button"
-              onClick={handleQuickLogin}
-              className="text-[11px] font-mono text-sand hover:underline uppercase tracking-wider cursor-pointer"
-            >
-              [ DIRECT PASS: OPEN COMMAND CENTER NOW ]
-            </button>
-          </div>
 
           <div className="mt-4 text-center">
             <Link href="/" className="text-xs font-mono text-mutedText hover:text-tacticalWhite transition-colors">

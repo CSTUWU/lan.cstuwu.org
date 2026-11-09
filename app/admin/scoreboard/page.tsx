@@ -245,17 +245,11 @@ export default function AdminScoreboardPage() {
     const isEightSquad = sourceTeams.length <= 8;
 
     const confirmSeed = window.confirm(
-      `CREATE PLAYOFF TREE from ${sourceTeams.length} registered squads?\n\n` +
-      (isEightSquad
-        ? `• 8-TEAM DUAL-WING BRACKET:\n` +
-          `  - Left Wing: 4 squads (2 Quarterfinal matches)\n` +
-          `  - Right Wing: 4 squads (2 Quarterfinal matches)\n` +
-          `  - Round 2 (Semifinals) and Grand Final will start completely free.\n`
-        : `• 16-TEAM DUAL-WING BRACKET:\n` +
-          `  - Left Wing: 8 squads (4 Round of 16 matches)\n` +
-          `  - Right Wing: 8 squads (4 Round of 16 matches)\n` +
-          `  - Round 2 (Quarterfinals), Semifinals & Grand Final will start completely free.\n`) +
-      `• Winning match scores will automatically advance winners down the tree to the trophy!`
+      `GENERATE OFFICIAL PLAYOFF TREE?\n\n` +
+      `• Any manually scheduled 1st round matches will be preserved and linked into the tree.\n` +
+      `• Remaining slots will be filled from registered approved squads.\n` +
+      `• Semifinals, Grand Final & Bronze decider start free awaiting match winners.\n` +
+      `• When any match is won, the winner will automatically advance into the playoff tree!`
     );
     if (!confirmSeed) return;
 
@@ -267,7 +261,7 @@ export default function AdminScoreboardPage() {
     const updated = getCombinedMatches(bracketFilter);
     setMatches(updated);
     showNotice(
-      `✓ ${isEightSquad ? '8-Squad Dual-Wing' : '16-Squad Major'} Playoff Tree created! Downstream rounds are free.`
+      `✓ Playoff Tree generated! 1st round fixtures linked. Match wins will automatically advance winners down the tree.`
     );
   };
 
@@ -362,6 +356,9 @@ export default function AdminScoreboardPage() {
             onChange={(e) => handleSelectMatch(e.target.value)}
             className="w-full bg-surface border border-gunmetal px-4 py-3 text-xs font-mono text-tacticalWhite focus:outline-none focus:border-olive"
           >
+            {matches.length === 0 && (
+              <option value="">No fixtures scheduled yet</option>
+            )}
             {matches.map((m) => (
               <option key={m.id} value={m.id}>
                 [{m.status.toUpperCase()}] {m.teamATag} vs {m.teamBTag} • Theater: {m.map} • Stage: {m.stage} ({m.scoreA} : {m.scoreB})
@@ -370,7 +367,7 @@ export default function AdminScoreboardPage() {
           </select>
         </div>
 
-        {currentMatch && (
+        {currentMatch ? (
           <div className="bg-card/90 border-2 border-gunmetal p-6 sm:p-8 backdrop-blur-md relative overflow-hidden">
             <div className="absolute top-0 right-0 bg-olive text-tacticalWhite font-mono text-[10px] font-bold px-3 py-1 uppercase tracking-widest">
               ACTIVE REFEREE DESK
@@ -592,6 +589,24 @@ export default function AdminScoreboardPage() {
               </div>
             </form>
 
+          </div>
+        ) : (
+          <div className="bg-card/90 border border-gunmetal p-12 text-center">
+            <Trophy className="w-12 h-12 text-mutedKhaki/40 mx-auto mb-3" />
+            <h3 className="font-display font-black text-lg text-tacticalWhite uppercase mb-1">
+              Referee Desk Standby
+            </h3>
+            <p className="text-xs font-mono text-mutedKhaki max-w-md mx-auto mb-6">
+              No match fixture currently loaded. Click &quot;CREATE PLAYOFF TREE&quot; above or schedule fixtures from the Matches panel to begin refereeing live rounds.
+            </p>
+            <div className="flex justify-center gap-3">
+              <Button onClick={handleCreatePlayoffTree} variant="olive" size="sm">
+                CREATE PLAYOFF TREE
+              </Button>
+              <Button href="/admin/matches" variant="outline" size="sm">
+                SCHEDULE FIXTURE
+              </Button>
+            </div>
           </div>
         )}
 

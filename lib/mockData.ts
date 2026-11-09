@@ -1,4 +1,5 @@
 import { Team, Match, CountdownSettings } from './types';
+import seedData from './seedData.json';
 
 export const INITIAL_COUNTDOWN: CountdownSettings = {
   tournamentDate: '2026-11-20T09:00:00',

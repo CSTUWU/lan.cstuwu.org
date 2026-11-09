@@ -7,9 +7,10 @@ import { getStoredTeams, updateTeamStatus } from '@/lib/storage';
 import { api } from '@/lib/api';
 import { transformBackendRegistration } from '@/lib/transformers';
 import { Team, ApprovalStatus } from '@/lib/types';
-import { Search, CheckCircle2, XCircle, Clock, Eye, X, Mail, Phone, Shield, RefreshCw } from 'lucide-react';
+import { Search, CheckCircle2, XCircle, Clock, Eye, X, Mail, Phone, Shield, RefreshCw, GraduationCap, Calendar, Hash, UserCheck, FileSpreadsheet, Download } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
+import { downloadTeamWiseExcel, downloadAllMembersExcel } from '@/lib/exportExcel';
 
 export default function AdminRegistrationsPage() {
   const [teams, setTeams] = useState<Team[]>([]);
@@ -67,12 +68,15 @@ export default function AdminRegistrationsPage() {
     loadRegistrations();
   };
 
-  const filteredTeams = teams.filter((team) => {
+  const filteredTeams = (teams || []).filter((team) => {
+    if (!team) return false;
+    const q = searchQuery.toLowerCase();
     const matchesSearch =
-      team.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      team.tag.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      team.university.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      team.captain.name.toLowerCase().includes(searchQuery.toLowerCase());
+      (team.name || '').toLowerCase().includes(q) ||
+      (team.tag || '').toLowerCase().includes(q) ||
+      (team.university || '').toLowerCase().includes(q) ||
+      (team.degreeProgram || '').toLowerCase().includes(q) ||
+      (team.captain?.name || '').toLowerCase().includes(q);
 
     const matchesStatus = statusFilter === 'all' || team.status === statusFilter;
     return matchesSearch && matchesStatus;
@@ -96,16 +100,36 @@ export default function AdminRegistrationsPage() {
             </p>
           </div>
 
-          <button
-            onClick={() => {
-              setLoading(true);
-              loadRegistrations().finally(() => setLoading(false));
-            }}
-            className="px-3.5 py-2 bg-surface border border-gunmetal text-xs font-mono text-sand hover:border-sand transition-colors flex items-center gap-2 self-start sm:self-auto"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            <span>REFRESH FROM DATABASE</span>
-          </button>
+          <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
+            <button
+              onClick={() => downloadTeamWiseExcel(filteredTeams)}
+              className="px-3.5 py-2 bg-surface border border-gunmetal hover:border-olive text-xs font-mono text-tacticalWhite hover:text-sand transition-colors flex items-center gap-2"
+              title="Download Team-Wise Roster Excel Spreadsheet (.csv / .xlsx compatible)"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+              <span>EXPORT EXCEL (TEAM-WISE)</span>
+            </button>
+
+            <button
+              onClick={() => downloadAllMembersExcel(filteredTeams)}
+              className="px-3.5 py-2 bg-surface border border-gunmetal hover:border-olive text-xs font-mono text-tacticalWhite hover:text-sand transition-colors flex items-center gap-2"
+              title="Download Master All Members List Excel Spreadsheet (.csv / .xlsx compatible)"
+            >
+              <Download className="w-4 h-4 text-sand" />
+              <span>EXPORT EXCEL (ALL MEMBERS)</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setLoading(true);
+                loadRegistrations().finally(() => setLoading(false));
+              }}
+              className="px-3.5 py-2 bg-surface border border-gunmetal text-xs font-mono text-sand hover:border-sand transition-colors flex items-center gap-2"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+              <span>REFRESH</span>
+            </button>
+          </div>
         </div>
 
         {actionNotice && (
@@ -150,8 +174,9 @@ export default function AdminRegistrationsPage() {
               <thead>
                 <tr className="bg-surface/80 border-b border-gunmetal text-mutedKhaki text-[10px] uppercase">
                   <th className="py-3 px-4">SQUAD</th>
-                  <th className="py-3 px-4">UNIVERSITY</th>
-                  <th className="py-3 px-4">CAPTAIN</th>
+                  <th className="py-3 px-4">DEGREE PROGRAMME</th>
+                  <th className="py-3 px-4">LEADER CONTACT</th>
+                  <th className="py-3 px-4">ENROLLMENT NO</th>
                   <th className="py-3 px-4">SUBMITTED</th>
                   <th className="py-3 px-4 text-center">STATUS</th>
                   <th className="py-3 px-4 text-right">ACTIONS</th>
@@ -173,15 +198,24 @@ export default function AdminRegistrationsPage() {
                     </td>
 
                     <td className="py-3.5 px-4 text-mutedKhaki">
-                      {team.university}
+                      <span className="text-tacticalWhite block font-medium truncate max-w-[180px]">
+                        {team.degreeProgram || team.faculty || 'Computer Science & Tech'}
+                      </span>
+                      <span className="text-[10px] text-mutedKhaki">5 Registered Operatives</span>
                     </td>
 
                     <td className="py-3.5 px-4">
                       <span className="text-tacticalWhite block font-medium">{team.captain.name}</span>
-                      <span className="text-[11px] text-mutedKhaki block">{team.captain.email}</span>
+                      <span className="text-[11px] text-emerald-400 block font-bold">
+                        {team.captain.whatsappNumber || team.captain.phone}
+                      </span>
                     </td>
 
-                    <td className="py-3.5 px-4 text-mutedKhaki">
+                    <td className="py-3.5 px-4 text-sand font-bold">
+                      {team.enrollmentNumber || team.column1 || '—'}
+                    </td>
+
+                    <td className="py-3.5 px-4 text-mutedKhaki text-[11px]">
                       {new Date(team.createdAt).toLocaleDateString('en-US', {
                         month: 'short',
                         day: 'numeric',
@@ -248,6 +282,7 @@ export default function AdminRegistrationsPage() {
             <button
               onClick={() => setSelectedTeam(null)}
               className="absolute top-4 right-4 p-2 text-mutedKhaki hover:text-tacticalWhite border border-gunmetal bg-surface"
+              title="Close Dossier"
             >
               <X className="w-5 h-5" />
             </button>
@@ -256,25 +291,31 @@ export default function AdminRegistrationsPage() {
               <div className="relative w-16 h-16 bg-surface border border-gunmetal shrink-0 overflow-hidden">
                 <Image src={selectedTeam.logo} alt={selectedTeam.name} fill className="object-cover" sizes="64px" />
               </div>
-              <div>
-                <span className="text-xs font-mono text-sand uppercase tracking-widest font-bold">
-                  [{selectedTeam.tag}] // STATUS: {selectedTeam.status.toUpperCase()}
-                </span>
-                <h2 className="font-display font-black text-2xl text-tacticalWhite uppercase tracking-wider">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-mono text-sand uppercase tracking-widest font-bold">
+                    [{selectedTeam.tag}]
+                  </span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 border border-gunmetal bg-surface text-mutedKhaki">
+                    STATUS: {selectedTeam.status.toUpperCase()}
+                  </span>
+                </div>
+                <h2 className="font-display font-black text-2xl text-tacticalWhite uppercase tracking-wider truncate">
                   {selectedTeam.name}
                 </h2>
                 <p className="text-xs font-mono text-mutedKhaki">
-                  {selectedTeam.university}
+                  {selectedTeam.university || 'Uva Wellassa University of Sri Lanka'}
                 </p>
               </div>
             </div>
 
-            <div className="bg-surface/80 border border-gunmetal p-4 mb-6 text-xs font-mono">
-              <div className="text-sand font-bold uppercase mb-2 flex items-center justify-between">
+            {/* Enlistment & Academic Cohort Dossier */}
+            <div className="bg-surface/80 border border-gunmetal p-4 mb-6 text-xs font-mono space-y-3">
+              <div className="text-sand font-bold uppercase flex items-center justify-between border-b border-gunmetal/60 pb-2">
                 <span className="flex items-center gap-2">
-                  <Shield className="w-3.5 h-3.5 text-olive" /> SQUAD LEADER
+                  <Shield className="w-3.5 h-3.5 text-olive" /> SQUAD DOSSIER &amp; COHORT DATA
                 </span>
-                {selectedTeam.captain.whatsappNumber && (
+                {selectedTeam.captain?.whatsappNumber && (
                   <a
                     href={`https://wa.me/${selectedTeam.captain.whatsappNumber.replace(/[^0-9]/g, '')}`}
                     target="_blank"
@@ -286,38 +327,101 @@ export default function AdminRegistrationsPage() {
                   </a>
                 )}
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-mutedKhaki">
-                <div>NAME: <span className="text-tacticalWhite font-medium">{selectedTeam.captain.name}</span></div>
-                <div>WHATSAPP: <span className="text-sand font-bold">{selectedTeam.captain.whatsappNumber || selectedTeam.captain.phone}</span></div>
-                <div>FACULTY: <span className="text-tacticalWhite font-medium">{selectedTeam.captain.faculty || 'Applied Sciences'}</span></div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-mutedKhaki">
+                <div>
+                  <span className="text-[10px] uppercase text-mutedKhaki/70 block">Degree Programme</span>
+                  <span className="text-tacticalWhite font-medium">
+                    {selectedTeam.degreeProgram || selectedTeam.faculty || 'Computer Science & Technology (CST)'}
+                  </span>
+                </div>
+
+                <div>
+                  <span className="text-[10px] uppercase text-mutedKhaki/70 block">Institution</span>
+                  <span className="text-sand font-bold">
+                    {selectedTeam.university || 'Uva Wellassa University of Sri Lanka'}
+                  </span>
+                </div>
+
+                <div>
+                  <span className="text-[10px] uppercase text-mutedKhaki/70 block">Enrollment No (Column1)</span>
+                  <span className="text-sand font-mono font-bold">
+                    {selectedTeam.enrollmentNumber || selectedTeam.column1 || '—'}
+                  </span>
+                </div>
+
+                <div>
+                  <span className="text-[10px] uppercase text-mutedKhaki/70 block">Timestamp</span>
+                  <span className="text-tacticalWhite">
+                    {selectedTeam.createdAt
+                      ? new Date(selectedTeam.createdAt).toLocaleString('en-US', {
+                          dateStyle: 'medium',
+                          timeStyle: 'short',
+                        })
+                      : '—'}
+                  </span>
+                </div>
+
+                <div>
+                  <span className="text-[10px] uppercase text-mutedKhaki/70 block">Contact Email</span>
+                  <span className="text-tacticalWhite break-all">
+                    {selectedTeam.email || selectedTeam.captain.email || '—'}
+                  </span>
+                </div>
+
+                <div>
+                  <span className="text-[10px] uppercase text-mutedKhaki/70 block">WhatsApp Contact</span>
+                  <span className="text-emerald-400 font-bold">
+                    {selectedTeam.captain.whatsappNumber || selectedTeam.captain.phone || '—'}
+                  </span>
+                </div>
               </div>
             </div>
 
+            {/* Starting 5 Operatives Lineup */}
             <div className="mb-6">
-              <h3 className="font-display font-bold text-sm text-tacticalWhite uppercase tracking-wider mb-3">
-                STARTING 5 OPERATIVES
+              <h3 className="font-display font-bold text-sm text-tacticalWhite uppercase tracking-wider mb-3 flex items-center justify-between">
+                <span>STARTING 5 OPERATIVES</span>
+                <span className="text-[11px] font-mono text-sand">SHARED DEGREE • MEMBER YEARS</span>
               </h3>
+
               <div className="space-y-2">
-                {selectedTeam.players.map((p, idx) => (
-                  <div
-                    key={p.id || idx}
-                    className="p-3 bg-surface/50 border border-gunmetal flex flex-col sm:flex-row sm:items-center justify-between text-xs font-mono gap-2"
-                  >
-                    <div>
-                      <span className="text-sand font-bold mr-2">0{idx + 1}.</span>
-                      <span className="text-tacticalWhite font-bold">{p.name || p.ign}</span>
-                      {p.ign && p.ign !== p.name && (
-                        <span className="text-mutedKhaki"> ({p.ign})</span>
-                      )}
+                {selectedTeam.players.map((p, idx) => {
+                  const isLeader = idx === 0 || p.role === 'Team Leader';
+                  return (
+                    <div
+                      key={p.id || idx}
+                      className="p-3 bg-surface/50 border border-gunmetal flex flex-col sm:flex-row sm:items-center justify-between text-xs font-mono gap-2"
+                    >
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sand font-bold">0{idx + 1}.</span>
+                          <span className="text-tacticalWhite font-bold">{p.name || p.ign}</span>
+                          {isLeader && (
+                            <span className="text-[9px] px-1.5 py-0.5 bg-olive/30 border border-olive text-sand uppercase font-bold">
+                              TEAM LEADER
+                            </span>
+                          )}
+                          <span className="text-[10px] px-1.5 py-0.2 bg-surface border border-gunmetal text-sand font-bold">
+                            Year {p.year || '1'}
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-mutedKhaki mt-0.5 pl-6">
+                          Gaming Name: <strong className="text-sand">{p.gamingName || p.ign || '—'}</strong>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-3 text-mutedKhaki text-[11px] pl-6 sm:pl-0">
+                        {p.enrollmentNumber && (
+                          <span>ENROLLMENT: <strong className="text-sand">{p.enrollmentNumber}</strong></span>
+                        )}
+                        {p.steamId && p.steamId !== p.ign && (
+                          <span>ID: <strong className="text-tacticalWhite">{p.steamId}</strong></span>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex flex-wrap items-center gap-3 text-mutedKhaki text-[11px]">
-                      <span className="text-sand font-medium">{p.faculty}</span>
-                      {p.steamId && (
-                        <span>CALLSIGN / ID: <strong className="text-tacticalWhite">{p.steamId}</strong></span>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 

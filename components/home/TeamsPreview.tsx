@@ -21,10 +21,8 @@ export default function TeamsPreview() {
   useEffect(() => {
     // 1. Instant local render from storage
     const local = getStoredTeams();
-    if (local && local.length > 0) {
-      setTeams(local);
-      setIsLoading(false);
-    }
+    setTeams(local);
+    setIsLoading(false);
 
     // 2. Fetch live registered squads from backend API
     api.public
@@ -174,7 +172,7 @@ export default function TeamsPreview() {
                   </div>
 
                   <div className="text-xs font-mono text-mutedText truncate mb-4">
-                    {team.university || 'Uva Wellassa University of Sri Lanka'}
+                    {team.degreeProgram || team.faculty || team.university || 'Uva Wellassa University of Sri Lanka'}
                   </div>
 
                   <div className="pt-3 border-t border-gunmetal flex items-center justify-between text-xs font-mono">

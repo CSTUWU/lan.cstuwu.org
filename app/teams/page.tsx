@@ -52,11 +52,15 @@ export default function TeamsPage() {
     };
   }, []);
 
-  const filteredTeams = teams.filter((team) => {
+  const filteredTeams = (teams || []).filter((team) => {
+    if (!team) return false;
+    const q = searchQuery.toLowerCase();
     const matchesSearch =
-      team.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      team.tag.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      team.university.toLowerCase().includes(searchQuery.toLowerCase());
+      (team.name || '').toLowerCase().includes(q) ||
+      (team.tag || '').toLowerCase().includes(q) ||
+      (team.university || '').toLowerCase().includes(q) ||
+      (team.degreeProgram || '').toLowerCase().includes(q) ||
+      (team.captain?.name || '').toLowerCase().includes(q);
 
     const statusLower = (team.status || 'pending').toLowerCase();
     const matchesStatus = statusFilter === 'all' || statusLower === statusFilter.toLowerCase();
@@ -182,7 +186,7 @@ export default function TeamsPage() {
                 </div>
 
                 <p className="text-xs font-mono text-mutedText line-clamp-1 mb-4">
-                  {team.university}
+                  {team.degreeProgram || team.faculty || team.university || 'Uva Wellassa University'}
                 </p>
 
                 <div className="grid grid-cols-3 gap-2 py-3 border-y border-gunmetal text-center font-mono text-xs mb-4">
@@ -257,19 +261,39 @@ export default function TeamsPage() {
                   {selectedTeam.name}
                 </h2>
                 <p className="text-xs font-mono text-mutedText mt-0.5">
-                  {selectedTeam.university}
+                  {selectedTeam.degreeProgram || selectedTeam.faculty || selectedTeam.university}
                 </p>
               </div>
             </div>
 
-            <div className="bg-surface/80 border border-gunmetal p-4 mb-6 text-xs font-mono">
-              <div className="text-sand font-bold uppercase mb-2 flex items-center gap-2">
-                <Shield className="w-3.5 h-3.5 text-sand" /> TEAM CAPTAIN
+            <div className="bg-surface/80 border border-gunmetal p-4 mb-6 text-xs font-mono space-y-2">
+              <div className="text-sand font-bold uppercase mb-2 flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Shield className="w-3.5 h-3.5 text-sand" /> SQUAD LEADER &amp; COHORT DATA
+                </span>
+                {selectedTeam.captain?.whatsappNumber && (
+                  <a
+                    href={`https://wa.me/${selectedTeam.captain.whatsappNumber.replace(/[^0-9]/g, '')}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-olive/30 text-sand border border-olive hover:bg-olive hover:text-tacticalWhite transition-colors"
+                  >
+                    <Phone className="w-3 h-3" />
+                    <span>CHAT ON WHATSAPP</span>
+                  </a>
+                )}
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-mutedText">
-                <div>NAME: <span className="text-tacticalWhite font-medium">{selectedTeam.captain.name}</span></div>
-                <div>WHATSAPP: <span className="text-emerald-400 font-bold">{selectedTeam.captain.whatsappNumber || selectedTeam.captain.phone}</span></div>
-                <div>FACULTY: <span className="text-tacticalWhite font-medium">{selectedTeam.captain.faculty || selectedTeam.faculty || 'UWU'}</span></div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-mutedText">
+                <div>DEGREE: <span className="text-tacticalWhite font-medium">{selectedTeam.degreeProgram || selectedTeam.faculty || 'Computer Science & Tech'}</span></div>
+                <div>INSTITUTION: <span className="text-sand font-bold">{selectedTeam.university || 'Uva Wellassa University'}</span></div>
+                <div>LEADER: <span className="text-tacticalWhite font-medium">{selectedTeam.captain?.name || '—'}</span></div>
+                <div>WHATSAPP: <span className="text-emerald-400 font-bold">{selectedTeam.captain?.whatsappNumber || selectedTeam.captain?.phone || '—'}</span></div>
+                {selectedTeam.enrollmentNumber && (
+                  <div>REG NO: <span className="text-sand font-bold">{selectedTeam.enrollmentNumber}</span></div>
+                )}
+                {selectedTeam.email && (
+                  <div>EMAIL: <span className="text-tacticalWhite font-medium">{selectedTeam.email}</span></div>
+                )}
               </div>
             </div>
 
@@ -280,34 +304,46 @@ export default function TeamsPage() {
               </h3>
 
               <div className="space-y-2">
-                {selectedTeam.players.map((player, idx) => (
-                  <div
-                    key={player.id || idx}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between bg-surface/50 border border-gunmetal p-3 text-xs font-mono gap-2"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-sand font-bold w-4">0{idx + 1}</span>
-                      <div>
-                        <span className="text-tacticalWhite font-bold">{player.name || player.ign}</span>
-                        {player.ign && player.ign !== player.name && (
-                          <span className="text-mutedText"> ({player.ign})</span>
-                        )}
-                        {player.faculty && (
-                          <span className="block text-[10px] text-sand/80 mt-0.5">{player.faculty}</span>
-                        )}
+                {(selectedTeam.players || []).map((player, idx) => {
+                  const isLeader = idx === 0 || player.role === 'Team Leader';
+                  return (
+                    <div
+                      key={player.id || idx}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between bg-surface/50 border border-gunmetal p-3 text-xs font-mono gap-2"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-sand font-bold w-4">0{idx + 1}</span>
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-tacticalWhite font-bold">{player.name || player.ign}</span>
+                            {isLeader && (
+                              <span className="text-[9px] px-1.5 py-0.2 bg-olive/30 border border-olive text-sand uppercase font-bold">
+                                LEADER
+                              </span>
+                            )}
+                            <span className="text-[10px] px-1.5 py-0.2 bg-card border border-gunmetal text-sand font-bold">
+                              Year {player.year || '1'}
+                            </span>
+                          </div>
+                          <span className="text-sand text-[11px] block mt-0.5">
+                            Gaming Name: <strong className="text-tacticalWhite">{player.gamingName || player.ign || '—'}</strong>
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-4 text-mutedText text-[11px]">
+                        {player.enrollmentNumber ? (
+                          <span className="text-sand font-mono">{player.enrollmentNumber}</span>
+                        ) : player.steamId ? (
+                          <span>{player.steamId}</span>
+                        ) : null}
+                        <span className="px-2 py-0.5 bg-card border border-gunmetal text-sand uppercase">
+                          {isLeader ? 'Leader' : (player.role || 'Operative')}
+                        </span>
                       </div>
                     </div>
-
-                    <div className="flex items-center gap-4 text-mutedText text-[11px]">
-                      {player.steamId ? <span>{player.steamId}</span> : null}
-                      {player.role && (
-                        <span className="px-2 py-0.5 bg-card border border-gunmetal text-sand">
-                          {player.role}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 

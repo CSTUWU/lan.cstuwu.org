@@ -25,9 +25,12 @@ import {
   Filter,
   RefreshCw,
   Trophy,
+  FileSpreadsheet,
+  Download,
 } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
+import { downloadTeamWiseExcel, downloadAllMembersExcel } from '@/lib/exportExcel';
 
 export default function AdminTeamsPage() {
   const [teams, setTeams] = useState<Team[]>([]);
@@ -89,17 +92,11 @@ export default function AdminTeamsPage() {
     }
     const isEightSquad = candidateTeams.length <= 8;
     const confirmSeed = window.confirm(
-      `CREATE PLAYOFF TREE from ${candidateTeams.length} registered squads?\n\n` +
-      (isEightSquad
-        ? `• 8-TEAM DUAL-WING BRACKET:\n` +
-          `  - Left Wing: 4 squads (2 Quarterfinal matches)\n` +
-          `  - Right Wing: 4 squads (2 Quarterfinal matches)\n` +
-          `  - Round 2 (Semifinals) and Grand Final will be completely free.\n`
-        : `• 16-TEAM DUAL-WING BRACKET:\n` +
-          `  - Left Wing: 8 squads (4 Round of 16 matches)\n` +
-          `  - Right Wing: 8 squads (4 Round of 16 matches)\n` +
-          `  - Round 2 (Quarterfinals), Semifinals & Grand Final will be completely free.\n`) +
-      `• Match wins will automatically advance winners down the tree!`
+      `GENERATE OFFICIAL PLAYOFF TREE?\n\n` +
+      `• Any manually scheduled 1st round matches will be preserved and linked into the tree.\n` +
+      `• Remaining slots will be filled from registered approved squads.\n` +
+      `• Semifinals, Grand Final & Bronze decider start free awaiting match winners.\n` +
+      `• When any match is won, the winner will automatically advance into the playoff tree!`
     );
     if (!confirmSeed) return;
 
@@ -108,7 +105,7 @@ export default function AdminTeamsPage() {
       api.admin.generatePlayoffs().catch(() => null);
     } catch (e) {}
     setNotice(
-      `✓ ${isEightSquad ? '8-Squad Dual-Wing' : '16-Squad Major'} Playoff Tree created! Seeded with ${candidateTeams.length} squads; downstream rounds are free.`
+      `✓ Playoff Tree generated! 1st round fixtures linked. Match wins will automatically advance winners down the tree.`
     );
     setTimeout(() => setNotice(null), 5000);
   };
@@ -142,18 +139,23 @@ export default function AdminTeamsPage() {
     setTimeout(() => setCopiedSteamId(null), 2000);
   };
 
-  const filteredTeams = teams.filter((t) => {
+  const filteredTeams = (teams || []).filter((t) => {
+    if (!t) return false;
+    const q = searchQuery.toLowerCase();
     const matchesSearch =
-      t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.tag.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.university.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.captain.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.players.some(
+      (t.name || '').toLowerCase().includes(q) ||
+      (t.tag || '').toLowerCase().includes(q) ||
+      (t.university || '').toLowerCase().includes(q) ||
+      (t.degreeProgram || '').toLowerCase().includes(q) ||
+      (t.captain?.name || '').toLowerCase().includes(q) ||
+      (t.players || []).some(
         (p) =>
-          (p.ign || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-          p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (p.faculty || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (p.steamId || '').toLowerCase().includes(searchQuery.toLowerCase())
+          (p?.ign || '').toLowerCase().includes(q) ||
+          (p?.name || '').toLowerCase().includes(q) ||
+          (p?.faculty || '').toLowerCase().includes(q) ||
+          (p?.degreeProgram || '').toLowerCase().includes(q) ||
+          (p?.enrollmentNumber || '').toLowerCase().includes(q) ||
+          (p?.steamId || '').toLowerCase().includes(q)
       );
 
     if (statusFilter === 'approved') return matchesSearch && t.status === 'approved';
@@ -161,8 +163,8 @@ export default function AdminTeamsPage() {
     return matchesSearch;
   });
 
-  const totalPlayersCount = teams.reduce((acc, t) => acc + t.players.length, 0);
-  const approvedCount = teams.filter((t) => t.status === 'approved').length;
+  const totalPlayersCount = (teams || []).reduce((acc, t) => acc + (t.players?.length || 0), 0);
+  const approvedCount = (teams || []).filter((t) => t.status === 'approved').length;
 
   return (
     <AdminLayout>
@@ -190,6 +192,22 @@ export default function AdminTeamsPage() {
             >
               <Trophy className="w-3.5 h-3.5 text-military-black" />
               <span>CREATE PLAYOFF TREE</span>
+            </button>
+            <button
+              onClick={() => downloadTeamWiseExcel(filteredTeams)}
+              className="px-3 py-2 bg-surface border border-gunmetal hover:border-olive text-xs font-mono text-tacticalWhite hover:text-sand transition-colors flex items-center gap-1.5"
+              title="Download Team-Wise Roster Excel Spreadsheet"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
+              <span>EXCEL (TEAM-WISE)</span>
+            </button>
+            <button
+              onClick={() => downloadAllMembersExcel(filteredTeams)}
+              className="px-3 py-2 bg-surface border border-gunmetal hover:border-olive text-xs font-mono text-tacticalWhite hover:text-sand transition-colors flex items-center gap-1.5"
+              title="Download All Members Master List Excel Spreadsheet"
+            >
+              <Download className="w-3.5 h-3.5 text-sand" />
+              <span>EXCEL (ALL MEMBERS)</span>
             </button>
             <button
               onClick={() => {
@@ -311,7 +329,7 @@ export default function AdminTeamsPage() {
                           </h3>
                         </div>
                         <p className="text-xs font-mono text-mutedKhaki">
-                          {team.university} • {team.players.length} Active Operatives
+                          {team.degreeProgram || team.faculty || 'UWU'} {team.enrollmentNumber ? `• Reg: ${team.enrollmentNumber}` : ''} • {team.players.length} Operatives
                         </p>
                       </div>
                     </div>
@@ -358,28 +376,36 @@ export default function AdminTeamsPage() {
                           </div>
                           <div>
                             <span className="text-[10px] font-mono text-sand uppercase font-bold tracking-widest block">
-                              SQUAD LEADER & LIAISON
+                              SQUAD LEADER &amp; COHORT DETAILS
                             </span>
                             <span className="font-display font-bold text-sm text-tacticalWhite uppercase tracking-wider">
-                              {team.captain.name}
+                              {team.captain?.name || 'Squad Leader'}
                             </span>
+                            <div className="text-[11px] font-mono text-mutedKhaki mt-0.5">
+                              {team.degreeProgram || team.faculty || 'Computer Science & Technology (CST)'}
+                              {(team.enrollmentNumber || team.column1) && (
+                                <span className="text-sand ml-2 font-mono">• Reg: {team.enrollmentNumber || team.column1}</span>
+                              )}
+                            </div>
                           </div>
                         </div>
 
                         <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-mutedKhaki">
                           <a
-                            href={`mailto:${team.captain.email}`}
+                            href={`mailto:${team.email || team.captain?.email || ''}`}
                             className="flex items-center gap-1.5 text-tacticalWhite hover:text-sand transition-colors"
                           >
                             <Mail className="w-3.5 h-3.5 text-sand" />
-                            <span>{team.captain.email}</span>
+                            <span>{team.email || team.captain?.email || '—'}</span>
                           </a>
                           <a
-                            href={`tel:${team.captain.phone}`}
-                            className="flex items-center gap-1.5 text-tacticalWhite hover:text-sand transition-colors"
+                            href={`https://wa.me/${(team.captain?.whatsappNumber || team.captain?.phone || '').replace(/[^0-9]/g, '')}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 font-bold transition-colors"
                           >
-                            <Phone className="w-3.5 h-3.5 text-sand" />
-                            <span>{team.captain.phone}</span>
+                            <Phone className="w-3.5 h-3.5 text-emerald-400" />
+                            <span>{team.captain.whatsappNumber || team.captain.phone}</span>
                           </a>
                         </div>
                       </div>
@@ -394,48 +420,56 @@ export default function AdminTeamsPage() {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
-                          {team.players.map((player: Player, index: number) => (
-                            <div
-                              key={player.id || index}
-                              className="p-3 bg-surface/70 border border-gunmetal hover:border-sand/50 transition-colors flex flex-col justify-between"
-                            >
-                              <div>
-                                <div className="flex items-center justify-between mb-1.5">
-                                  <span className="text-[10px] font-mono font-bold text-sand">SLOT 0{index + 1}</span>
-                                  <span className="text-[10px] font-mono text-mutedKhaki uppercase">
-                                    {player.role || 'Operative'}
+                          {team.players.map((player: Player, index: number) => {
+                            const isLeader = index === 0 || player.role === 'Team Leader';
+                            return (
+                              <div
+                                key={player.id || index}
+                                className="p-3 bg-surface/70 border border-gunmetal hover:border-sand/50 transition-colors flex flex-col justify-between"
+                              >
+                                <div>
+                                  <div className="flex items-center justify-between mb-1.5">
+                                    <span className="text-[10px] font-mono font-bold text-sand">SLOT 0{index + 1}</span>
+                                    <span className="text-[10px] font-mono text-mutedKhaki uppercase">
+                                      {isLeader ? 'Leader' : (player.role || 'Operative')}
+                                    </span>
+                                  </div>
+                                  
+                                  <div className="font-display font-black text-base text-tacticalWhite truncate" title={player.name || player.ign}>
+                                    {player.name || player.ign}
+                                  </div>
+
+                                  <div className="flex items-center justify-between mt-1 text-xs font-mono">
+                                    <span className="text-mutedKhaki text-[11px] truncate" title={player.gamingName || player.ign}>
+                                      IGN: <strong className="text-sand">{player.gamingName || player.ign || '—'}</strong>
+                                    </span>
+                                    <span className="text-[10px] px-1.5 py-0.2 bg-surface border border-gunmetal text-sand font-bold shrink-0 ml-1">
+                                      Year {player.year || '1'}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <div className="mt-3 pt-2.5 border-t border-gunmetal/60 flex items-center justify-between text-[11px] font-mono">
+                                  <span className="text-mutedKhaki truncate max-w-[120px]" title={player.enrollmentNumber || player.steamId || 'Operative'}>
+                                    {player.enrollmentNumber || player.steamId || 'Active'}
                                   </span>
-                                </div>
-                                
-                                <div className="font-display font-black text-base text-tacticalWhite truncate" title={player.name || player.ign}>
-                                  {player.name || player.ign}
-                                </div>
-
-                                <div className="text-xs font-mono text-sand truncate mt-0.5" title={player.faculty || player.name}>
-                                  {player.faculty || (player.ign ? `(${player.ign})` : '')}
+                                  {(player.enrollmentNumber || player.steamId) && (
+                                    <button
+                                      onClick={() => copyToClipboard(player.enrollmentNumber || player.steamId!)}
+                                      className="text-sand hover:text-tacticalWhite transition-colors ml-1 shrink-0"
+                                      title="Copy ID / Callsign"
+                                    >
+                                      {copiedSteamId === (player.enrollmentNumber || player.steamId) ? (
+                                        <Check className="w-3.5 h-3.5 text-sand" />
+                                      ) : (
+                                        <Copy className="w-3.5 h-3.5" />
+                                      )}
+                                    </button>
+                                  )}
                                 </div>
                               </div>
-
-                              <div className="mt-3 pt-2.5 border-t border-gunmetal/60 flex items-center justify-between text-[11px] font-mono">
-                                <span className="text-mutedKhaki truncate max-w-[120px]" title={player.steamId || player.faculty}>
-                                  {player.steamId || player.faculty}
-                                </span>
-                                {player.steamId && (
-                                  <button
-                                    onClick={() => copyToClipboard(player.steamId!)}
-                                    className="text-sand hover:text-tacticalWhite transition-colors ml-1 shrink-0"
-                                    title="Copy Callsign / ID"
-                                  >
-                                    {copiedSteamId === player.steamId ? (
-                                      <Check className="w-3.5 h-3.5 text-sand" />
-                                    ) : (
-                                      <Copy className="w-3.5 h-3.5" />
-                                    )}
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
 

@@ -83,12 +83,12 @@ export default function AdminDashboardPage() {
     };
   }, []);
 
-  const totalTeams = backendStats?.totalRegistrations ?? teams.length;
-  const pendingTeams = backendStats?.pendingRegistrations ?? teams.filter((t) => t.status === 'pending').length;
-  const approvedTeams = backendStats?.approvedRegistrations ?? teams.filter((t) => t.status === 'approved').length;
-  const rejectedTeams = backendStats?.rejectedRegistrations ?? teams.filter((t) => t.status === 'rejected').length;
-  const totalMatches = backendStats?.totalMatches ?? matches.length;
-  const completedMatches = backendStats?.completedMatches ?? matches.filter((m) => m.status === 'completed').length;
+  const totalTeams = backendStats?.totalRegistrations ?? (teams?.length || 0);
+  const pendingTeams = backendStats?.pendingRegistrations ?? (teams || []).filter((t) => t?.status === 'pending').length;
+  const approvedTeams = backendStats?.approvedRegistrations ?? (teams || []).filter((t) => t?.status === 'approved').length;
+  const rejectedTeams = backendStats?.rejectedRegistrations ?? (teams || []).filter((t) => t?.status === 'rejected').length;
+  const totalMatches = backendStats?.totalMatches ?? (matches?.length || 0);
+  const completedMatches = backendStats?.completedMatches ?? (matches || []).filter((m) => m?.status === 'completed').length;
 
   const handleQuickStatus = async (teamId: string, status: 'approved' | 'rejected') => {
     try {
@@ -206,18 +206,25 @@ export default function AdminDashboardPage() {
                 <thead>
                   <tr className="border-b border-gunmetal text-mutedKhaki text-[10px] uppercase">
                     <th className="py-2.5">SQUAD</th>
-                    <th className="py-2.5">UNIVERSITY</th>
+                    <th className="py-2.5">DEGREE</th>
                     <th className="py-2.5 text-center">STATUS</th>
                     <th className="py-2.5 text-right">ACTION</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gunmetal/60">
-                  {teams.slice(0, 5).map((team) => (
+                  {teams.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="py-8 text-center text-mutedKhaki">
+                        No squads registered yet. Enlistments will appear here once submitted.
+                      </td>
+                    </tr>
+                  ) : (
+                    teams.slice(0, 5).map((team) => (
                     <tr key={team.id} className="hover:bg-surface/40 transition-colors">
                       <td className="py-3">
                         <div className="flex items-center gap-2.5">
                           <div className="relative w-8 h-8 bg-surface border border-gunmetal shrink-0 overflow-hidden">
-                            <Image src={team.logo} alt={team.name} fill className="object-cover" sizes="32px" />
+                            <Image src={team.logo || '/images/team-placeholder.svg'} alt={team.name} fill className="object-cover" sizes="32px" />
                           </div>
                           <div>
                             <span className="text-[10px] text-sand block font-bold">[{team.tag}]</span>
@@ -225,8 +232,8 @@ export default function AdminDashboardPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="py-3 text-mutedKhaki truncate max-w-[140px]">
-                        {team.university}
+                      <td className="py-3 text-mutedKhaki truncate max-w-[160px]" title={team.degreeProgram || team.captain?.degreeProgram || team.faculty || team.university || 'CST'}>
+                        {team.degreeProgram || team.captain?.degreeProgram || team.faculty || team.university || 'CST'}
                       </td>
                       <td className="py-3 text-center">
                         {team.status === 'approved' && (
@@ -273,7 +280,8 @@ export default function AdminDashboardPage() {
                         )}
                       </td>
                     </tr>
-                  ))}
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -296,7 +304,12 @@ export default function AdminDashboardPage() {
               </div>
 
               <div className="space-y-3 font-mono text-xs">
-                {matches.slice(0, 3).map((m) => (
+                {matches.length === 0 ? (
+                  <div className="p-4 bg-surface/40 border border-gunmetal text-center text-mutedKhaki">
+                    No combat fixtures scheduled yet. Use &quot;+ CREATE FIXTURE&quot; below to set up first-round matches.
+                  </div>
+                ) : (
+                  matches.slice(0, 3).map((m) => (
                   <div
                     key={m.id}
                     className="p-3 bg-surface/60 border border-gunmetal flex items-center justify-between gap-3"
@@ -320,7 +333,8 @@ export default function AdminDashboardPage() {
                       )}
                     </div>
                   </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
 

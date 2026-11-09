@@ -5,7 +5,7 @@ import { Match, Team, PlayoffBracket, CS2Map } from './types';
 const PLAYOFF_MAPS: CS2Map[] = ['Mirage', 'Inferno', 'Dust II', 'Ancient', 'Nuke', 'Anubis', 'Vertigo'];
 
 
-export function generatePlayoffTreeFromTeams(teams?: Team[]): Match[] {
+export function generatePlayoffTreeFromTeams(teams?: Team[], manualMatches?: Match[]): Match[] {
   const currentTeams = teams || [];
   // Include all registered squads that are not rejected, prioritizing approved then pending
   const nonRejected = currentTeams.filter((t) => (t.status || '').toLowerCase() !== 'rejected');
@@ -16,12 +16,50 @@ export function generatePlayoffTreeFromTeams(teams?: Team[]): Match[] {
     return (b.points || 0) - (a.points || 0);
   });
 
+  // Extract any 1st round / Quarterfinal fixtures manually scheduled by the administrator
+  const scheduledTeamIds = new Set<string>();
+  const rawManual = (manualMatches || []).filter(
+    (m) =>
+      m.bracketRound === 'quarterfinals' ||
+      (m.stage && /quarterfinal|round 1|first round/i.test(m.stage)) ||
+      (!m.bracketRound && !/semifinal|final|bronze|third/i.test(m.stage || ''))
+  );
+
+  const manualQF: (Match | undefined)[] = [undefined, undefined, undefined, undefined];
+  rawManual.forEach((m) => {
+    if (m.bracketPosition && m.bracketPosition >= 1 && m.bracketPosition <= 4 && !manualQF[m.bracketPosition - 1]) {
+      manualQF[m.bracketPosition - 1] = m;
+    } else if (m.id === 'm-qf-1' && !manualQF[0]) {
+      manualQF[0] = m;
+    } else if (m.id === 'm-qf-2' && !manualQF[1]) {
+      manualQF[1] = m;
+    } else if (m.id === 'm-qf-3' && !manualQF[2]) {
+      manualQF[2] = m;
+    } else if (m.id === 'm-qf-4' && !manualQF[3]) {
+      manualQF[3] = m;
+    }
+  });
+
+  rawManual.forEach((m) => {
+    if (!manualQF.includes(m)) {
+      const emptyIdx = manualQF.findIndex((x) => x === undefined);
+      if (emptyIdx !== -1) manualQF[emptyIdx] = m;
+    }
+  });
+
+  manualQF.forEach((m) => {
+    if (m?.teamAId) scheduledTeamIds.add(m.teamAId);
+    if (m?.teamBId) scheduledTeamIds.add(m.teamBId);
+  });
+
+  const availableSquads = sourceTeams.filter((t) => !scheduledTeamIds.has(t.id));
+
   // Symmetrical 8-squad dual-wing bracket seeding:
   // Left Wing (4 teams): QF 1 (Slots 0, 1) & QF 2 (Slots 2, 3)
   // Right Wing (4 teams): QF 3 (Slots 4, 5) & QF 4 (Slots 6, 7)
   const slotSquads: Team[] = Array.from({ length: 8 }, (_, idx) => {
-    if (sourceTeams[idx]) {
-      return sourceTeams[idx];
+    if (availableSquads[idx]) {
+      return availableSquads[idx];
     }
     return DEFAULT_TBD_TEAMS[idx];
   });
@@ -29,6 +67,11 @@ export function generatePlayoffTreeFromTeams(teams?: Team[]): Match[] {
   const now = new Date();
   const baseTime = new Date(now.getTime() + 86400000); // Tomorrow
   baseTime.setHours(10, 0, 0, 0);
+
+  const qf1 = manualQF[0];
+  const qf2 = manualQF[1];
+  const qf3 = manualQF[2];
+  const qf4 = manualQF[3];
 
   const matches: Match[] = [
     // ================= 1. QUARTERFINALS (LAYER 1: 4 MATCHES) =================
@@ -40,25 +83,26 @@ export function generatePlayoffTreeFromTeams(teams?: Team[]): Match[] {
       bracketPosition: 1,
       nextMatchId: 'm-sf-1',
       nextMatchSlot: 'teamA',
-      stage: 'Quarterfinal 01 (MR12)',
-      teamAId: slotSquads[0].id,
-      teamAName: slotSquads[0].name,
-      teamATag: slotSquads[0].tag,
-      teamALogo: slotSquads[0].logo || '/images/team-placeholder.svg',
-      teamBId: slotSquads[1].id,
-      teamBName: slotSquads[1].name,
-      teamBTag: slotSquads[1].tag,
-      teamBLogo: slotSquads[1].logo || '/images/team-placeholder.svg',
-      map: 'Mirage',
-      dateTime: new Date(baseTime.getTime()).toISOString(),
-      status: 'upcoming',
-      scoreA: 0,
-      scoreB: 0,
-      currentRound: 0,
-      half: 1,
-      roundHistory: [],
-      teamASide: 'CT',
-      teamBSide: 'T',
+      stage: qf1?.stage || 'Quarterfinal 01 (MR12)',
+      teamAId: qf1?.teamAId || slotSquads[0].id,
+      teamAName: qf1?.teamAName || slotSquads[0].name,
+      teamATag: qf1?.teamATag || slotSquads[0].tag,
+      teamALogo: qf1?.teamALogo || slotSquads[0].logo || '/images/team-placeholder.svg',
+      teamBId: qf1?.teamBId || slotSquads[1].id,
+      teamBName: qf1?.teamBName || slotSquads[1].name,
+      teamBTag: qf1?.teamBTag || slotSquads[1].tag,
+      teamBLogo: qf1?.teamBLogo || slotSquads[1].logo || '/images/team-placeholder.svg',
+      map: qf1?.map || 'Mirage',
+      dateTime: qf1?.dateTime || new Date(baseTime.getTime()).toISOString(),
+      status: qf1?.status || 'upcoming',
+      scoreA: qf1?.scoreA ?? 0,
+      scoreB: qf1?.scoreB ?? 0,
+      winnerId: qf1?.winnerId,
+      currentRound: qf1?.currentRound ?? 0,
+      half: qf1?.half || 1,
+      roundHistory: qf1?.roundHistory || [],
+      teamASide: qf1?.teamASide || 'CT',
+      teamBSide: qf1?.teamBSide || 'T',
     },
     // Left Wing Bottom: Match 2 (Slots 2 vs 3)
     {
@@ -68,25 +112,26 @@ export function generatePlayoffTreeFromTeams(teams?: Team[]): Match[] {
       bracketPosition: 2,
       nextMatchId: 'm-sf-1',
       nextMatchSlot: 'teamB',
-      stage: 'Quarterfinal 02 (MR12)',
-      teamAId: slotSquads[2].id,
-      teamAName: slotSquads[2].name,
-      teamATag: slotSquads[2].tag,
-      teamALogo: slotSquads[2].logo || '/images/team-placeholder.svg',
-      teamBId: slotSquads[3].id,
-      teamBName: slotSquads[3].name,
-      teamBTag: slotSquads[3].tag,
-      teamBLogo: slotSquads[3].logo || '/images/team-placeholder.svg',
-      map: 'Inferno',
-      dateTime: new Date(baseTime.getTime() + 7200000).toISOString(),
-      status: 'upcoming',
-      scoreA: 0,
-      scoreB: 0,
-      currentRound: 0,
-      half: 1,
-      roundHistory: [],
-      teamASide: 'CT',
-      teamBSide: 'T',
+      stage: qf2?.stage || 'Quarterfinal 02 (MR12)',
+      teamAId: qf2?.teamAId || slotSquads[2].id,
+      teamAName: qf2?.teamAName || slotSquads[2].name,
+      teamATag: qf2?.teamATag || slotSquads[2].tag,
+      teamALogo: qf2?.teamALogo || slotSquads[2].logo || '/images/team-placeholder.svg',
+      teamBId: qf2?.teamBId || slotSquads[3].id,
+      teamBName: qf2?.teamBName || slotSquads[3].name,
+      teamBTag: qf2?.teamBTag || slotSquads[3].tag,
+      teamBLogo: qf2?.teamBLogo || slotSquads[3].logo || '/images/team-placeholder.svg',
+      map: qf2?.map || 'Inferno',
+      dateTime: qf2?.dateTime || new Date(baseTime.getTime() + 7200000).toISOString(),
+      status: qf2?.status || 'upcoming',
+      scoreA: qf2?.scoreA ?? 0,
+      scoreB: qf2?.scoreB ?? 0,
+      winnerId: qf2?.winnerId,
+      currentRound: qf2?.currentRound ?? 0,
+      half: qf2?.half || 1,
+      roundHistory: qf2?.roundHistory || [],
+      teamASide: qf2?.teamASide || 'CT',
+      teamBSide: qf2?.teamBSide || 'T',
     },
     // Right Wing Top: Match 3 (Slots 4 vs 5)
     {
@@ -96,25 +141,26 @@ export function generatePlayoffTreeFromTeams(teams?: Team[]): Match[] {
       bracketPosition: 3,
       nextMatchId: 'm-sf-2',
       nextMatchSlot: 'teamA',
-      stage: 'Quarterfinal 03 (MR12)',
-      teamAId: slotSquads[4].id,
-      teamAName: slotSquads[4].name,
-      teamATag: slotSquads[4].tag,
-      teamALogo: slotSquads[4].logo || '/images/team-placeholder.svg',
-      teamBId: slotSquads[5].id,
-      teamBName: slotSquads[5].name,
-      teamBTag: slotSquads[5].tag,
-      teamBLogo: slotSquads[5].logo || '/images/team-placeholder.svg',
-      map: 'Dust II',
-      dateTime: new Date(baseTime.getTime() + 14400000).toISOString(),
-      status: 'upcoming',
-      scoreA: 0,
-      scoreB: 0,
-      currentRound: 0,
-      half: 1,
-      roundHistory: [],
-      teamASide: 'CT',
-      teamBSide: 'T',
+      stage: qf3?.stage || 'Quarterfinal 03 (MR12)',
+      teamAId: qf3?.teamAId || slotSquads[4].id,
+      teamAName: qf3?.teamAName || slotSquads[4].name,
+      teamATag: qf3?.teamATag || slotSquads[4].tag,
+      teamALogo: qf3?.teamALogo || slotSquads[4].logo || '/images/team-placeholder.svg',
+      teamBId: qf3?.teamBId || slotSquads[5].id,
+      teamBName: qf3?.teamBName || slotSquads[5].name,
+      teamBTag: qf3?.teamBTag || slotSquads[5].tag,
+      teamBLogo: qf3?.teamBLogo || slotSquads[5].logo || '/images/team-placeholder.svg',
+      map: qf3?.map || 'Dust II',
+      dateTime: qf3?.dateTime || new Date(baseTime.getTime() + 14400000).toISOString(),
+      status: qf3?.status || 'upcoming',
+      scoreA: qf3?.scoreA ?? 0,
+      scoreB: qf3?.scoreB ?? 0,
+      winnerId: qf3?.winnerId,
+      currentRound: qf3?.currentRound ?? 0,
+      half: qf3?.half || 1,
+      roundHistory: qf3?.roundHistory || [],
+      teamASide: qf3?.teamASide || 'CT',
+      teamBSide: qf3?.teamBSide || 'T',
     },
     // Right Wing Bottom: Match 4 (Slots 6 vs 7)
     {
@@ -124,25 +170,26 @@ export function generatePlayoffTreeFromTeams(teams?: Team[]): Match[] {
       bracketPosition: 4,
       nextMatchId: 'm-sf-2',
       nextMatchSlot: 'teamB',
-      stage: 'Quarterfinal 04 (MR12)',
-      teamAId: slotSquads[6].id,
-      teamAName: slotSquads[6].name,
-      teamATag: slotSquads[6].tag,
-      teamALogo: slotSquads[6].logo || '/images/team-placeholder.svg',
-      teamBId: slotSquads[7].id,
-      teamBName: slotSquads[7].name,
-      teamBTag: slotSquads[7].tag,
-      teamBLogo: slotSquads[7].logo || '/images/team-placeholder.svg',
-      map: 'Ancient',
-      dateTime: new Date(baseTime.getTime() + 21600000).toISOString(),
-      status: 'upcoming',
-      scoreA: 0,
-      scoreB: 0,
-      currentRound: 0,
-      half: 1,
-      roundHistory: [],
-      teamASide: 'CT',
-      teamBSide: 'T',
+      stage: qf4?.stage || 'Quarterfinal 04 (MR12)',
+      teamAId: qf4?.teamAId || slotSquads[6].id,
+      teamAName: qf4?.teamAName || slotSquads[6].name,
+      teamATag: qf4?.teamATag || slotSquads[6].tag,
+      teamALogo: qf4?.teamALogo || slotSquads[6].logo || '/images/team-placeholder.svg',
+      teamBId: qf4?.teamBId || slotSquads[7].id,
+      teamBName: qf4?.teamBName || slotSquads[7].name,
+      teamBTag: qf4?.teamBTag || slotSquads[7].tag,
+      teamBLogo: qf4?.teamBLogo || slotSquads[7].logo || '/images/team-placeholder.svg',
+      map: qf4?.map || 'Ancient',
+      dateTime: qf4?.dateTime || new Date(baseTime.getTime() + 21600000).toISOString(),
+      status: qf4?.status || 'upcoming',
+      scoreA: qf4?.scoreA ?? 0,
+      scoreB: qf4?.scoreB ?? 0,
+      winnerId: qf4?.winnerId,
+      currentRound: qf4?.currentRound ?? 0,
+      half: qf4?.half || 1,
+      roundHistory: qf4?.roundHistory || [],
+      teamASide: qf4?.teamASide || 'CT',
+      teamBSide: qf4?.teamBSide || 'T',
     },
 
     // ================= 2. SEMIFINALS (START COMPLETELY FREE) =================
@@ -324,8 +371,20 @@ export function analyzeAndAdvanceBracketWinners(
       }
 
       // 2. Advance winner to the downstream match (QF, SF, or Grand Final)
-      if (match.winnerId && match.nextMatchId) {
-        const nextMatch = matchMap.get(match.nextMatchId);
+      if (match.winnerId && (match.nextMatchId || (match as any).nextMatchNumber)) {
+        let nextMatch = match.nextMatchId ? matchMap.get(match.nextMatchId) : null;
+        if (!nextMatch && (match as any).nextMatchNumber) {
+          nextMatch = cloned.find((m) => m.matchNumber === (match as any).nextMatchNumber);
+        }
+        if (!nextMatch && match.nextMatchId) {
+          if (match.nextMatchId === 'm-105' || match.nextMatchId === '105') {
+            nextMatch = matchMap.get('m-sf-1') || cloned.find((m) => m.matchNumber === 105);
+          } else if (match.nextMatchId === 'm-106' || match.nextMatchId === '106') {
+            nextMatch = matchMap.get('m-sf-2') || cloned.find((m) => m.matchNumber === 106);
+          } else if (match.nextMatchId === 'm-107' || match.nextMatchId === '107') {
+            nextMatch = matchMap.get('m-gf') || cloned.find((m) => m.matchNumber === 107);
+          }
+        }
         if (nextMatch) {
           const winningTeam = teamLookup.get(match.winnerId) || {
             id: match.winnerId,
@@ -891,8 +950,10 @@ export function generate16TeamPlayoffTree(customTeams?: Team[]): Match[] {
 /**
  * Group matches into structured PlayoffBracket model
  */
-export function getPlayoffBracket(matches: Match[], teams: Team[]): PlayoffBracket {
-  const playoffList = matches.filter((m) =>
+export function getPlayoffBracket(matches: Match[] = [], teams: Team[] = []): PlayoffBracket {
+  const safeMatches = Array.isArray(matches) ? matches : [];
+  const safeTeams = Array.isArray(teams) ? teams : [];
+  const playoffList = safeMatches.filter((m) =>
     ['round_of_16', 'quarterfinals', 'semifinals', 'final', 'third_place'].includes(m.bracketRound || '')
   );
 
@@ -914,7 +975,7 @@ export function getPlayoffBracket(matches: Match[], teams: Team[]): PlayoffBrack
   let champion: Team | null = null;
   if (final && final.status === 'completed' && final.winnerId) {
     champion =
-      teams.find((t) => t.id === final.winnerId) ||
+      safeTeams.find((t) => t.id === final.winnerId) ||
       ({
         id: final.winnerId,
         name: final.winnerId === final.teamAId ? final.teamAName : final.teamBName,

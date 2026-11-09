@@ -6,8 +6,9 @@ import Image from 'next/image';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { getStoredTeams } from '@/lib/storage';
 import { Team, Player } from '@/lib/types';
-import { Search, Shield, Copy, Check, Users, Crosshair, Crown, ArrowRight, LayoutGrid, List } from 'lucide-react';
+import { Search, Shield, Copy, Check, Users, Crosshair, Crown, ArrowRight, LayoutGrid, List, FileSpreadsheet, Download } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
+import { downloadTeamWiseExcel, downloadAllMembersExcel } from '@/lib/exportExcel';
 
 export default function AdminPlayersPage() {
   const [teams, setTeams] = useState<Team[]>([]);
@@ -28,20 +29,25 @@ export default function AdminPlayersPage() {
     setTimeout(() => setCopiedSteamId(null), 2000);
   };
 
-  const filteredTeams = teams.map((team) => {
+  const filteredTeams = (teams || []).map((team) => {
+    if (!team) return { team: {} as Team, matchingPlayers: [], isRelevant: false };
     const query = searchQuery.toLowerCase();
     const teamMatches =
-      team.name.toLowerCase().includes(query) ||
-      team.tag.toLowerCase().includes(query) ||
-      team.university.toLowerCase().includes(query);
+      (team.name || '').toLowerCase().includes(query) ||
+      (team.tag || '').toLowerCase().includes(query) ||
+      (team.university || '').toLowerCase().includes(query) ||
+      (team.degreeProgram || '').toLowerCase().includes(query) ||
+      (team.captain?.name || '').toLowerCase().includes(query);
 
-    const matchingPlayers = team.players.filter(
+    const matchingPlayers = (team.players || []).filter(
       (p) =>
         teamMatches ||
-        (p.ign || '').toLowerCase().includes(query) ||
-        p.name.toLowerCase().includes(query) ||
-        (p.faculty || '').toLowerCase().includes(query) ||
-        (p.steamId || '').toLowerCase().includes(query)
+        (p?.ign || '').toLowerCase().includes(query) ||
+        (p?.name || '').toLowerCase().includes(query) ||
+        (p?.faculty || '').toLowerCase().includes(query) ||
+        (p?.degreeProgram || '').toLowerCase().includes(query) ||
+        (p?.enrollmentNumber || '').toLowerCase().includes(query) ||
+        (p?.steamId || '').toLowerCase().includes(query)
     );
 
     return {
@@ -52,20 +58,22 @@ export default function AdminPlayersPage() {
   }).filter((item) => (searchQuery ? item.isRelevant : true));
 
   const allFlatPlayers: { player: Player; team: Team }[] = [];
-  teams.forEach((t) => {
-    t.players.forEach((p) => {
+  (teams || []).forEach((t) => {
+    (t.players || []).forEach((p) => {
       allFlatPlayers.push({ player: p, team: t });
     });
   });
 
   const filteredFlatPlayers = allFlatPlayers.filter(
     ({ player, team }) =>
-      (player.ign || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      player.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (player.faculty && player.faculty.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (player.steamId || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      team.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      team.tag.toLowerCase().includes(searchQuery.toLowerCase())
+      (player?.ign || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (player?.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (player?.faculty || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (player?.degreeProgram || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (player?.enrollmentNumber || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (player?.steamId || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (team?.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (team?.tag || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -107,6 +115,24 @@ export default function AdminPlayersPage() {
                 <span>ALL OPERATIVES LIST</span>
               </button>
             </div>
+
+            <button
+              onClick={() => downloadTeamWiseExcel(teams)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-gunmetal hover:border-olive text-tacticalWhite hover:text-sand text-xs font-mono transition-colors"
+              title="Download Team-Wise Roster Excel Spreadsheet"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
+              <span>TEAM-WISE EXCEL</span>
+            </button>
+
+            <button
+              onClick={() => downloadAllMembersExcel(teams)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-gunmetal hover:border-olive text-tacticalWhite hover:text-sand text-xs font-mono transition-colors"
+              title="Download Master All Members List Excel Spreadsheet"
+            >
+              <Download className="w-3.5 h-3.5 text-sand" />
+              <span>ALL MEMBERS EXCEL</span>
+            </button>
 
             <Link
               href="/admin/teams"
@@ -151,13 +177,13 @@ export default function AdminPlayersPage() {
                           {team.name}
                         </h3>
                       </div>
-                      <span className="text-xs font-mono text-mutedKhaki">{team.university}</span>
+                      <span className="text-xs font-mono text-mutedKhaki">{team.degreeProgram || team.faculty || team.university}</span>
                     </div>
                   </div>
 
                   <div className="text-xs font-mono flex items-center gap-3">
                     <span className="text-mutedKhaki">
-                      LEADER: <strong className="text-tacticalWhite">{team.captain.name}</strong> ({team.captain.phone})
+                      LEADER: <strong className="text-tacticalWhite">{team.captain?.name || 'Squad Leader'}</strong> ({team.captain?.phone || team.captain?.whatsappNumber || '—'})
                     </span>
                     <span className={`px-2 py-0.5 uppercase text-[10px] font-bold border ${
                       team.status === 'approved' ? 'bg-olive/20 text-sand border-olive' : 'bg-sand/10 text-sand border-sand/40'

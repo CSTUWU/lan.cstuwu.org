@@ -233,7 +233,7 @@ export default function AdminCountdownPage() {
                 className="px-4 py-2 bg-sand/20 border border-sand/50 text-sand hover:bg-sand hover:text-military-black font-mono text-xs uppercase font-bold flex items-center justify-center gap-2 transition-colors shrink-0"
               >
                 <GitBranch className="w-3.5 h-3.5" />
-                <span>SEED PLAYOFF TREE FROM APPROVED SQUADS</span>
+                <span>GENERATE PLAYOFF TREE (FROM FIXTURES & SQUADS)</span>
               </button>
             </div>
             {playoffNotice && (

@@ -89,8 +89,45 @@ export default function AdminMatchesPage() {
 
     if (!teamA || !teamB) return;
 
+    let bracketRound: 'quarterfinals' | 'semifinals' | 'final' | 'third_place' | undefined;
+    let bracketPosition: number | undefined;
+    let matchNumber: number | undefined;
+    let nextMatchNumber: number | undefined;
+    let nextMatchSlot: 'teamA' | 'teamB' | undefined;
+    let nextMatchId: string | undefined;
+
+    if (stage.includes('Quarterfinal 1') || stage.includes('Quarterfinal 01')) {
+      bracketRound = 'quarterfinals';
+      bracketPosition = 1;
+      matchNumber = 101;
+      nextMatchNumber = 105;
+      nextMatchSlot = 'teamA';
+      nextMatchId = 'm-sf-1';
+    } else if (stage.includes('Quarterfinal 2') || stage.includes('Quarterfinal 02')) {
+      bracketRound = 'quarterfinals';
+      bracketPosition = 2;
+      matchNumber = 102;
+      nextMatchNumber = 105;
+      nextMatchSlot = 'teamB';
+      nextMatchId = 'm-sf-1';
+    } else if (stage.includes('Quarterfinal 3') || stage.includes('Quarterfinal 03')) {
+      bracketRound = 'quarterfinals';
+      bracketPosition = 3;
+      matchNumber = 103;
+      nextMatchNumber = 106;
+      nextMatchSlot = 'teamA';
+      nextMatchId = 'm-sf-2';
+    } else if (stage.includes('Quarterfinal 4') || stage.includes('Quarterfinal 04')) {
+      bracketRound = 'quarterfinals';
+      bracketPosition = 4;
+      matchNumber = 104;
+      nextMatchNumber = 106;
+      nextMatchSlot = 'teamB';
+      nextMatchId = 'm-sf-2';
+    }
+
     // Backend payload
-    const backendData = {
+    const backendData: any = {
       teamA: teamA.id,
       teamB: teamB.id,
       teamAName: teamA.name,
@@ -103,6 +140,11 @@ export default function AdminMatchesPage() {
       scheduledAt: new Date(dateTime).toISOString(),
       stage,
       status: status.toUpperCase(),
+      bracketRound,
+      bracketPosition,
+      matchNumber,
+      nextMatchNumber,
+      nextMatchSlot,
     };
 
     try {
@@ -129,6 +171,11 @@ export default function AdminMatchesPage() {
       scoreA: 0,
       scoreB: 0,
       stage,
+      bracketRound,
+      bracketPosition,
+      matchNumber,
+      nextMatchId,
+      nextMatchSlot,
     });
 
     setShowCreateModal(false);
@@ -144,32 +191,26 @@ export default function AdminMatchesPage() {
     }
     const isEightSquad = candidateTeams.length <= 8;
     const confirmSeed = window.confirm(
-      `CREATE PLAYOFF TREE from ${candidateTeams.length} registered squads?\n\n` +
-      (isEightSquad
-        ? `• 8-TEAM DUAL-WING BRACKET:\n` +
-          `  - Left Wing: 4 squads (2 Quarterfinal matches)\n` +
-          `  - Right Wing: 4 squads (2 Quarterfinal matches)\n` +
-          `  - Round 2 (Semifinals) and Grand Final will be completely free.\n`
-        : `• 16-TEAM DUAL-WING BRACKET:\n` +
-          `  - Left Wing: 8 squads (4 Round of 16 matches)\n` +
-          `  - Right Wing: 8 squads (4 Round of 16 matches)\n` +
-          `  - Round 2 (Quarterfinals), Semifinals & Grand Final will be completely free.\n`) +
-      `• Match wins will automatically advance winners down the tree to the trophy!`
+      `GENERATE OFFICIAL PLAYOFF TREE?\n\n` +
+      `• Any 1st round matches you manually scheduled will be preserved and linked into the tree.\n` +
+      `• Remaining slots will be filled from registered approved squads.\n` +
+      `• Semifinals, Grand Final & Bronze decider start free awaiting match winners.\n` +
+      `• When any match is won, the winner will automatically advance into the playoff tree!`
     );
     if (!confirmSeed) return;
 
     setLoading(true);
     try {
       createAndSeedPlayoffTree(candidateTeams);
-      setNotice(
-        `✓ ${isEightSquad ? '8-Squad Dual-Wing' : '16-Squad Major'} Playoff Tree created! Seeded with ${candidateTeams.length} squads; downstream rounds are free.`
-      );
       try {
         await api.admin.generatePlayoffs().catch(() => null);
       } catch (e) {}
+      setNotice(
+        `✓ Playoff Tree generated! 1st round fixtures linked. Match wins will automatically advance winners down the tree.`
+      );
     } catch (e) {
       createAndSeedPlayoffTree(candidateTeams);
-      setNotice('✓ Playoff tree created locally.');
+      setNotice('✓ Playoff tree generated locally.');
     } finally {
       await loadData();
       setLoading(false);
@@ -233,7 +274,26 @@ export default function AdminMatchesPage() {
         )}
 
         <div className="space-y-4">
-          {matches.map((m) => (
+          {matches.length === 0 ? (
+            <div className="bg-card/80 border border-gunmetal p-12 text-center">
+              <Swords className="w-12 h-12 text-mutedKhaki/40 mx-auto mb-3" />
+              <h3 className="font-display font-black text-lg text-tacticalWhite uppercase mb-1">
+                No Match Fixtures Scheduled Yet
+              </h3>
+              <p className="text-xs font-mono text-mutedKhaki max-w-md mx-auto mb-6">
+                No active fixtures found. Use &quot;+ CREATE NEW FIXTURE&quot; above to schedule 1st round matches manually, or click &quot;CREATE PLAYOFF TREE&quot; to seed approved squads automatically.
+              </p>
+              <Button
+                onClick={() => setShowCreateModal(true)}
+                variant="olive"
+                size="sm"
+                icon={<Plus className="w-4 h-4" />}
+              >
+                CREATE NEW FIXTURE
+              </Button>
+            </div>
+          ) : (
+            matches.map((m) => (
             <div
               key={m.id}
               className="bg-card/90 border border-gunmetal p-5 backdrop-blur-md flex flex-col md:flex-row items-center justify-between gap-6"
@@ -293,7 +353,8 @@ export default function AdminMatchesPage() {
                 </Button>
               </div>
             </div>
-          ))}
+            ))
+          )}
         </div>
 
       </div>
@@ -359,15 +420,21 @@ export default function AdminMatchesPage() {
                 </div>
 
                 <div>
-                  <label className="block text-mutedKhaki uppercase mb-1">STAGE / ROUND</label>
-                  <input
-                    type="text"
+                  <label className="block text-mutedKhaki uppercase mb-1">STAGE / 1ST ROUND SLOT</label>
+                  <select
                     value={stage}
                     onChange={(e) => setStage(e.target.value)}
-                    placeholder="e.g. Upper Semifinal 1"
                     className="w-full bg-surface border border-gunmetal p-2.5 text-tacticalWhite focus:outline-none focus:border-olive"
-                    required
-                  />
+                  >
+                    <option value="Quarterfinal 1 (MR12)">Quarterfinal 1 (1st Round • Left Wing Top)</option>
+                    <option value="Quarterfinal 2 (MR12)">Quarterfinal 2 (1st Round • Left Wing Bottom)</option>
+                    <option value="Quarterfinal 3 (MR12)">Quarterfinal 3 (1st Round • Right Wing Top)</option>
+                    <option value="Quarterfinal 4 (MR12)">Quarterfinal 4 (1st Round • Right Wing Bottom)</option>
+                    <option value="Semifinal 1 (MR12)">Semifinal 1 (MR12)</option>
+                    <option value="Semifinal 2 (MR12)">Semifinal 2 (MR12)</option>
+                    <option value="Grand Final (LAN Main Auditorium Stage)">Grand Final (Auditorium Stage)</option>
+                    <option value="Exhibition Match">Exhibition / Group Stage Match</option>
+                  </select>
                 </div>
               </div>
 
