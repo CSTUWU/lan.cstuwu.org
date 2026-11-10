@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Radio, ExternalLink, Bomb, Shield, Trophy, ChevronRight, Activity } from 'lucide-react';
+import { Radio, ExternalLink, Bomb, Activity } from 'lucide-react';
 import { api } from '@/lib/api';
 import {
   getStoredMatches,
@@ -15,6 +15,7 @@ import { transformBackendMatch } from '@/lib/transformers';
 import { Match } from '@/lib/types';
 
 export default function LiveMatchHomeBanner() {
+  const [mounted, setMounted] = useState(false);
   const [liveMatch, setLiveMatch] = useState<Match | null>(null);
 
   const checkLive = useCallback(() => {
@@ -46,7 +47,8 @@ export default function LiveMatchHomeBanner() {
   }, []);
 
   useEffect(() => {
-    // Initial fetch from storage if already present, then check API
+    setMounted(true);
+
     try {
       const stored = getStoredMatches();
       const localLive = stored.find((m) => m.status === 'live');
@@ -82,13 +84,16 @@ export default function LiveMatchHomeBanner() {
     };
   }, [checkLive]);
 
-  if (!liveMatch) return null;
+  // Always return a stable persistent container to preserve React DOM tree hierarchy with GSAP pinned siblings
+  if (!mounted || !liveMatch) {
+    return <div id="live-match-banner-wrapper" className="hidden" aria-hidden="true" />;
+  }
 
   const currentRound = liveMatch.currentRound || liveMatch.scoreA + liveMatch.scoreB;
 
   return (
-    <>
-      {/* Floating Tactical Live HUD Pill (Always reachable without layout shifts) */}
+    <div id="live-match-banner-wrapper" className="w-full">
+      {/* Floating Tactical Live HUD Pill (Always reachable across viewport without layout shifts) */}
       <aside aria-label="Live Match Status" className="fixed bottom-6 right-6 z-50 pointer-events-auto">
         <Link
           href="/scoreboard/live"
@@ -118,7 +123,7 @@ export default function LiveMatchHomeBanner() {
         </Link>
       </aside>
 
-      {/* Main Full-Width Section Below Hero */}
+      {/* Main Full-Width Section */}
       <section className="relative z-30 w-full bg-military-black border-y-2 border-rose-600/60 shadow-[0_0_35px_rgba(225,29,72,0.25)] overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-rose-950/30 via-military-black to-rose-950/30 pointer-events-none" />
         <div className="absolute inset-0 tactical-grid-bg opacity-20 pointer-events-none" />
@@ -246,6 +251,6 @@ export default function LiveMatchHomeBanner() {
 
         </div>
       </section>
-    </>
+    </div>
   );
 }
