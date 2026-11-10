@@ -60,10 +60,15 @@ export default function ScoreboardPage() {
         const isPub = Boolean(res.data.playoffTreePublished);
         setIsTreePublished(isPub);
         setPlayoffTreePublished(isPub);
-        if (isPub) {
-          setActiveTab((prev) => (prev === 'standings' ? 'playoffs' : prev));
-        } else {
-          setActiveTab((prev) => (prev === 'playoffs' ? 'standings' : prev));
+        if (isInitial) {
+          const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+          if (!params?.get('tab')) {
+            if (isPub) {
+              setActiveTab('playoffs');
+            } else {
+              setActiveTab('standings');
+            }
+          }
         }
       }
     }).catch(() => {});
@@ -114,6 +119,15 @@ export default function ScoreboardPage() {
   };
 
   useEffect(() => {
+    // Check if URL specified a direct tab: e.g. /scoreboard?tab=standings
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const urlTab = params.get('tab');
+      if (urlTab === 'standings' || urlTab === 'completed' || urlTab === 'upcoming' || urlTab === 'playoffs') {
+        setActiveTab(urlTab);
+      }
+    }
+
     reloadData(true);
 
     const handleTeamsUpdate = () => setTeams(getStoredTeams());
@@ -127,9 +141,8 @@ export default function ScoreboardPage() {
         ? customEvent.detail.published
         : isPlayoffTreePublished();
       setIsTreePublished(pub);
-      if (pub) {
-        setActiveTab('playoffs');
-      } else {
+      // Only navigate away from playoffs if playoffs were unpublished while currently viewing them
+      if (!pub) {
         setActiveTab((prev) => (prev === 'playoffs' ? 'standings' : prev));
       }
     };
@@ -139,9 +152,7 @@ export default function ScoreboardPage() {
       if (event.data?.type === 'CST_PLAYOFF_PUBLISHED_UPDATE') {
         const pub = typeof event.data.published === 'boolean' ? event.data.published : isPlayoffTreePublished();
         setIsTreePublished(pub);
-        if (pub) {
-          setActiveTab('playoffs');
-        } else {
+        if (!pub) {
           setActiveTab((prev) => (prev === 'playoffs' ? 'standings' : prev));
         }
       }
@@ -353,7 +364,7 @@ export default function ScoreboardPage() {
           <button
             onClick={() => setActiveTab('standings')}
             className={`px-4 py-2.5 font-mono text-xs uppercase font-bold tracking-wider transition-all border flex items-center gap-2 ${
-              activeTab === 'standings' || (!showPlayoffTab && activeTab === 'playoffs')
+              activeTab === 'standings'
                 ? 'bg-olive text-tacticalWhite border-olive'
                 : 'bg-card text-mutedKhaki border-gunmetal hover:text-tacticalWhite hover:border-sand/40'
             }`}

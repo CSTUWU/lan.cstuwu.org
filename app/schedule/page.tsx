@@ -111,11 +111,11 @@ export default function SchedulePage() {
 
           <div className="flex items-center gap-3">
             {showPlayoffBanner && (
-              <Button href="/scoreboard" variant="sand" size="sm" icon={<Trophy className="w-3.5 h-3.5 text-military-black" />}>
+              <Button href="/scoreboard?tab=playoffs" variant="sand" size="sm" icon={<Trophy className="w-3.5 h-3.5 text-military-black" />}>
                 PLAYOFF BRACKET
               </Button>
             )}
-            <Button href="/scoreboard" variant="outline" size="sm">
+            <Button href="/scoreboard?tab=standings" variant="outline" size="sm">
               VIEW STANDINGS
             </Button>
             {isOpen && (
@@ -247,7 +247,7 @@ export default function SchedulePage() {
               </div>
             </div>
             <Link
-              href="/scoreboard"
+              href="/scoreboard?tab=playoffs"
               className="px-4 py-2 bg-sand hover:bg-sand/90 text-military-black font-display font-black text-xs uppercase tracking-wider flex items-center gap-2 shrink-0 transition-all clip-tactical"
             >
               <span>VIEW INTERACTIVE BRACKET</span>
