@@ -151,7 +151,7 @@ export default function TournamentFormat() {
               <CheckCircle2 className="w-4 h-4 text-sand shrink-0 mt-0.5" />
               <div>
                 <span className="text-tacticalWhite font-bold block mb-0.5">MAP &amp; SIDE SELECTION</span>
-                Knockouts: Coin-toss winner picks map or side. Semis &amp; Finals: Previous round winner picks map or side.
+                Better seed selects map, lower seed selects side.
               </div>
             </div>
           </div>
