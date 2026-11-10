@@ -32,6 +32,8 @@ import {
   Hash,
   Clock,
   Sparkles,
+  FileCode2,
+  Trash2,
 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
@@ -53,6 +55,8 @@ interface MemberFormState {
   gamingName: string;
   year: string; // 1, 2, 3, 4
   enrollmentNumber: string; // Member's unique Enrollment Number e.g. UWU/CST/22/001
+  configFile?: File | null;
+  configFileName?: string;
 }
 
 export default function RegisterPage() {
@@ -79,11 +83,11 @@ export default function RegisterPage() {
 
   // Step 2: 5 Squad Members (all from same Degree Programme, each with individual Academic Year and Enrollment Number)
   const [members, setMembers] = useState<MemberFormState[]>([
-    { fullName: '', gamingName: '', year: '1', enrollmentNumber: '' }, // Member 1 (Team Leader)
-    { fullName: '', gamingName: '', year: '1', enrollmentNumber: '' }, // Member 2
-    { fullName: '', gamingName: '', year: '1', enrollmentNumber: '' }, // Member 3
-    { fullName: '', gamingName: '', year: '1', enrollmentNumber: '' }, // Member 4
-    { fullName: '', gamingName: '', year: '1', enrollmentNumber: '' }, // Member 5
+    { fullName: '', gamingName: '', year: '1', enrollmentNumber: '', configFile: null, configFileName: '' }, // Member 1 (Team Leader)
+    { fullName: '', gamingName: '', year: '1', enrollmentNumber: '', configFile: null, configFileName: '' }, // Member 2
+    { fullName: '', gamingName: '', year: '1', enrollmentNumber: '', configFile: null, configFileName: '' }, // Member 3
+    { fullName: '', gamingName: '', year: '1', enrollmentNumber: '', configFile: null, configFileName: '' }, // Member 4
+    { fullName: '', gamingName: '', year: '1', enrollmentNumber: '', configFile: null, configFileName: '' }, // Member 5
   ]);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -123,6 +127,34 @@ export default function RegisterPage() {
           degreeProgram: identified.name,
         }));
       }
+    }
+  };
+
+  const handleMemberConfigFile = (index: number, file: File | null) => {
+    if (file) {
+      if (!file.name.toLowerCase().endsWith('.cfg')) {
+        setErrors((prev) => ({
+          ...prev,
+          [`m_${index}_cfg`]: 'Only .cfg files are allowed',
+        }));
+        return;
+      }
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[`m_${index}_cfg`];
+        return next;
+      });
+      setMembers((prev) => {
+        const updated = [...prev];
+        updated[index] = { ...updated[index], configFile: file, configFileName: file.name };
+        return updated;
+      });
+    } else {
+      setMembers((prev) => {
+        const updated = [...prev];
+        updated[index] = { ...updated[index], configFile: null, configFileName: '' };
+        return updated;
+      });
     }
   };
 
@@ -934,6 +966,61 @@ export default function RegisterPage() {
                               <p className="text-[10px] font-mono text-rose-500 mt-1">{errors[`m_${idx}_enrollmentNumber`]}</p>
                             )}
                           </div>
+
+                          {/* 5. Player Config (.cfg) File */}
+                          <div className="md:col-span-2 pt-2 border-t border-gunmetal/40">
+                            <div className="flex items-center justify-between text-[11px] font-mono text-mutedKhaki uppercase mb-1.5 h-5">
+                              <span className="font-bold flex items-center gap-1.5">
+                                <FileCode2 className="w-3.5 h-3.5 text-sand" />
+                                PLAYER CONFIG FILE (.CFG)
+                              </span>
+                              <span className="text-[10px] text-sand font-mono bg-card px-1.5 py-0.2 border border-gunmetal font-bold">
+                                ONLY .CFG ALLOWED
+                              </span>
+                            </div>
+                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                              <label className="cursor-pointer inline-flex items-center justify-center gap-2 px-4 py-2 bg-surface border border-gunmetal hover:border-olive text-xs font-mono text-tacticalWhite transition-colors shrink-0">
+                                <Upload className="w-3.5 h-3.5 text-sand" />
+                                <span>{member.configFileName ? 'CHANGE .CFG FILE' : 'CHOOSE .CFG FILE'}</span>
+                                <input
+                                  type="file"
+                                  accept=".cfg"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0] || null;
+                                    handleMemberConfigFile(idx, file);
+                                  }}
+                                  className="hidden"
+                                />
+                              </label>
+
+                              {member.configFileName ? (
+                                <div className="flex items-center justify-between flex-1 px-3 py-2 bg-card border border-olive/50 text-xs font-mono">
+                                  <div className="flex items-center gap-2 truncate">
+                                    <FileCode2 className="w-3.5 h-3.5 text-sand shrink-0" />
+                                    <span className="text-sand font-bold truncate">{member.configFileName}</span>
+                                    <span className="text-[10px] text-mutedKhaki">
+                                      ({((member.configFile?.size || 0) / 1024).toFixed(1)} KB)
+                                    </span>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleMemberConfigFile(idx, null)}
+                                    className="text-mutedKhaki hover:text-rose-400 p-1 transition-colors ml-2"
+                                    title="Remove config file"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <span className="text-[11px] font-mono text-mutedKhaki flex items-center">
+                                  No .cfg file selected (Upload custom COD4 player config)
+                                </span>
+                              )}
+                            </div>
+                            {errors[`m_${idx}_cfg`] && (
+                              <p className="text-[10px] font-mono text-rose-500 mt-1">{errors[`m_${idx}_cfg`]}</p>
+                            )}
+                          </div>
                         </div>
                       </div>
                     );
@@ -1052,6 +1139,12 @@ export default function RegisterPage() {
                                 {m.gamingName}
                               </span>
                             </div>
+                            {m.configFileName && (
+                              <div className="flex items-center gap-1 text-[11px] text-sand bg-surface border border-olive/40 px-2 py-0.5">
+                                <FileCode2 className="w-3 h-3 text-sand" />
+                                <span className="font-bold">{m.configFileName}</span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       ))}
