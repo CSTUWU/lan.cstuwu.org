@@ -274,7 +274,7 @@ export default function AdminPlayersPage() {
                   <tr className="bg-surface/80 border-b border-gunmetal text-mutedKhaki text-[10px] uppercase">
                     <th className="py-3 px-4">OPERATIVE NAME</th>
                     <th className="py-3 px-4">FACULTY</th>
-                    <th className="py-3 px-4">CALLSIGN / IGN</th>
+                    <th className="py-3 px-4">CALLSIGN</th>
                     <th className="py-3 px-4">SQUAD</th>
                     <th className="py-3 px-4">ROLE</th>
                     <th className="py-3 px-4">STUDENT EMAIL</th>

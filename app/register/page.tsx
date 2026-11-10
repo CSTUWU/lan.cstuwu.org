@@ -159,7 +159,7 @@ export default function RegisterPage() {
           newErrors[`m_${idx}_fullName`] = `${roleLabel} full name is required`;
         }
         if (!m.gamingName.trim()) {
-          newErrors[`m_${idx}_gamingName`] = `${roleLabel} gaming name (IGN) is required`;
+          newErrors[`m_${idx}_gamingName`] = `${roleLabel} in game name (Callsign) is required`;
         }
         if (!m.year || !m.year.trim()) {
           newErrors[`m_${idx}_year`] = `${roleLabel} year is required`;
@@ -736,7 +736,7 @@ export default function RegisterPage() {
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
                       <h3 className="font-display font-black text-xl text-tacticalWhite uppercase tracking-wider">
-                        STEP 2: 5 SQUAD MEMBERS (NAME, GAMING NAME, YEAR &amp; ENROLLMENT NUMBER)
+                        STEP 2: 5 SQUAD MEMBERS (NAME, IN GAME NAME, YEAR &amp; ENROLLMENT NUMBER)
                       </h3>
                       <p className="text-xs font-mono text-mutedKhaki mt-1">
                         All 5 operatives must belong to <strong className="text-sand">{form.degreeProgram}</strong>. Degree is identified directly from each member&apos;s individual enrollment number.
@@ -821,14 +821,14 @@ export default function RegisterPage() {
                             )}
                           </div>
 
-                          {/* 2. Gaming Name (IGN) */}
+                          {/* 2. In Game Name (Callsign) */}
                           <div>
                             <div className="flex items-center justify-between text-[11px] font-mono text-mutedKhaki uppercase mb-1.5 h-5">
                               <span className="font-bold flex items-center gap-1">
-                                GAMING NAME <span className="text-sand">*</span>
+                                IN GAME NAME <span className="text-sand">*</span>
                               </span>
                               <span className="text-[10px] text-sand font-mono bg-card px-1.5 py-0.2 border border-gunmetal font-bold">
-                                CALLSIGN / IGN
+                                CALLSIGN
                               </span>
                             </div>
                             <input

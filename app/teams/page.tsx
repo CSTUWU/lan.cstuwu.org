@@ -312,7 +312,7 @@ export default function TeamsPage() {
                             </span>
                           </div>
                           <span className="text-sand text-[11px] block mt-0.5">
-                            Gaming Name: <strong className="text-tacticalWhite">{player.gamingName || player.ign || '—'}</strong>
+                            In Game Name: <strong className="text-tacticalWhite">{player.gamingName || player.ign || '—'}</strong>
                           </span>
                         </div>
                       </div>

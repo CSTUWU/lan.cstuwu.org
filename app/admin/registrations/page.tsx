@@ -463,7 +463,7 @@ export default function AdminRegistrationsPage() {
                           )}
                         </div>
                         <div className="text-[11px] text-mutedKhaki mt-0.5 pl-6">
-                          Gaming Name: <strong className="text-sand">{p.gamingName || p.ign || '—'}</strong>
+                          In Game Name: <strong className="text-sand">{p.gamingName || p.ign || '—'}</strong>
                         </div>
                       </div>
 
