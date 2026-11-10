@@ -32,7 +32,7 @@ export default function PrizePoolSection() {
       bgColor: 'bg-card/90',
       tagBadge: 'bg-surface text-sand border-gunmetal',
       icon: <Medal className="w-10 h-10 text-sand" />,
-      prize: 'LKR 45,000',
+      prize: 'LKR 15,000',
       perks: [
         'Official CST 2026 Silver Championship Trophy',
         'CST Silver Medals for 5 Active Operatives',
@@ -51,7 +51,7 @@ export default function PrizePoolSection() {
       bgColor: 'bg-card/95',
       tagBadge: 'bg-sand text-military-black border-sand font-bold',
       icon: <Crown className="w-12 h-12 text-sand animate-bounce" />,
-      prize: 'LKR 80,000',
+      prize: 'LKR 25,000',
       perks: [
         'Official CST LAN Challenge 2026 Grand Trophy',
         'Official CST Gold Medals for 5 Operatives',
@@ -72,7 +72,7 @@ export default function PrizePoolSection() {
       bgColor: 'bg-card/90',
       tagBadge: 'bg-surface text-khaki border-gunmetal',
       icon: <Award className="w-10 h-10 text-khaki" />,
-      prize: 'LKR 25,000',
+      prize: 'LKR 10,000',
       perks: [
         'Official CST 2026 Bronze Championship Trophy',
         'CST Bronze Medals for 5 Active Operatives',

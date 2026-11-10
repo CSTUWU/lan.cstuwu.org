@@ -176,14 +176,20 @@ export default function PlayoffBracketTree({
 
   // Dynamic automatic bracket sizing: 16-squad vs 8-squad based on scheduled matches
   const has16Matches = useMemo(() => {
+    if (defaultMode === '8-squad') return false;
+    if (defaultMode === '16-squad') return true;
+
+    if (matches.some((m) => m.bracketRound === 'round_of_16')) {
+      return true;
+    }
     if (sixteenMatches.some((m) => m.bracketRound === 'round_of_16' && (m.teamAId || m.teamBId || m.teamAName))) {
       return true;
     }
-    if (matches.some((m) => m.bracketRound === 'round_of_16') || matches.length > 7) {
-      return true;
+    if (matches.some((m) => m.bracketRound === 'quarterfinals')) {
+      return false;
     }
     return getActiveBracketMode() === '16-squad';
-  }, [sixteenMatches, matches]);
+  }, [sixteenMatches, matches, defaultMode]);
 
   const [viewStyle, setViewStyle] = useState<'bracket' | 'linear'>('bracket');
   const activeLayout: BracketLayoutMode = viewStyle === 'linear' ? 'linear' : (has16Matches ? '16-squad' : '8-squad');
@@ -329,10 +335,16 @@ export default function PlayoffBracketTree({
     triggerNotice('✓ 16-Squad Playoff Tree restored to initial major tournament state!');
   };
 
-  const handleCreatePlayoffTree = () => {
+  const handleCreatePlayoffTree = async () => {
     const fresh = createAndSeedPlayoffTree(teams);
     setSixteenMatches(fresh);
-    triggerNotice('✓ Playoff Tree created! 1st layer seeded with teams. Round 2, Semifinals & Finals are free.');
+    setIsPublished(true);
+    setPlayoffTreePublished(true);
+    try {
+      await api.admin.generatePlayoffs().catch(() => null);
+      await api.admin.updateSettings({ playoffTreePublished: true }).catch(() => null);
+    } catch (e) {}
+    triggerNotice('✓ Official Playoff Tree created & published to public site! 1st stage seeded. Semifinals & Finals advance automatically on match wins.');
     if (onRefresh) onRefresh();
   };
 
@@ -396,6 +408,10 @@ export default function PlayoffBracketTree({
           m.bracketRound === 'round_of_16'
       ) || sixteenMatches.some((m) => m.bracketRound === 'round_of_16')
     );
+  }, [matches, sixteenMatches]);
+
+  const livePlayoffMatch = useMemo(() => {
+    return matches.find((m) => m.status === 'live') || sixteenMatches.find((m) => m.status === 'live') || null;
   }, [matches, sixteenMatches]);
 
   // If playoff bracket is disabled/unpublished and viewer is NOT using admin controls and no playoff matches exist:
@@ -587,11 +603,7 @@ export default function PlayoffBracketTree({
                   </>
                 ) : (
                   <button
-                    onClick={() => {
-                      createAndSeedPlayoffTree(teams);
-                      if (onRefresh) onRefresh();
-                      triggerNotice('✓ Re-seeded official 8-squad UWU bracket!');
-                    }}
+                    onClick={handleCreatePlayoffTree}
                     className="px-3 py-2 bg-surface border border-gunmetal hover:border-sand text-mutedText hover:text-tacticalWhite font-mono text-xs uppercase flex items-center gap-1.5 transition-colors"
                     title="Re-seed 8-squad bracket from registered teams"
                   >
@@ -613,6 +625,35 @@ export default function PlayoffBracketTree({
             </Link>
           </div>
         </div>
+
+        {livePlayoffMatch && (
+          <div className="mt-4 p-3.5 bg-gradient-to-r from-rose-950/80 via-military-black to-card border border-rose-500/80 rounded flex flex-col sm:flex-row items-center justify-between gap-3 shadow-[0_0_20px_rgba(225,29,72,0.3)]">
+            <div className="flex items-center gap-3">
+              <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />
+              <div>
+                <div className="text-xs font-mono font-black text-rose-400 uppercase tracking-widest flex items-center gap-2">
+                  <span>🔴 AUDITORIUM STAGE ENGAGEMENT LIVE</span>
+                  <span className="text-mutedKhaki">•</span>
+                  <span className="text-sand">{livePlayoffMatch.stage}</span>
+                </div>
+                <div className="text-sm font-display font-black text-tacticalWhite uppercase mt-0.5">
+                  [{livePlayoffMatch.teamATag}] {livePlayoffMatch.teamAName}{' '}
+                  <span className="text-sand mx-1.5 font-mono">{livePlayoffMatch.scoreA} : {livePlayoffMatch.scoreB}</span>{' '}
+                  [{livePlayoffMatch.teamBTag}] {livePlayoffMatch.teamBName}
+                </div>
+              </div>
+            </div>
+            <Link
+              href={`/scoreboard/live?matchId=${livePlayoffMatch.id}`}
+              target="_blank"
+              className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-500 text-white font-mono text-xs font-black uppercase tracking-wider flex items-center gap-1.5 clip-tactical shadow-md shrink-0"
+            >
+              <Radio className="w-3.5 h-3.5 text-sand animate-pulse" />
+              <span>OPEN AUDITORIUM HUD</span>
+              <ExternalLink className="w-3 h-3 ml-0.5" />
+            </Link>
+          </div>
+        )}
 
         {actionNotice && (
           <div className="mt-4 p-3 bg-olive/20 border border-olive text-sand font-mono text-xs flex items-center gap-2 animate-pulse shadow-[0_2px_10px_rgba(24,30,24,0.6)]">
@@ -689,11 +730,7 @@ export default function PlayoffBracketTree({
                   </p>
                   {(showAdminControls || isAdmin) && (
                     <button
-                      onClick={() => {
-                        createAndSeedPlayoffTree(teams);
-                        if (onRefresh) onRefresh();
-                        triggerNotice('✓ Seeded official 8-squad playoff tree!');
-                      }}
+                      onClick={handleCreatePlayoffTree}
                       className="px-5 py-2.5 bg-olive hover:bg-olive/90 text-tacticalWhite font-mono text-xs uppercase font-bold tracking-wider transition-all flex items-center gap-2 mx-auto border border-gunmetal shadow-lg"
                     >
                       <Trophy className="w-4 h-4 text-sand" />
@@ -1607,14 +1644,35 @@ function DualWingBracket8View({
   onSimulateWin,
   onSimulateRound,
 }: DualWingBracket8Props) {
-  const qf1 = bracket.quarterfinals[0] || null;
-  const qf2 = bracket.quarterfinals[1] || null;
-  const qf3 = bracket.quarterfinals[2] || null;
-  const qf4 = bracket.quarterfinals[3] || null;
+  const qf1 = bracket.quarterfinals.find((m) => m.bracketPosition === 1 || m.matchNumber === 101) || bracket.quarterfinals[0] || null;
+  const qf2 = bracket.quarterfinals.find((m) => m.bracketPosition === 2 || m.matchNumber === 102) || bracket.quarterfinals[1] || null;
+  const qf3 = bracket.quarterfinals.find((m) => m.bracketPosition === 3 || m.matchNumber === 103) || bracket.quarterfinals[2] || null;
+  const qf4 = bracket.quarterfinals.find((m) => m.bracketPosition === 4 || m.matchNumber === 104) || bracket.quarterfinals[3] || null;
 
-  const sf1 = bracket.semifinals[0] || null;
-  const sf2 = bracket.semifinals[1] || null;
-  const finalMatch = bracket.final;
+  const sf1 = bracket.semifinals.find((m) => m.bracketPosition === 1 || m.matchNumber === 105) || bracket.semifinals[0] || null;
+  const sf2 = bracket.semifinals.find((m) => m.bracketPosition === 2 || m.matchNumber === 106) || bracket.semifinals[1] || null;
+  const finalMatch = bracket.final || null;
+
+  const isQF1AWin = Boolean(qf1?.winnerId && String(qf1.winnerId) === String(qf1.teamAId)) || (qf1?.status === 'completed' && (qf1.scoreA ?? 0) > (qf1.scoreB ?? 0));
+  const isQF1BWin = Boolean(qf1?.winnerId && String(qf1.winnerId) === String(qf1.teamBId)) || (qf1?.status === 'completed' && (qf1.scoreB ?? 0) > (qf1.scoreA ?? 0));
+
+  const isQF2AWin = Boolean(qf2?.winnerId && String(qf2.winnerId) === String(qf2.teamAId)) || (qf2?.status === 'completed' && (qf2.scoreA ?? 0) > (qf2.scoreB ?? 0));
+  const isQF2BWin = Boolean(qf2?.winnerId && String(qf2.winnerId) === String(qf2.teamBId)) || (qf2?.status === 'completed' && (qf2.scoreB ?? 0) > (qf2.scoreA ?? 0));
+
+  const isSF1AWin = Boolean(sf1?.winnerId && String(sf1.winnerId) === String(sf1.teamAId)) || (sf1?.status === 'completed' && (sf1.scoreA ?? 0) > (sf1.scoreB ?? 0));
+  const isSF1BWin = Boolean(sf1?.winnerId && String(sf1.winnerId) === String(sf1.teamBId)) || (sf1?.status === 'completed' && (sf1.scoreB ?? 0) > (sf1.scoreA ?? 0));
+
+  const isSF2AWin = Boolean(sf2?.winnerId && String(sf2.winnerId) === String(sf2.teamAId)) || (sf2?.status === 'completed' && (sf2.scoreA ?? 0) > (sf2.scoreB ?? 0));
+  const isSF2BWin = Boolean(sf2?.winnerId && String(sf2.winnerId) === String(sf2.teamBId)) || (sf2?.status === 'completed' && (sf2.scoreB ?? 0) > (sf2.scoreA ?? 0));
+
+  const isFinalAWin = Boolean(finalMatch?.winnerId && String(finalMatch.winnerId) === String(finalMatch.teamAId)) || (finalMatch?.status === 'completed' && (finalMatch.scoreA ?? 0) > (finalMatch.scoreB ?? 0));
+  const isFinalBWin = Boolean(finalMatch?.winnerId && String(finalMatch.winnerId) === String(finalMatch.teamBId)) || (finalMatch?.status === 'completed' && (finalMatch.scoreB ?? 0) > (finalMatch.scoreA ?? 0));
+
+  const isQF3AWin = Boolean(qf3?.winnerId && String(qf3.winnerId) === String(qf3.teamAId)) || (qf3?.status === 'completed' && (qf3.scoreA ?? 0) > (qf3.scoreB ?? 0));
+  const isQF3BWin = Boolean(qf3?.winnerId && String(qf3.winnerId) === String(qf3.teamBId)) || (qf3?.status === 'completed' && (qf3.scoreB ?? 0) > (qf3.scoreA ?? 0));
+
+  const isQF4AWin = Boolean(qf4?.winnerId && String(qf4.winnerId) === String(qf4.teamAId)) || (qf4?.status === 'completed' && (qf4.scoreA ?? 0) > (qf4.scoreB ?? 0));
+  const isQF4BWin = Boolean(qf4?.winnerId && String(qf4.winnerId) === String(qf4.teamBId)) || (qf4?.status === 'completed' && (qf4.scoreB ?? 0) > (qf4.scoreA ?? 0));
 
   const getWireClasses = (teamAId?: string, teamBId?: string) => {
     const isHovered = activeHoverTeam && (activeHoverTeam === teamAId || activeHoverTeam === teamBId);
@@ -1651,16 +1709,23 @@ function DualWingBracket8View({
       <div className="w-[230px] h-full flex flex-col justify-between py-6 z-10">
         {qf1 && (
           <div className="space-y-2.5">
-            <div className="text-[10px] font-mono font-bold text-purple-400 uppercase tracking-wider flex items-center gap-1.5 pb-1 border-b border-purple-500/30">
-              <span className="w-2 h-2 rounded-full bg-purple-500 shadow-[0_0_8px_#A855F7]" />
-              <span>QF 01 • MAP: {qf1.map}</span>
+            <div className="text-[10px] font-mono font-bold text-purple-400 uppercase tracking-wider flex items-center justify-between pb-1 border-b border-purple-500/30">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-purple-500 shadow-[0_0_8px_#A855F7]" />
+                <span>QF 01 • MAP: {qf1.map}</span>
+              </span>
+              {qf1.status === 'live' && (
+                <span className="px-1.5 py-0.2 bg-rose-600 text-white font-mono text-[9px] font-black uppercase tracking-wider animate-pulse">
+                  LIVE
+                </span>
+              )}
             </div>
             <TacticalTeamPill
               name={qf1.teamAName}
               tag={qf1.teamATag}
               logo={qf1.teamALogo}
               score={qf1.scoreA}
-              isWinner={qf1.winnerId === qf1.teamAId}
+              isWinner={isQF1AWin}
               themeKey="purple"
               isHovered={activeHoverTeam === qf1.teamAId}
               onMouseEnter={() => setActiveHoverTeam(qf1.teamAId)}
@@ -1673,7 +1738,7 @@ function DualWingBracket8View({
               tag={qf1.teamBTag}
               logo={qf1.teamBLogo}
               score={qf1.scoreB}
-              isWinner={qf1.winnerId === qf1.teamBId}
+              isWinner={isQF1BWin}
               themeKey="purple"
               isHovered={activeHoverTeam === qf1.teamBId}
               onMouseEnter={() => setActiveHoverTeam(qf1.teamBId)}
@@ -1686,16 +1751,23 @@ function DualWingBracket8View({
 
         {qf2 && (
           <div className="space-y-2.5">
-            <div className="text-[10px] font-mono font-bold text-orange-400 uppercase tracking-wider flex items-center gap-1.5 pb-1 border-b border-orange-500/30">
-              <span className="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_8px_#F97316]" />
-              <span>QF 02 • MAP: {qf2.map}</span>
+            <div className="text-[10px] font-mono font-bold text-orange-400 uppercase tracking-wider flex items-center justify-between pb-1 border-b border-orange-500/30">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_8px_#F97316]" />
+                <span>QF 02 • MAP: {qf2.map}</span>
+              </span>
+              {qf2.status === 'live' && (
+                <span className="px-1.5 py-0.2 bg-rose-600 text-white font-mono text-[9px] font-black uppercase tracking-wider animate-pulse">
+                  LIVE
+                </span>
+              )}
             </div>
             <TacticalTeamPill
               name={qf2.teamAName}
               tag={qf2.teamATag}
               logo={qf2.teamALogo}
               score={qf2.scoreA}
-              isWinner={qf2.winnerId === qf2.teamAId}
+              isWinner={isQF2AWin}
               themeKey="orange"
               isHovered={activeHoverTeam === qf2.teamAId}
               onMouseEnter={() => setActiveHoverTeam(qf2.teamAId)}
@@ -1708,7 +1780,7 @@ function DualWingBracket8View({
               tag={qf2.teamBTag}
               logo={qf2.teamBLogo}
               score={qf2.scoreB}
-              isWinner={qf2.winnerId === qf2.teamBId}
+              isWinner={isQF2BWin}
               themeKey="orange"
               isHovered={activeHoverTeam === qf2.teamBId}
               onMouseEnter={() => setActiveHoverTeam(qf2.teamBId)}
@@ -1725,14 +1797,20 @@ function DualWingBracket8View({
           <div className="p-3 bg-card/90 border-2 border-purple-500/70 shadow-[0_0_25px_rgba(168,85,247,0.3)] clip-tactical space-y-3">
             <div className="flex items-center justify-between pb-1 border-b border-tactical-border text-[9px] font-mono text-purple-300">
               <span className="font-bold uppercase tracking-wider">SEMIFINAL 01</span>
-              <span>{sf1.status.toUpperCase()}</span>
+              {sf1.status === 'live' ? (
+                <span className="px-1.5 py-0.2 bg-rose-600 text-white font-mono text-[9px] font-black uppercase tracking-wider animate-pulse">
+                  LIVE
+                </span>
+              ) : (
+                <span>{sf1.status.toUpperCase()}</span>
+              )}
             </div>
             <TacticalTeamPill
               name={sf1.teamAName}
               tag={sf1.teamATag}
               logo={sf1.teamALogo}
               score={sf1.scoreA}
-              isWinner={sf1.winnerId === sf1.teamAId}
+              isWinner={isSF1AWin}
               themeKey="purple"
               isHovered={activeHoverTeam === sf1.teamAId}
               onMouseEnter={() => setActiveHoverTeam(sf1.teamAId)}
@@ -1745,7 +1823,7 @@ function DualWingBracket8View({
               tag={sf1.teamBTag}
               logo={sf1.teamBLogo}
               score={sf1.scoreB}
-              isWinner={sf1.winnerId === sf1.teamBId}
+              isWinner={isSF1BWin}
               themeKey="orange"
               isHovered={activeHoverTeam === sf1.teamBId}
               onMouseEnter={() => setActiveHoverTeam(sf1.teamBId)}
@@ -1772,7 +1850,7 @@ function DualWingBracket8View({
             <div
               onClick={() => onSelectMatch(finalMatch)}
               className={`p-3 bg-gradient-to-r from-purple-900/80 to-[#1A1028] border-2 text-center clip-tactical cursor-pointer hover:scale-105 transition-all ${
-                finalMatch.winnerId === finalMatch.teamAId
+                isFinalAWin
                   ? 'border-tactical-gold shadow-[0_0_25px_rgba(255,184,0,0.6)] ring-1 ring-amber-400'
                   : 'border-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.5)]'
               }`}
@@ -1782,7 +1860,7 @@ function DualWingBracket8View({
               </div>
               <div className="text-[9px] font-mono text-purple-300 uppercase tracking-widest font-bold flex items-center justify-center gap-1.5 mt-0.5">
                 <span>LEFT SEMIFINAL WINNER</span>
-                {finalMatch.winnerId === finalMatch.teamAId && (
+                {isFinalAWin && (
                   <span className="text-tactical-gold font-black">★ WON</span>
                 )}
               </div>
@@ -1800,7 +1878,7 @@ function DualWingBracket8View({
             <div
               onClick={() => onSelectMatch(finalMatch)}
               className={`p-3 bg-gradient-to-r from-cyan-900/80 to-[#0A1B28] border-2 text-center clip-tactical cursor-pointer hover:scale-105 transition-all ${
-                finalMatch.winnerId === finalMatch.teamBId
+                isFinalBWin
                   ? 'border-tactical-gold shadow-[0_0_25px_rgba(255,184,0,0.6)] ring-1 ring-amber-400'
                   : 'border-cyan-400 shadow-[0_0_20px_rgba(0,213,255,0.5)]'
               }`}
@@ -1810,7 +1888,7 @@ function DualWingBracket8View({
               </div>
               <div className="text-[9px] font-mono text-cyan-300 uppercase tracking-widest font-bold flex items-center justify-center gap-1.5 mt-0.5">
                 <span>RIGHT SEMIFINAL WINNER</span>
-                {finalMatch.winnerId === finalMatch.teamBId && (
+                {isFinalBWin && (
                   <span className="text-tactical-gold font-black">★ WON</span>
                 )}
               </div>
@@ -1846,14 +1924,20 @@ function DualWingBracket8View({
           <div className="p-3 bg-card/90 border-2 border-cyan-500/70 shadow-[0_0_25px_rgba(0,213,255,0.3)] clip-tactical space-y-3">
             <div className="flex items-center justify-between pb-1 border-b border-tactical-border text-[9px] font-mono text-cyan-300">
               <span className="font-bold uppercase tracking-wider">SEMIFINAL 02</span>
-              <span>{sf2.status.toUpperCase()}</span>
+              {sf2.status === 'live' ? (
+                <span className="px-1.5 py-0.2 bg-rose-600 text-white font-mono text-[9px] font-black uppercase tracking-wider animate-pulse">
+                  LIVE
+                </span>
+              ) : (
+                <span>{sf2.status.toUpperCase()}</span>
+              )}
             </div>
             <TacticalTeamPill
               name={sf2.teamAName}
               tag={sf2.teamATag}
               logo={sf2.teamALogo}
               score={sf2.scoreA}
-              isWinner={sf2.winnerId === sf2.teamAId}
+              isWinner={isSF2AWin}
               themeKey="cyan"
               isHovered={activeHoverTeam === sf2.teamAId}
               onMouseEnter={() => setActiveHoverTeam(sf2.teamAId)}
@@ -1866,7 +1950,7 @@ function DualWingBracket8View({
               tag={sf2.teamBTag}
               logo={sf2.teamBLogo}
               score={sf2.scoreB}
-              isWinner={sf2.winnerId === sf2.teamBId}
+              isWinner={isSF2BWin}
               themeKey="red"
               isHovered={activeHoverTeam === sf2.teamBId}
               onMouseEnter={() => setActiveHoverTeam(sf2.teamBId)}
@@ -1881,16 +1965,23 @@ function DualWingBracket8View({
       <div className="w-[230px] h-full flex flex-col justify-between py-6 z-10">
         {qf3 && (
           <div className="space-y-2.5">
-            <div className="text-[10px] font-mono font-bold text-cyan-400 uppercase tracking-wider flex items-center justify-end gap-1.5 pb-1 border-b border-cyan-500/30">
-              <span>QF 03 • MAP: {qf3.map}</span>
-              <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_#00D5FF]" />
+            <div className="text-[10px] font-mono font-bold text-cyan-400 uppercase tracking-wider flex items-center justify-between pb-1 border-b border-cyan-500/30">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_#00D5FF]" />
+                <span>QF 03 • MAP: {qf3.map}</span>
+              </span>
+              {qf3.status === 'live' && (
+                <span className="px-1.5 py-0.2 bg-rose-600 text-white font-mono text-[9px] font-black uppercase tracking-wider animate-pulse">
+                  LIVE
+                </span>
+              )}
             </div>
             <TacticalTeamPill
               name={qf3.teamAName}
               tag={qf3.teamATag}
               logo={qf3.teamALogo}
               score={qf3.scoreA}
-              isWinner={qf3.winnerId === qf3.teamAId}
+              isWinner={isQF3AWin}
               themeKey="cyan"
               isHovered={activeHoverTeam === qf3.teamAId}
               onMouseEnter={() => setActiveHoverTeam(qf3.teamAId)}
@@ -1903,7 +1994,7 @@ function DualWingBracket8View({
               tag={qf3.teamBTag}
               logo={qf3.teamBLogo}
               score={qf3.scoreB}
-              isWinner={qf3.winnerId === qf3.teamBId}
+              isWinner={isQF3BWin}
               themeKey="cyan"
               isHovered={activeHoverTeam === qf3.teamBId}
               onMouseEnter={() => setActiveHoverTeam(qf3.teamBId)}
@@ -1916,16 +2007,23 @@ function DualWingBracket8View({
 
         {qf4 && (
           <div className="space-y-2.5">
-            <div className="text-[10px] font-mono font-bold text-rose-400 uppercase tracking-wider flex items-center justify-end gap-1.5 pb-1 border-b border-rose-500/30">
-              <span>QF 04 • MAP: {qf4.map}</span>
-              <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_#F43F5E]" />
+            <div className="text-[10px] font-mono font-bold text-rose-400 uppercase tracking-wider flex items-center justify-between pb-1 border-b border-rose-500/30">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_#F43F5E]" />
+                <span>QF 04 • MAP: {qf4.map}</span>
+              </span>
+              {qf4.status === 'live' && (
+                <span className="px-1.5 py-0.2 bg-rose-600 text-white font-mono text-[9px] font-black uppercase tracking-wider animate-pulse">
+                  LIVE
+                </span>
+              )}
             </div>
             <TacticalTeamPill
               name={qf4.teamAName}
               tag={qf4.teamATag}
               logo={qf4.teamALogo}
               score={qf4.scoreA}
-              isWinner={qf4.winnerId === qf4.teamAId}
+              isWinner={isQF4AWin}
               themeKey="red"
               isHovered={activeHoverTeam === qf4.teamAId}
               onMouseEnter={() => setActiveHoverTeam(qf4.teamAId)}
@@ -1938,7 +2036,7 @@ function DualWingBracket8View({
               tag={qf4.teamBTag}
               logo={qf4.teamBLogo}
               score={qf4.scoreB}
-              isWinner={qf4.winnerId === qf4.teamBId}
+              isWinner={isQF4BWin}
               themeKey="red"
               isHovered={activeHoverTeam === qf4.teamBId}
               onMouseEnter={() => setActiveHoverTeam(qf4.teamBId)}

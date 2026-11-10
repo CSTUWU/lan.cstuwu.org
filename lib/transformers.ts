@@ -84,9 +84,17 @@ export function transformBackendRegistration(raw: any): Team {
 export function transformBackendMatch(raw: any): Match {
   if (!raw) return {} as Match;
 
-  const id = raw._id || raw.id || `match-${Math.random()}`;
-  const teamAId = raw.teamA?._id || raw.teamA || raw.teamAId || 'teamA';
-  const teamBId = raw.teamB?._id || raw.teamB || raw.teamBId || 'teamB';
+  const rawId = raw._id || raw.id;
+  const id = typeof rawId === 'object' && rawId !== null
+    ? (rawId.$oid || rawId.toString?.() || String(rawId))
+    : String(rawId || `match-${Math.random()}`);
+
+  const rawA = raw.teamA?._id || raw.teamA || raw.teamAId || 'teamA';
+  const teamAId = typeof rawA === 'object' && rawA !== null ? (rawA.$oid || rawA.toString?.() || String(rawA)) : String(rawA);
+
+  const rawB = raw.teamB?._id || raw.teamB || raw.teamBId || 'teamB';
+  const teamBId = typeof rawB === 'object' && rawB !== null ? (rawB.$oid || rawB.toString?.() || String(rawB)) : String(rawB);
+
   const teamAName = raw.teamAName || raw.teamA?.teamName || raw.teamA?.name || 'Team Alpha';
   const teamATag = raw.teamATag || raw.teamA?.teamTag || raw.teamA?.tag || 'TMA';
   const teamALogo = raw.teamALogo || raw.teamA?.teamLogo || raw.teamA?.logo || '/images/team-placeholder.svg';
@@ -106,9 +114,60 @@ export function transformBackendMatch(raw: any): Match {
     }
   }
 
+  const rawWinner = raw.winner?._id || raw.winner || (status === 'completed' && raw.scoreA !== raw.scoreB ? (raw.scoreA > raw.scoreB ? teamAId : teamBId) : undefined);
+  const winnerId = rawWinner ? (typeof rawWinner === 'object' ? (rawWinner.$oid || rawWinner.toString?.() || String(rawWinner)) : String(rawWinner)) : undefined;
+
+  const stage = raw.stage || 'Official Match';
+  const stageLower = stage.toLowerCase();
+  const matchNum = raw.matchNumber !== undefined ? Number(raw.matchNumber) : undefined;
+
+  let bracketRound = raw.bracketRound;
+  let bracketPosition = raw.bracketPosition;
+
+  if (!bracketRound || bracketRound === 'groups') {
+    if (matchNum === 101 || matchNum === 1 || stageLower.includes('quarterfinal 1') || stageLower.includes('quarterfinal 01')) {
+      bracketRound = 'quarterfinals';
+      bracketPosition = bracketPosition || 1;
+    } else if (matchNum === 102 || matchNum === 2 || stageLower.includes('quarterfinal 2') || stageLower.includes('quarterfinal 02')) {
+      bracketRound = 'quarterfinals';
+      bracketPosition = bracketPosition || 2;
+    } else if (matchNum === 103 || matchNum === 3 || stageLower.includes('quarterfinal 3') || stageLower.includes('quarterfinal 03')) {
+      bracketRound = 'quarterfinals';
+      bracketPosition = bracketPosition || 3;
+    } else if (matchNum === 104 || matchNum === 4 || stageLower.includes('quarterfinal 4') || stageLower.includes('quarterfinal 04')) {
+      bracketRound = 'quarterfinals';
+      bracketPosition = bracketPosition || 4;
+    } else if (matchNum === 105 || stageLower.includes('semifinal 1') || stageLower.includes('semifinal 01')) {
+      bracketRound = 'semifinals';
+      bracketPosition = bracketPosition || 1;
+    } else if (matchNum === 106 || stageLower.includes('semifinal 2') || stageLower.includes('semifinal 02')) {
+      bracketRound = 'semifinals';
+      bracketPosition = bracketPosition || 2;
+    } else if (matchNum === 107 || stageLower.includes('grand final') || stageLower.includes('championship final')) {
+      bracketRound = 'final';
+      bracketPosition = bracketPosition || 1;
+    } else if (matchNum === 108 || stageLower.includes('3rd') || stageLower.includes('bronze')) {
+      bracketRound = 'third_place';
+      bracketPosition = bracketPosition || 1;
+    } else if (stageLower.includes('quarterfinal') || stageLower.includes('qf')) {
+      bracketRound = 'quarterfinals';
+    } else if (stageLower.includes('semifinal') || stageLower.includes('sf')) {
+      bracketRound = 'semifinals';
+    } else if (stageLower.includes('final')) {
+      bracketRound = 'final';
+    }
+  }
+
+  if (!bracketPosition && matchNum) {
+    if (matchNum >= 101 && matchNum <= 104) bracketPosition = matchNum - 100;
+    else if (matchNum === 105) bracketPosition = 1;
+    else if (matchNum === 106) bracketPosition = 2;
+    else if (matchNum === 107 || matchNum === 108) bracketPosition = 1;
+  }
+
   return {
     id,
-    matchNumber: raw.matchNumber,
+    matchNumber: matchNum,
     teamAId,
     teamBId,
     teamAName,
@@ -122,14 +181,14 @@ export function transformBackendMatch(raw: any): Match {
     status,
     scoreA: raw.scoreA ?? 0,
     scoreB: raw.scoreB ?? 0,
-    stage: raw.stage || 'Official Match',
+    stage,
     streamUrl: raw.streamUrl,
     mvp: raw.mvp,
-    bracketRound: raw.bracketRound,
-    bracketPosition: raw.bracketPosition,
+    bracketRound,
+    bracketPosition,
     nextMatchId: raw.nextMatchId || (raw.nextMatchNumber ? `m-${raw.nextMatchNumber}` : undefined),
     nextMatchSlot: raw.nextMatchSlot,
-    winnerId: raw.winner?._id || raw.winner || (raw.status === 'completed' ? (raw.scoreA > raw.scoreB ? teamAId : teamBId) : undefined),
+    winnerId,
     currentRound: raw.currentRound ?? ((raw.scoreA ?? 0) + (raw.scoreB ?? 0)),
     half: raw.half || 1,
     c4Planted: !!raw.c4Planted,

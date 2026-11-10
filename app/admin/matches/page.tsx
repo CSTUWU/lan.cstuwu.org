@@ -36,7 +36,7 @@ export default function AdminMatchesPage() {
   const [teamBId, setTeamBId] = useState('');
   const [map, setMap] = useState<CS2Map>('Crash');
   const [dateTime, setDateTime] = useState('2026-11-20T14:00:00');
-  const [stage, setStage] = useState('Quarterfinal Match');
+  const [stage, setStage] = useState('Quarterfinal 1 (MR12)');
   const [status, setStatus] = useState<MatchStatus>('upcoming');
 
   const loadData = async () => {
@@ -114,34 +114,53 @@ export default function AdminMatchesPage() {
     let nextMatchSlot: 'teamA' | 'teamB' | undefined;
     let nextMatchId: string | undefined;
 
-    if (stage.includes('Quarterfinal 1') || stage.includes('Quarterfinal 01')) {
+    const stageLower = stage.toLowerCase();
+    if (stageLower.includes('quarterfinal 1') || stageLower.includes('quarterfinal 01') || stageLower.includes('qf 1') || stageLower.includes('qf 01') || stageLower.includes('qf1')) {
       bracketRound = 'quarterfinals';
       bracketPosition = 1;
       matchNumber = 101;
       nextMatchNumber = 105;
       nextMatchSlot = 'teamA';
       nextMatchId = 'm-sf-1';
-    } else if (stage.includes('Quarterfinal 2') || stage.includes('Quarterfinal 02')) {
+    } else if (stageLower.includes('quarterfinal 2') || stageLower.includes('quarterfinal 02') || stageLower.includes('qf 2') || stageLower.includes('qf 02') || stageLower.includes('qf2')) {
       bracketRound = 'quarterfinals';
       bracketPosition = 2;
       matchNumber = 102;
       nextMatchNumber = 105;
       nextMatchSlot = 'teamB';
       nextMatchId = 'm-sf-1';
-    } else if (stage.includes('Quarterfinal 3') || stage.includes('Quarterfinal 03')) {
+    } else if (stageLower.includes('quarterfinal 3') || stageLower.includes('quarterfinal 03') || stageLower.includes('qf 3') || stageLower.includes('qf 03') || stageLower.includes('qf3')) {
       bracketRound = 'quarterfinals';
       bracketPosition = 3;
       matchNumber = 103;
       nextMatchNumber = 106;
       nextMatchSlot = 'teamA';
       nextMatchId = 'm-sf-2';
-    } else if (stage.includes('Quarterfinal 4') || stage.includes('Quarterfinal 04')) {
+    } else if (stageLower.includes('quarterfinal 4') || stageLower.includes('quarterfinal 04') || stageLower.includes('qf 4') || stageLower.includes('qf 04') || stageLower.includes('qf4')) {
       bracketRound = 'quarterfinals';
       bracketPosition = 4;
       matchNumber = 104;
       nextMatchNumber = 106;
       nextMatchSlot = 'teamB';
       nextMatchId = 'm-sf-2';
+    } else if (stageLower.includes('semifinal 1') || stageLower.includes('semifinal 01') || stageLower.includes('sf 1') || stageLower.includes('sf 01')) {
+      bracketRound = 'semifinals';
+      bracketPosition = 1;
+      matchNumber = 105;
+      nextMatchNumber = 107;
+      nextMatchSlot = 'teamA';
+      nextMatchId = 'm-gf';
+    } else if (stageLower.includes('semifinal 2') || stageLower.includes('semifinal 02') || stageLower.includes('sf 2') || stageLower.includes('sf 02')) {
+      bracketRound = 'semifinals';
+      bracketPosition = 2;
+      matchNumber = 106;
+      nextMatchNumber = 107;
+      nextMatchSlot = 'teamB';
+      nextMatchId = 'm-gf';
+    } else if (stageLower.includes('grand final') || stageLower.includes('championship final') || stageLower === 'final') {
+      bracketRound = 'final';
+      bracketPosition = 1;
+      matchNumber = 107;
     }
 
     // Backend payload
@@ -164,6 +183,11 @@ export default function AdminMatchesPage() {
       nextMatchNumber,
       nextMatchSlot,
     };
+
+    if (bracketRound) {
+      setPlayoffTreePublished(true);
+      api.admin.updateSettings({ playoffTreePublished: true }).catch(() => null);
+    }
 
     let backendId: string | undefined;
     try {

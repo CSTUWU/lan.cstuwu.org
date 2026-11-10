@@ -1082,7 +1082,62 @@ export function generate16TeamPlayoffTree(customTeams?: Team[]): Match[] {
 export function getPlayoffBracket(matches: Match[] = [], teams: Team[] = []): PlayoffBracket {
   const safeMatches = Array.isArray(matches) ? matches : [];
   const safeTeams = Array.isArray(teams) ? teams : [];
-  const playoffList = safeMatches.filter((m) =>
+
+  const normalizedMatches = safeMatches.map((m) => {
+    let bracketRound = m.bracketRound;
+    let bracketPosition = m.bracketPosition;
+    const stageLower = (m.stage || '').toLowerCase();
+    const num = m.matchNumber || 0;
+
+    if (!bracketRound || bracketRound === 'groups') {
+      if (num === 101 || num === 1 || stageLower.includes('quarterfinal 1') || stageLower.includes('quarterfinal 01')) {
+        bracketRound = 'quarterfinals';
+        bracketPosition = bracketPosition || 1;
+      } else if (num === 102 || num === 2 || stageLower.includes('quarterfinal 2') || stageLower.includes('quarterfinal 02')) {
+        bracketRound = 'quarterfinals';
+        bracketPosition = bracketPosition || 2;
+      } else if (num === 103 || num === 3 || stageLower.includes('quarterfinal 3') || stageLower.includes('quarterfinal 03')) {
+        bracketRound = 'quarterfinals';
+        bracketPosition = bracketPosition || 3;
+      } else if (num === 104 || num === 4 || stageLower.includes('quarterfinal 4') || stageLower.includes('quarterfinal 04')) {
+        bracketRound = 'quarterfinals';
+        bracketPosition = bracketPosition || 4;
+      } else if (num === 105 || stageLower.includes('semifinal 1') || stageLower.includes('semifinal 01')) {
+        bracketRound = 'semifinals';
+        bracketPosition = bracketPosition || 1;
+      } else if (num === 106 || stageLower.includes('semifinal 2') || stageLower.includes('semifinal 02')) {
+        bracketRound = 'semifinals';
+        bracketPosition = bracketPosition || 2;
+      } else if (num === 107 || stageLower.includes('grand final') || stageLower.includes('championship final')) {
+        bracketRound = 'final';
+        bracketPosition = bracketPosition || 1;
+      } else if (num === 108 || stageLower.includes('3rd') || stageLower.includes('bronze')) {
+        bracketRound = 'third_place';
+        bracketPosition = bracketPosition || 1;
+      } else if (stageLower.includes('quarterfinal') || stageLower.includes('qf')) {
+        bracketRound = 'quarterfinals';
+      } else if (stageLower.includes('semifinal') || stageLower.includes('sf')) {
+        bracketRound = 'semifinals';
+      } else if (stageLower.includes('final')) {
+        bracketRound = 'final';
+      }
+    }
+
+    if (!bracketPosition && num) {
+      if (num >= 101 && num <= 104) bracketPosition = num - 100;
+      else if (num === 105) bracketPosition = 1;
+      else if (num === 106) bracketPosition = 2;
+      else if (num === 107 || num === 108) bracketPosition = 1;
+    }
+
+    return {
+      ...m,
+      bracketRound,
+      bracketPosition,
+    };
+  });
+
+  const playoffList = normalizedMatches.filter((m) =>
     ['round_of_16', 'quarterfinals', 'semifinals', 'final', 'third_place'].includes(m.bracketRound || '')
   );
 

@@ -71,16 +71,19 @@ export default function ScoreboardPage() {
     // Fetch live scoreboard & standings from API
     api.public.getScoreboard().then((res) => {
       if (res?.success && res.data) {
-        if (res.data.playoffTreePublished !== undefined) {
+        const hasPlayoffsInBackend = Boolean(
+          res.data.playoffTreePublished ||
+          (Array.isArray(res.data.playoffMatches) && res.data.playoffMatches.length > 0)
+        );
+        if (hasPlayoffsInBackend) {
+          setIsTreePublished(true);
+          setPlayoffTreePublished(true);
+        } else if (res.data.playoffTreePublished !== undefined) {
           const isPub = Boolean(res.data.playoffTreePublished);
           setIsTreePublished(isPub);
           setPlayoffTreePublished(isPub);
-          if (isPub) {
-            setActiveTab((prev) => (prev === 'standings' ? 'playoffs' : prev));
-          } else {
-            setActiveTab((prev) => (prev === 'playoffs' ? 'standings' : prev));
-          }
         }
+
         if (Array.isArray(res.data.standings) && res.data.standings.length > 0) {
           setTeams(res.data.standings.map(transformBackendTeam));
         }
@@ -97,7 +100,7 @@ export default function ScoreboardPage() {
         if (Array.isArray(res.data.playoffMatches)) {
           const playoffBackend = res.data.playoffMatches.map(transformBackendMatch);
           for (const pm of playoffBackend) {
-            if (!apiMatches.some((m) => m.id === pm.id)) {
+            if (!apiMatches.some((m) => m.id === pm.id || (m.matchNumber && pm.matchNumber && m.matchNumber === pm.matchNumber))) {
               apiMatches.push(pm);
             }
           }
@@ -382,8 +385,8 @@ export default function ScoreboardPage() {
           </button>
         </div>
 
-        {/* TAB 0: PLAYOFF BRACKET TREE (ONLY WHEN PUBLISHED) */}
-        {isTreePublished && activeTab === 'playoffs' && (
+        {/* TAB 0: PLAYOFF BRACKET TREE (WHEN PUBLISHED OR HAS PLAYOFF MATCHES) */}
+        {showPlayoffTab && activeTab === 'playoffs' && (
           <div className="mb-12">
             <PlayoffBracketTree
               matches={matches}

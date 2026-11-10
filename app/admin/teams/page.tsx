@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { getStoredTeams, setStoredTeams, updateTeamStatus, createAndSeedPlayoffTree } from '@/lib/storage';
+import { getStoredTeams, setStoredTeams, updateTeamStatus, createAndSeedPlayoffTree, setPlayoffTreePublished } from '@/lib/storage';
 import { api } from '@/lib/api';
 import { transformBackendTeam } from '@/lib/transformers';
 import { Team, ApprovalStatus, Player } from '@/lib/types';
@@ -91,11 +91,13 @@ export default function AdminTeamsPage() {
     if (!confirmSeed) return;
 
     createAndSeedPlayoffTree(candidateTeams);
+    setPlayoffTreePublished(true);
     try {
       api.admin.generatePlayoffs().catch(() => null);
+      api.admin.updateSettings({ playoffTreePublished: true }).catch(() => null);
     } catch (e) {}
     setNotice(
-      `✓ Playoff Tree generated! 1st round fixtures linked. Match wins will automatically advance winners down the tree.`
+      `✓ Playoff Tree generated & published to live public site! 1st round fixtures linked. Match wins will automatically advance winners down the tree.`
     );
     setTimeout(() => setNotice(null), 5000);
   };

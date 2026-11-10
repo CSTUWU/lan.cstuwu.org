@@ -53,22 +53,27 @@ export type ActiveBracketMode = '8-squad' | '16-squad';
 export const getActiveBracketMode = (): ActiveBracketMode => {
   if (typeof window === 'undefined') return '8-squad';
   try {
-    // 1. Dynamic check based on created/scheduled matches
-    const rawMatches16 = localStorage.getItem(MATCHES_16_KEY);
-    const m16: Match[] = rawMatches16 ? JSON.parse(rawMatches16) : [];
-    if (m16.length > 7 || m16.some((m) => m.bracketRound === 'round_of_16' && (m.teamAId || m.teamBId))) {
-      return '16-squad';
+    const explicitlySaved = localStorage.getItem(ACTIVE_BRACKET_MODE_KEY);
+    if (explicitlySaved === '8-squad' || explicitlySaved === '16-squad') {
+      return explicitlySaved;
     }
+
     const rawMatches = localStorage.getItem(MATCHES_KEY);
     const matches: Match[] = rawMatches ? JSON.parse(rawMatches) : [];
-    if (matches.some((m) => m.bracketRound === 'round_of_16') || matches.length > 7) {
+    if (matches.some((m) => m.bracketRound === 'round_of_16')) {
       return '16-squad';
     }
-    // 2. Check registered candidate squads
-    const rawTeams = localStorage.getItem(TEAMS_KEY);
-    const teams: Team[] = rawTeams ? JSON.parse(rawTeams) : [];
-    const sourceTeams = teams.filter((t) => (t.status || '').toLowerCase() !== 'rejected');
-    return sourceTeams.length > 8 ? '16-squad' : '8-squad';
+    if (matches.some((m) => m.bracketRound === 'quarterfinals' || m.bracketRound === 'semifinals' || m.bracketRound === 'final')) {
+      return '8-squad';
+    }
+
+    const rawMatches16 = localStorage.getItem(MATCHES_16_KEY);
+    const m16: Match[] = rawMatches16 ? JSON.parse(rawMatches16) : [];
+    if (m16.some((m) => m.bracketRound === 'round_of_16' && (m.teamAId || m.teamBId || m.teamAName))) {
+      return '16-squad';
+    }
+
+    return '8-squad';
   } catch {
     return '8-squad';
   }

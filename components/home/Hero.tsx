@@ -3,9 +3,9 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { gsap, ScrollTrigger } from '@/lib/gsap';
-import { Shield, Crosshair, Trophy, Clock, ChevronDown, Activity, Mouse, Sparkles } from 'lucide-react';
+import { Shield, Crosshair, Trophy, Clock, ChevronDown, Activity, Mouse, Sparkles, Radio } from 'lucide-react';
 import Button from '../ui/Button';
-import { getStoredCountdown, saveCountdown } from '@/lib/storage';
+import { getStoredCountdown, saveCountdown, getStoredMatches } from '@/lib/storage';
 import { api } from '@/lib/api';
 import { transformBackendSettings } from '@/lib/transformers';
 import { useRegistrationStatus } from '@/hooks/useRegistrationStatus';
@@ -37,8 +37,35 @@ export default function Hero() {
     minutes: 45,
     seconds: 0,
   });
+  const [hasLiveMatch, setHasLiveMatch] = useState(false);
+  const [liveInfo, setLiveInfo] = useState<{ scoreA: number; scoreB: number; teamATag: string; teamBTag: string } | null>(null);
 
   useEffect(() => {
+    const checkLive = () => {
+      try {
+        const stored = getStoredMatches();
+        const lm = stored.find((m) => m.status === 'live');
+        if (lm) {
+          setHasLiveMatch(true);
+          setLiveInfo({ scoreA: lm.scoreA, scoreB: lm.scoreB, teamATag: lm.teamATag, teamBTag: lm.teamBTag });
+        }
+        api.public.getMatches({ status: 'LIVE' }).then((res) => {
+          if (res?.success && Array.isArray(res.data) && res.data.length > 0) {
+            const m = res.data[0];
+            setHasLiveMatch(true);
+            setLiveInfo({ scoreA: m.scoreA ?? 0, scoreB: m.scoreB ?? 0, teamATag: m.teamATag || 'TMA', teamBTag: m.teamBTag || 'TMB' });
+          } else if (!lm) {
+            setHasLiveMatch(false);
+            setLiveInfo(null);
+          }
+        }).catch(() => {});
+      } catch (e) {}
+    };
+
+    checkLive();
+    const liveInterval = setInterval(checkLive, 4000);
+    window.addEventListener('cst_matches_updated', checkLive);
+
     const updateCountdown = () => {
       const active = getStoredCountdown();
       const target = new Date(active.tournamentDate).getTime();
@@ -77,7 +104,9 @@ export default function Hero() {
     const interval = setInterval(updateCountdown, 1000);
     return () => {
       clearInterval(interval);
+      clearInterval(liveInterval);
       window.removeEventListener('cst_countdown_updated', handleUpdate);
+      window.removeEventListener('cst_matches_updated', checkLive);
     };
   }, []);
 
@@ -577,6 +606,18 @@ export default function Hero() {
           ref={ctaBlockRef}
           className="flex flex-col sm:flex-row items-center justify-center gap-2.5 sm:gap-3 w-full sm:w-auto"
         >
+          {hasLiveMatch && liveInfo && (
+            <Button
+              href="/scoreboard/live"
+              variant="outline"
+              size="md"
+              icon={<Radio className="w-4 h-4 text-rose-500 animate-pulse" />}
+              className="w-full sm:w-auto border-rose-500/80 bg-rose-950/40 text-tacticalWhite hover:bg-rose-900/60 hover:border-rose-400 font-black shadow-[0_0_15px_rgba(225,29,72,0.4)] transition-all text-xs sm:text-sm"
+            >
+              STAGE MATCH LIVE ({liveInfo.teamATag} {liveInfo.scoreA} : {liveInfo.scoreB} {liveInfo.teamBTag})
+            </Button>
+          )}
+
           {isOpen && (
             <Button
               href="/register"
