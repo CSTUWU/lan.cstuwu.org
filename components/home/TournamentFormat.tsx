@@ -103,7 +103,7 @@ export default function TournamentFormat() {
 
             <div className="flex flex-wrap items-center gap-2">
               <span className="px-3 py-1 bg-olive/20 border border-olive/40 text-sand text-xs font-mono uppercase">
-                ENGINE: PROMODLIVE 2.20 EU
+                MOD: PROMODLIVE 2.20 EU
               </span>
               <span className="px-3 py-1 bg-surface border border-gunmetal text-mutedText text-xs font-mono uppercase">
                 SPECTATOR: 1 DESIGNATED PER SQUAD
@@ -126,11 +126,11 @@ export default function TournamentFormat() {
             </div>
             <div className="p-3 bg-card border border-gunmetal">
               <span className="block text-[10px] text-mutedText uppercase mb-1">ROUND LIMIT</span>
-              <span className="text-sm font-bold text-tacticalWhite">24 (SWAP AT 12)</span>
+              <span className="text-xs sm:text-sm font-bold text-tacticalWhite">Half-Time Side switching</span>
             </div>
             <div className="p-3 bg-card border border-gunmetal">
               <span className="block text-[10px] text-mutedText uppercase mb-1">CLASS LIMITS</span>
-              <span className="text-xs font-bold text-sand">1 SNIPER • 1 DEMO • 2 SMG</span>
+              <span className="text-[11px] sm:text-xs font-bold text-sand leading-tight">1 SNIPER • 1 DEMO • 2 SPEC OPS</span>
             </div>
             <div className="p-3 bg-card border border-gunmetal">
               <span className="block text-[10px] text-mutedText uppercase mb-1">OVERTIME</span>
@@ -151,7 +151,7 @@ export default function TournamentFormat() {
               <CheckCircle2 className="w-4 h-4 text-sand shrink-0 mt-0.5" />
               <div>
                 <span className="text-tacticalWhite font-bold block mb-0.5">MAP &amp; SIDE SELECTION</span>
-                Knockouts: Coin-toss winner picks map or side. Semis &amp; Finals: Previous round winner picks map or side.
+                Better seed selects map, lower seed selects side.
               </div>
             </div>
           </div>

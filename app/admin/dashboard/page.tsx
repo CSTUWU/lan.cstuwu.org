@@ -150,7 +150,7 @@ export default function AdminDashboardPage() {
             <Link
               href="/scoreboard/live"
               target="_blank"
-              className="px-3.5 py-2 bg-olive hover:bg-olive/90 text-tacticalWhite text-xs font-mono font-bold uppercase clip-tactical border border-gunmetal transition-all flex items-center gap-1.5"
+              className="px-3.5 py-2 bg-olive hover:bg-olive/90 text-black font-bold text-xs font-mono font-bold uppercase clip-tactical border border-gunmetal transition-all flex items-center gap-1.5"
             >
               <span>STAGE PROJECTOR HUD</span>
               <ArrowUpRight className="w-3.5 h-3.5" />
@@ -261,7 +261,7 @@ export default function AdminDashboardPage() {
                           <div className="flex items-center justify-end gap-1.5">
                             <button
                               onClick={() => handleQuickStatus(team.id, 'approved')}
-                              className="px-2 py-1 bg-olive/30 text-sand border border-olive hover:bg-olive hover:text-tacticalWhite text-[10px] font-bold uppercase transition-colors"
+                              className="px-2 py-1 bg-olive/30 text-sand border border-olive hover:bg-olive hover:text-black text-[10px] font-bold uppercase transition-colors"
                               title="Approve Squad"
                             >
                               APPROVE

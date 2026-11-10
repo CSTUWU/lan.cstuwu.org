@@ -147,7 +147,7 @@ export default function AdminLoginView() {
             <button
               type="submit"
               disabled={isSubmitting || isSuccess}
-              className="w-full py-3 px-4 bg-olive hover:bg-olive-light text-tacticalWhite border border-olive-light/50 text-xs font-mono uppercase font-black tracking-wider transition-all flex items-center justify-center gap-2 clip-tactical cursor-pointer mt-4 shadow-[0_2px_12px_rgba(37,44,36,0.8)]"
+              className="w-full py-3 px-4 bg-olive hover:bg-olive-light text-black font-bold border border-olive-light/50 text-xs font-mono uppercase font-black tracking-wider transition-all flex items-center justify-center gap-2 clip-tactical cursor-pointer mt-4 shadow-[0_2px_12px_rgba(37,44,36,0.8)]"
             >
               <span>{isSuccess ? 'ENTERING DASHBOARD...' : isSubmitting ? 'AUTHENTICATING...' : 'AUTHENTICATE & ENTER'}</span>
               <ArrowRight className="w-4 h-4" />

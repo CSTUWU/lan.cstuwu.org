@@ -213,7 +213,7 @@ export default function SchedulePage() {
               <div className="flex items-center gap-3">
                 <Link
                   href="/scoreboard"
-                  className="px-3.5 py-1.5 bg-olive hover:bg-olive/90 text-tacticalWhite font-display font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 clip-tactical border border-gunmetal"
+                  className="px-3.5 py-1.5 bg-olive hover:bg-olive/90 text-black font-bold font-display font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 clip-tactical border border-gunmetal"
                 >
                   <Trophy className="w-3.5 h-3.5 text-sand" />
                   <span>VIEW SCOREBOARD</span>
@@ -265,7 +265,7 @@ export default function SchedulePage() {
                 onClick={() => setFilter(tab)}
                 className={`px-4 py-2 text-xs font-mono uppercase font-bold tracking-wider border transition-colors flex items-center gap-1.5 ${
                   filter === tab
-                    ? 'bg-olive text-tacticalWhite border-olive-light/50 shadow-sm'
+                    ? 'bg-olive text-black font-bold border-olive-light/50 shadow-sm'
                     : 'bg-surface text-mutedText border-gunmetal hover:text-tacticalWhite'
                 }`}
               >

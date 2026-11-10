@@ -115,7 +115,7 @@ export default function AdminPlayersPage() {
               <button
                 onClick={() => setViewMode('team-wise')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 transition-colors ${
-                  viewMode === 'team-wise' ? 'bg-olive text-tacticalWhite font-bold' : 'text-mutedKhaki hover:text-tacticalWhite'
+                  viewMode === 'team-wise' ? 'bg-olive text-black font-bold' : 'text-mutedKhaki hover:text-tacticalWhite'
                 }`}
               >
                 <LayoutGrid className="w-3.5 h-3.5 text-sand" />
@@ -124,7 +124,7 @@ export default function AdminPlayersPage() {
               <button
                 onClick={() => setViewMode('flat')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 transition-colors border-l border-gunmetal ${
-                  viewMode === 'flat' ? 'bg-olive text-tacticalWhite font-bold' : 'text-mutedKhaki hover:text-tacticalWhite'
+                  viewMode === 'flat' ? 'bg-olive text-black font-bold' : 'text-mutedKhaki hover:text-tacticalWhite'
                 }`}
               >
                 <List className="w-3.5 h-3.5 text-sand" />
@@ -274,7 +274,7 @@ export default function AdminPlayersPage() {
                   <tr className="bg-surface/80 border-b border-gunmetal text-mutedKhaki text-[10px] uppercase">
                     <th className="py-3 px-4">OPERATIVE NAME</th>
                     <th className="py-3 px-4">FACULTY</th>
-                    <th className="py-3 px-4">CALLSIGN / IGN</th>
+                    <th className="py-3 px-4">CALLSIGN</th>
                     <th className="py-3 px-4">SQUAD</th>
                     <th className="py-3 px-4">ROLE</th>
                     <th className="py-3 px-4">STUDENT EMAIL</th>

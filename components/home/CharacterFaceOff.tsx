@@ -72,7 +72,7 @@ export default function CharacterFaceOff() {
       vy: (Math.random() - 0.5) * 0.9,
       size: 1 + Math.random() * 2.5,
       alpha: 0.15 + Math.random() * 0.65,
-      color: Math.random() > 0.5 ? '#59634A' : '#C2B28A',
+      color: Math.random() > 0.5 ? '#ffd000' : '#C2B28A',
       pulse: Math.random() * Math.PI,
     }));
 
@@ -101,7 +101,7 @@ export default function CharacterFaceOff() {
           ctx.shadowBlur = 8;
         } else if (p.x < width / 2) {
           ctx.fillStyle = `rgba(89, 99, 74, ${currentAlpha})`;
-          ctx.shadowColor = '#59634A';
+          ctx.shadowColor = '#ffd000';
           ctx.shadowBlur = 5;
         } else {
           ctx.fillStyle = `rgba(194, 178, 138, ${currentAlpha})`;
@@ -469,7 +469,7 @@ export default function CharacterFaceOff() {
               <span className="absolute bottom-3 right-3 w-5 h-5 border-b-2 border-r-2 border-olive z-30" />
 
               <div className="absolute top-4 left-4 right-4 z-30 flex items-center justify-between text-[10px] font-mono tracking-widest">
-                <span className="px-2 py-1 bg-olive text-tacticalWhite font-black uppercase clip-tactical">
+                <span className="px-2 py-1 bg-olive text-black font-bold font-black uppercase clip-tactical">
                   TASK FORCE // LEADER
                 </span>
                 <span className="text-sand font-bold bg-background/80 px-2 py-0.5 border border-olive/40">

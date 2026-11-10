@@ -277,7 +277,7 @@ export default function AboutPage() {
                   </div>
                   <div className="p-4 bg-surface border border-gunmetal">
                     <span className="text-2xl font-display font-black text-sand block">2</span>
-                    <span className="text-xs font-bold text-tacticalWhite uppercase block">SMG</span>
+                    <span className="text-xs font-bold text-tacticalWhite uppercase block">SPEC OPS</span>
                     <span className="text-[10px] text-mutedKhaki block mt-0.5">Maximum Two (2) per team</span>
                   </div>
                   <div className="p-4 bg-surface border border-gunmetal">

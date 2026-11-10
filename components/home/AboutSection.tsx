@@ -117,8 +117,8 @@ export default function AboutSection() {
                   <span className="text-tacticalWhite font-semibold">Uva Wellassa University</span>
                 </div>
                 <div className="flex justify-between py-1.5 border-b border-gunmetal/50">
-                  <span className="text-mutedText">MATCH FORMAT:</span>
-                  <span className="text-olive-light font-semibold">5v5 MR12 Search &amp; Destroy</span>
+                  <span className="text-mutedText">GAME TYPE:</span>
+                  <span className="text-olive-light font-semibold">Search &amp; Destroy</span>
                 </div>
                 <div className="flex justify-between py-1.5 border-b border-gunmetal/50">
                   <span className="text-mutedText">SERVER ARCHITECTURE:</span>

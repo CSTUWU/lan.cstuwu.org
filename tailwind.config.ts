@@ -16,11 +16,11 @@ const config: Config = {
 
         // Specified COD4 Colors
         olive: {
-          DEFAULT: "#59634A",  // Military Olive Green
-          light: "#707D5D",
-          hover: "#667254",
-          dark: "#3B4231",
-          muted: "rgba(89, 99, 74, 0.2)",
+          DEFAULT: "#ffd000",  // Military Accent Yellow
+          light: "#ffe04d",
+          hover: "#e6bc00",
+          dark: "#b39200",
+          muted: "rgba(255, 208, 0, 0.2)",
         },
         darkGreen: {
           DEFAULT: "#252C24",  // Tactical Dark Green
@@ -50,10 +50,10 @@ const config: Config = {
 
         // Aliased tokens for backwards compatibility (no neon cyan or orange)
         cyan: {
-          DEFAULT: "#59634A",  // Mapped to Military Olive Green
-          glow: "rgba(89, 99, 74, 0.35)",
-          muted: "rgba(89, 99, 74, 0.18)",
-          dark: "#3B4231",
+          DEFAULT: "#ffd000",  // Mapped to Military Accent Yellow
+          glow: "rgba(255, 208, 0, 0.35)",
+          muted: "rgba(255, 208, 0, 0.18)",
+          dark: "#b39200",
         },
         orange: {
           DEFAULT: "#C2B28A",  // Mapped to Desert Sand
@@ -65,11 +65,11 @@ const config: Config = {
         tactical: {
           border: "#343936",       // Gunmetal Grey
           borderLight: "#474E4A",
-          grid: "rgba(89, 99, 74, 0.05)",
+          grid: "rgba(255, 208, 0, 0.05)",
           surface2: "#252C24",     // Tactical Dark Green
           hover: "#2A3229",
           gold: "#C2B28A",         // Desert Sand
-          green: "#59634A",        // Military Olive Green
+          green: "#ffd000",        // Military Accent Yellow
           red: "#8F3434",          // Muted Alert Crimson
         },
         primaryText: "#E5E5DC",    // Tactical White
@@ -97,7 +97,7 @@ const config: Config = {
         ],
       },
       boxShadow: {
-        "olive-glow": "0 0 20px rgba(89, 99, 74, 0.35)",
+        "olive-glow": "0 0 20px rgba(255, 208, 0, 0.35)",
         "sand-glow": "0 0 20px rgba(194, 178, 138, 0.35)",
         "military-card": "0 10px 30px -10px rgba(0, 0, 0, 0.85)",
       },

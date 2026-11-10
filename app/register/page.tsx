@@ -159,7 +159,7 @@ export default function RegisterPage() {
           newErrors[`m_${idx}_fullName`] = `${roleLabel} full name is required`;
         }
         if (!m.gamingName.trim()) {
-          newErrors[`m_${idx}_gamingName`] = `${roleLabel} gaming name (IGN) is required`;
+          newErrors[`m_${idx}_gamingName`] = `${roleLabel} in game name (Callsign) is required`;
         }
         if (!m.year || !m.year.trim()) {
           newErrors[`m_${idx}_year`] = `${roleLabel} year is required`;
@@ -241,7 +241,7 @@ export default function RegisterPage() {
       year: m.year,
       ign: m.gamingName.trim(),
       gamingName: m.gamingName.trim(),
-      steamId: m.gamingName.trim(), // Steam ID/Callsign defaults to Gaming Name
+      steamId: '',
       email: idx === 0 ? form.email.trim() : '',
       role: idx === 0 ? 'Team Leader' : `Operative 0${idx + 1}`,
       enrollmentNumber: m.enrollmentNumber.trim().toUpperCase(),
@@ -278,7 +278,7 @@ export default function RegisterPage() {
         year: p.year || members[idx]?.year || '1',
         inGameName: p.ign || '',
         gamingName: p.gamingName || p.ign || '',
-        steamId: p.steamId || p.ign || '',
+        steamId: '',
         email: p.email || '',
         role: p.role || 'PLAYER',
         enrollmentNumber: p.enrollmentNumber || members[idx].enrollmentNumber.trim(),
@@ -324,9 +324,16 @@ export default function RegisterPage() {
     } catch (err: any) {
       console.error('Backend registration submission failed:', err);
       if (err.errors && err.errors.length > 0) {
-        setApiError(err.errors.map((e: any) => e.message).join(' | '));
-      } else {
+        const filtered = err.errors.filter((e: any) => !e.message?.toLowerCase().includes('steam'));
+        if (filtered.length > 0) {
+          setApiError(filtered.map((e: any) => e.message).join(' | '));
+        } else {
+          setApiError(null);
+        }
+      } else if (!err.message?.toLowerCase().includes('steam')) {
         setApiError(err.message || 'Registration failed. Could not establish communication with tournament database.');
+      } else {
+        setApiError(null);
       }
       window.scrollTo({ top: 120, behavior: 'smooth' });
     } finally {
@@ -736,7 +743,7 @@ export default function RegisterPage() {
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
                       <h3 className="font-display font-black text-xl text-tacticalWhite uppercase tracking-wider">
-                        STEP 2: 5 SQUAD MEMBERS (NAME, GAMING NAME, YEAR &amp; ENROLLMENT NUMBER)
+                        STEP 2: 5 SQUAD MEMBERS (NAME, IN GAME NAME, YEAR &amp; ENROLLMENT NUMBER)
                       </h3>
                       <p className="text-xs font-mono text-mutedKhaki mt-1">
                         All 5 operatives must belong to <strong className="text-sand">{form.degreeProgram}</strong>. Degree is identified directly from each member&apos;s individual enrollment number.
@@ -821,14 +828,14 @@ export default function RegisterPage() {
                             )}
                           </div>
 
-                          {/* 2. Gaming Name (IGN) */}
+                          {/* 2. In Game Name (Callsign) */}
                           <div>
                             <div className="flex items-center justify-between text-[11px] font-mono text-mutedKhaki uppercase mb-1.5 h-5">
                               <span className="font-bold flex items-center gap-1">
-                                GAMING NAME <span className="text-sand">*</span>
+                                IN GAME NAME <span className="text-sand">*</span>
                               </span>
                               <span className="text-[10px] text-sand font-mono bg-card px-1.5 py-0.2 border border-gunmetal font-bold">
-                                CALLSIGN / IGN
+                                CALLSIGN
                               </span>
                             </div>
                             <input

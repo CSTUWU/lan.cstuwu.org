@@ -30,7 +30,7 @@ export default function MapPoolSection() {
           </div>
 
           <div className="text-xs font-mono text-mutedText max-w-md">
-            <span className="text-sand font-bold">[OFFICIAL PROMOD VETO PROTOCOL]</span>: Sanctioned map pool for knockout, semifinal, and championship rounds. Coin-toss and previous round winners dictate map and side selection.
+            <span className="text-sand font-bold">[OFFICIAL PROMOD VETO PROTOCOL]</span>: Sanctioned map pool for tournament rounds. Better seed selects map, lower seed selects side.
           </div>
         </div>
 
