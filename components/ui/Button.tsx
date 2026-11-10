@@ -33,8 +33,8 @@ export default function Button({
   }[size];
 
   const variantClasses = {
-    cyan: 'bg-olive text-tacticalWhite hover:bg-olive-light border border-olive-light/50 shadow-[0_2px_12px_rgba(37,44,36,0.7)] active:translate-y-0.5',
-    olive: 'bg-olive text-tacticalWhite hover:bg-olive-light border border-olive-light/50 shadow-[0_2px_12px_rgba(37,44,36,0.7)] active:translate-y-0.5',
+    cyan: 'bg-olive text-black hover:bg-olive-light border border-olive-light/50 font-bold shadow-[0_2px_12px_rgba(255,208,0,0.35)] active:translate-y-0.5',
+    olive: 'bg-olive text-black hover:bg-olive-light border border-olive-light/50 font-bold shadow-[0_2px_12px_rgba(255,208,0,0.35)] active:translate-y-0.5',
     orange: 'bg-sand text-military-black hover:bg-sand-light border border-sand-light/60 font-bold shadow-[0_2px_12px_rgba(194,178,138,0.25)] active:translate-y-0.5',
     sand: 'bg-sand text-military-black hover:bg-sand-light border border-sand-light/60 font-bold shadow-[0_2px_12px_rgba(194,178,138,0.25)] active:translate-y-0.5',
     outline: 'border border-gunmetal text-sand hover:bg-olive/20 hover:border-olive-light/60 hover:text-tacticalWhite shadow-sm',

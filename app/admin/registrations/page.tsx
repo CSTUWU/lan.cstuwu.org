@@ -159,7 +159,7 @@ export default function AdminRegistrationsPage() {
                 onClick={() => setStatusFilter(filter)}
                 className={`px-3 py-1.5 text-xs font-mono uppercase font-bold tracking-wider transition-colors border ${
                   statusFilter === filter
-                    ? 'bg-olive text-tacticalWhite border-olive'
+                    ? 'bg-olive text-black font-bold border-olive'
                     : 'bg-surface text-mutedKhaki border-gunmetal hover:text-tacticalWhite'
                 }`}
               >
@@ -270,7 +270,7 @@ export default function AdminRegistrationsPage() {
                         {team.status !== 'approved' && (
                           <button
                             onClick={() => handleStatusChange(team.id, 'approved')}
-                            className="px-2.5 py-1 text-xs font-mono bg-olive/30 border border-olive hover:bg-olive hover:text-tacticalWhite text-sand font-bold uppercase transition-colors"
+                            className="px-2.5 py-1 text-xs font-mono bg-olive/30 border border-olive hover:bg-olive hover:text-black text-sand font-bold uppercase transition-colors"
                           >
                             APPROVE
                           </button>
@@ -338,7 +338,7 @@ export default function AdminRegistrationsPage() {
                     href={`https://wa.me/${selectedTeam.captain.whatsappNumber.replace(/[^0-9]/g, '')}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-olive/30 text-sand border border-olive hover:bg-olive hover:text-tacticalWhite transition-colors"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-olive/30 text-sand border border-olive hover:bg-olive hover:text-black transition-colors"
                   >
                     <Phone className="w-3 h-3" />
                     <span>CHAT ON WHATSAPP</span>
@@ -488,7 +488,7 @@ export default function AdminRegistrationsPage() {
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => handleStatusChange(selectedTeam.id, 'approved')}
-                  className="px-4 py-2 bg-olive text-tacticalWhite border border-olive hover:bg-olive/90 font-mono text-xs uppercase font-bold transition-colors"
+                  className="px-4 py-2 bg-olive text-black font-bold border border-olive hover:bg-olive/90 font-mono text-xs uppercase font-bold transition-colors"
                 >
                   ✓ APPROVE SQUAD
                 </button>

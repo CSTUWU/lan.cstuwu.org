@@ -195,7 +195,7 @@ export default function AdminCountdownPage() {
                 onClick={() => handleSetRegistrationStatus(true)}
                 className={`px-4 py-2.5 font-mono text-xs font-bold uppercase transition-all flex items-center gap-2 border cursor-pointer ${
                   settings.isRegistrationOpen ?? (settings.eventStatus === 'REGISTRATIONS OPEN')
-                    ? 'bg-olive text-tacticalWhite border-olive'
+                    ? 'bg-olive text-black font-bold border-olive'
                     : 'bg-surface text-mutedKhaki border-gunmetal hover:text-tacticalWhite'
                 }`}
               >

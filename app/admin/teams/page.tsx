@@ -276,7 +276,7 @@ export default function AdminTeamsPage() {
                 onClick={() => setStatusFilter(filter)}
                 className={`px-3 py-1.5 text-xs font-mono uppercase font-bold tracking-wider transition-colors border ${
                   statusFilter === filter
-                    ? 'bg-olive text-tacticalWhite border-olive'
+                    ? 'bg-olive text-black font-bold border-olive'
                     : 'bg-surface text-mutedKhaki border-gunmetal hover:text-tacticalWhite'
                 }`}
               >
@@ -356,7 +356,7 @@ export default function AdminTeamsPage() {
                         className={`px-3 py-1 text-xs font-mono uppercase font-bold border transition-colors ${
                           isApproved
                             ? 'bg-rose-950/60 text-rose-300 border-rose-800 hover:bg-rose-900 hover:text-white'
-                            : 'bg-olive/30 text-sand border-olive hover:bg-olive hover:text-tacticalWhite'
+                            : 'bg-olive/30 text-sand border-olive hover:bg-olive hover:text-black'
                         }`}
                       >
                         {isApproved ? 'DEACTIVATE' : 'ACTIVATE SQUAD'}

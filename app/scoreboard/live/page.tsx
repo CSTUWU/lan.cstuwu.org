@@ -236,7 +236,7 @@ function StageProjectorScoreboardContent() {
                 onClick={() => setDisplayMode('match')}
                 className={`px-2.5 py-1 font-mono text-[11px] uppercase font-bold transition-all ${
                   displayMode === 'match'
-                    ? 'bg-olive text-tacticalWhite'
+                    ? 'bg-olive text-black font-bold'
                     : 'text-mutedKhaki hover:text-tacticalWhite'
                 }`}
               >
@@ -279,7 +279,7 @@ function StageProjectorScoreboardContent() {
 
             <button
               onClick={toggleFullscreen}
-              className="px-3 py-1.5 bg-olive text-tacticalWhite font-bold border border-gunmetal text-xs font-mono flex items-center gap-1.5 hover:bg-olive/90 transition-all"
+              className="px-3 py-1.5 bg-olive text-black font-bold border border-gunmetal text-xs font-mono flex items-center gap-1.5 hover:bg-olive/90 transition-all"
             >
               {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
               <span>{isFullscreen ? 'EXIT FULLSCREEN' : 'FULLSCREEN (F11)'}</span>
@@ -327,7 +327,7 @@ function StageProjectorScoreboardContent() {
               {isTreePublished && (
                 <button
                   onClick={() => setDisplayMode('bracket')}
-                  className="px-5 py-2.5 bg-olive text-tacticalWhite font-mono text-xs font-bold uppercase tracking-wider hover:bg-olive/90 transition-all flex items-center gap-2 border border-gunmetal"
+                  className="px-5 py-2.5 bg-olive text-black font-bold font-mono text-xs font-bold uppercase tracking-wider hover:bg-olive/90 transition-all flex items-center gap-2 border border-gunmetal"
                 >
                   <Trophy className="w-4 h-4 text-sand" />
                   <span>VIEW PLAYOFF BRACKET</span>

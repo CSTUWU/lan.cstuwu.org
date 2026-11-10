@@ -375,7 +375,7 @@ export default function AdminScoreboardPage() {
 
             <button
               onClick={openProjectorWindow}
-              className="px-4 py-2.5 bg-olive hover:bg-olive/90 text-tacticalWhite font-display font-black text-xs uppercase tracking-wider flex items-center gap-2 border border-gunmetal transition-all shrink-0"
+              className="px-4 py-2.5 bg-olive hover:bg-olive/90 text-black font-bold font-display font-black text-xs uppercase tracking-wider flex items-center gap-2 border border-gunmetal transition-all shrink-0"
             >
               <ExternalLink className="w-4 h-4 text-sand" />
               <span>LAUNCH STAGE PROJECTOR (NEW WINDOW)</span>
@@ -412,7 +412,7 @@ export default function AdminScoreboardPage() {
 
         {currentMatch ? (
           <div className="bg-card/90 border-2 border-gunmetal p-6 sm:p-8 backdrop-blur-md relative overflow-hidden">
-            <div className="absolute top-0 right-0 bg-olive text-tacticalWhite font-mono text-[10px] font-bold px-3 py-1 uppercase tracking-widest">
+            <div className="absolute top-0 right-0 bg-olive text-black font-bold font-mono text-[10px] font-bold px-3 py-1 uppercase tracking-widest">
               ACTIVE REFEREE DESK
             </div>
 
@@ -442,7 +442,7 @@ export default function AdminScoreboardPage() {
                         ? s === 'live'
                           ? 'bg-rose-500 text-white border-rose-500 animate-pulse'
                           : s === 'completed'
-                          ? 'bg-olive text-tacticalWhite border-olive'
+                          ? 'bg-olive text-black font-bold border-olive'
                           : 'bg-sand text-military-black border-sand'
                         : 'bg-surface text-mutedKhaki border-gunmetal hover:text-tacticalWhite'
                     }`}
@@ -485,7 +485,7 @@ export default function AdminScoreboardPage() {
                 <div className="grid grid-cols-2 gap-2 mt-4">
                   <button
                     onClick={() => handleQuickScore('teamA', 1)}
-                    className="py-3 bg-olive text-tacticalWhite hover:bg-olive/90 font-display font-black text-sm uppercase flex items-center justify-center gap-1.5 transition-colors border border-gunmetal"
+                    className="py-3 bg-olive text-black font-bold hover:bg-olive/90 font-display font-black text-sm uppercase flex items-center justify-center gap-1.5 transition-colors border border-gunmetal"
                   >
                     <Plus className="w-4 h-4 stroke-[3]" />
                     <span>WIN ROUND (+1)</span>

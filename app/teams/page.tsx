@@ -104,7 +104,7 @@ export default function TeamsPage() {
                 onClick={() => setStatusFilter(filter)}
                 className={`px-3 py-1.5 text-xs font-mono uppercase font-bold tracking-wider transition-colors border ${
                   statusFilter === filter
-                    ? 'bg-olive text-tacticalWhite border-olive-light/60 shadow-sm'
+                    ? 'bg-olive text-black font-bold border-olive-light/60 shadow-sm'
                     : 'bg-surface text-mutedText border-gunmetal hover:text-tacticalWhite'
                 }`}
               >
@@ -262,7 +262,7 @@ export default function TeamsPage() {
                     href={`https://wa.me/${selectedTeam.captain.whatsappNumber.replace(/[^0-9]/g, '')}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-olive/30 text-sand border border-olive hover:bg-olive hover:text-tacticalWhite transition-colors"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-olive/30 text-sand border border-olive hover:bg-olive hover:text-black transition-colors"
                   >
                     <Phone className="w-3 h-3" />
                     <span>CHAT ON WHATSAPP</span>

@@ -79,7 +79,7 @@ type BracketLayoutMode = '16-squad' | '8-squad' | 'linear';
 const QUADRANT_THEMES = {
   purple: {
     name: 'SECTOR ALPHA [OLIVE]',
-    accent: '#59634A',
+    accent: '#ffd000',
     border: 'border-olive/60',
     borderActive: 'border-olive-light',
     bg: 'bg-darkGreen/40',
@@ -89,7 +89,7 @@ const QUADRANT_THEMES = {
     shadow: 'shadow-[0_2px_14px_rgba(24,30,24,0.6)]',
     cardGlow: 'hover:border-olive-light hover:shadow-[0_2px_18px_rgba(89,99,74,0.4)]',
     gradient: 'from-darkGreen/80 via-card/90 to-military-black',
-    wireStroke: '#59634A',
+    wireStroke: '#ffd000',
     wireGlow: 'rgba(89, 99, 74, 0.7)',
   },
   orange: {
@@ -515,7 +515,7 @@ export default function PlayoffBracketTree({
                 onClick={() => setViewStyle('bracket')}
                 className={`px-3 py-1.5 font-mono text-xs uppercase font-bold flex items-center gap-1.5 transition-all ${
                   viewStyle === 'bracket'
-                    ? 'bg-olive text-tacticalWhite shadow-[0_2px_10px_rgba(37,44,36,0.8)]'
+                    ? 'bg-olive text-black font-bold shadow-[0_2px_10px_rgba(37,44,36,0.8)]'
                     : 'text-mutedText hover:text-tacticalWhite'
                 }`}
                 title="Dual-Wing Symmetrical Tactical Championship Tree"
@@ -573,7 +573,7 @@ export default function PlayoffBracketTree({
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   onClick={handleCreatePlayoffTree}
-                  className="px-3.5 py-2 bg-olive hover:bg-olive-light text-tacticalWhite font-mono text-xs uppercase font-black flex items-center gap-1.5 border border-olive-light/50 shadow-[0_2px_12px_rgba(37,44,36,0.8)] transition-all"
+                  className="px-3.5 py-2 bg-olive hover:bg-olive-light text-black font-bold font-mono text-xs uppercase font-black flex items-center gap-1.5 border border-olive-light/50 shadow-[0_2px_12px_rgba(37,44,36,0.8)] transition-all"
                   title="Seed 1st layer with registered squads; Round 2, Semifinals & Finals start free and advance automatically on win"
                 >
                   <Trophy className="w-3.5 h-3.5 text-sand" />
@@ -617,7 +617,7 @@ export default function PlayoffBracketTree({
             <Link
               href="/scoreboard/live"
               target="_blank"
-              className="px-3.5 py-2 bg-olive hover:bg-olive-light text-tacticalWhite font-display font-black text-xs uppercase tracking-wider flex items-center gap-1.5 border border-olive-light/40 shadow-[0_2px_12px_rgba(37,44,36,0.8)] transition-all"
+              className="px-3.5 py-2 bg-olive hover:bg-olive-light text-black font-bold font-display font-black text-xs uppercase tracking-wider flex items-center gap-1.5 border border-olive-light/40 shadow-[0_2px_12px_rgba(37,44,36,0.8)] transition-all"
             >
               <Radio className="w-3.5 h-3.5 animate-pulse text-sand" />
               <span>STAGE HUD</span>
@@ -693,7 +693,7 @@ export default function PlayoffBracketTree({
                   {(showAdminControls || isAdmin) && (
                     <button
                       onClick={handleCreatePlayoffTree}
-                      className="px-5 py-2.5 bg-olive hover:bg-olive/90 text-tacticalWhite font-mono text-xs uppercase font-bold tracking-wider transition-all flex items-center gap-2 mx-auto border border-gunmetal shadow-lg"
+                      className="px-5 py-2.5 bg-olive hover:bg-olive/90 text-black font-bold font-mono text-xs uppercase font-bold tracking-wider transition-all flex items-center gap-2 mx-auto border border-gunmetal shadow-lg"
                     >
                       <Trophy className="w-4 h-4 text-sand" />
                       <span>GENERATE PLAYOFF TREE NOW</span>
@@ -731,7 +731,7 @@ export default function PlayoffBracketTree({
                   {(showAdminControls || isAdmin) && (
                     <button
                       onClick={handleCreatePlayoffTree}
-                      className="px-5 py-2.5 bg-olive hover:bg-olive/90 text-tacticalWhite font-mono text-xs uppercase font-bold tracking-wider transition-all flex items-center gap-2 mx-auto border border-gunmetal shadow-lg"
+                      className="px-5 py-2.5 bg-olive hover:bg-olive/90 text-black font-bold font-mono text-xs uppercase font-bold tracking-wider transition-all flex items-center gap-2 mx-auto border border-gunmetal shadow-lg"
                     >
                       <Trophy className="w-4 h-4 text-sand" />
                       <span>GENERATE PLAYOFF TREE NOW</span>
@@ -773,7 +773,7 @@ export default function PlayoffBracketTree({
                         if (onRefresh) onRefresh();
                         triggerNotice('✓ Seeded official playoff tree!');
                       }}
-                      className="px-5 py-2.5 bg-olive hover:bg-olive/90 text-tacticalWhite font-mono text-xs uppercase font-bold tracking-wider transition-all flex items-center gap-2 mx-auto border border-gunmetal shadow-lg"
+                      className="px-5 py-2.5 bg-olive hover:bg-olive/90 text-black font-bold font-mono text-xs uppercase font-bold tracking-wider transition-all flex items-center gap-2 mx-auto border border-gunmetal shadow-lg"
                     >
                       <Trophy className="w-4 h-4 text-sand" />
                       <span>GENERATE PLAYOFF TREE NOW</span>

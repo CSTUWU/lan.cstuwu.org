@@ -232,7 +232,7 @@ export default function ScoreboardPage() {
             <Link
               href="/scoreboard/live"
               target="_blank"
-              className="px-4 py-2.5 bg-olive hover:bg-olive/90 text-tacticalWhite font-display font-black text-xs uppercase tracking-wider flex items-center gap-2 border border-gunmetal transition-all"
+              className="px-4 py-2.5 bg-olive hover:bg-olive/90 text-black font-bold font-display font-black text-xs uppercase tracking-wider flex items-center gap-2 border border-gunmetal transition-all"
             >
               <Radio className="w-4 h-4 animate-pulse text-sand" />
               <span>STAGE AUDITORIUM PROJECTOR HUD</span>
@@ -352,7 +352,7 @@ export default function ScoreboardPage() {
               onClick={() => setActiveTab('playoffs')}
               className={`px-4 py-2.5 font-mono text-xs uppercase font-bold tracking-wider transition-all border flex items-center gap-2 ${
                 activeTab === 'playoffs'
-                  ? 'bg-olive text-tacticalWhite border-olive'
+                  ? 'bg-olive text-black font-bold border-olive'
                   : 'bg-card text-mutedKhaki border-gunmetal hover:text-tacticalWhite hover:border-sand/40'
               }`}
             >
@@ -365,7 +365,7 @@ export default function ScoreboardPage() {
             onClick={() => setActiveTab('standings')}
             className={`px-4 py-2.5 font-mono text-xs uppercase font-bold tracking-wider transition-all border flex items-center gap-2 ${
               activeTab === 'standings'
-                ? 'bg-olive text-tacticalWhite border-olive'
+                ? 'bg-olive text-black font-bold border-olive'
                 : 'bg-card text-mutedKhaki border-gunmetal hover:text-tacticalWhite hover:border-sand/40'
             }`}
           >
@@ -376,7 +376,7 @@ export default function ScoreboardPage() {
             onClick={() => setActiveTab('completed')}
             className={`px-4 py-2.5 font-mono text-xs uppercase font-bold tracking-wider transition-all border flex items-center gap-2 ${
               activeTab === 'completed'
-                ? 'bg-olive text-tacticalWhite border-olive'
+                ? 'bg-olive text-black font-bold border-olive'
                 : 'bg-card text-mutedKhaki border-gunmetal hover:text-tacticalWhite hover:border-sand/40'
             }`}
           >
@@ -387,7 +387,7 @@ export default function ScoreboardPage() {
             onClick={() => setActiveTab('upcoming')}
             className={`px-4 py-2.5 font-mono text-xs uppercase font-bold tracking-wider transition-all border flex items-center gap-2 ${
               activeTab === 'upcoming'
-                ? 'bg-olive text-tacticalWhite border-olive'
+                ? 'bg-olive text-black font-bold border-olive'
                 : 'bg-card text-mutedKhaki border-gunmetal hover:text-tacticalWhite hover:border-sand/40'
             }`}
           >
