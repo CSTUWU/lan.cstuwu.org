@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
-import { getLiveBroadcastChannel } from '@/lib/storage';
+import { getLiveBroadcastChannel, getStoredTeams, setStoredTeams } from '@/lib/storage';
 import { Team, Player, Captain, UWU_DEGREE_PROGRAMMES, ACADEMIC_YEARS } from '@/lib/types';
 import {
   extractDegreeFromEnrollment,
@@ -302,22 +302,55 @@ export default function RegisterPage() {
         res?.data?.confirmationCode ||
         `REG-2026-${Date.now().toString(36).toUpperCase()}`;
 
+      const savedPlayers: Player[] = Array.isArray(res?.data?.players) && res.data.players.length === 5
+        ? res.data.players.map((p: any, idx: number) => ({
+            id: p._id || p.id || String(idx + 1),
+            name: p.fullName || p.name || rosterPlayers[idx].name,
+            faculty: p.faculty || verifiedFaculty,
+            degreeProgram: p.degreeProgram || verifiedDegree,
+            year: p.year ? String(p.year) : rosterPlayers[idx].year,
+            ign: p.gamingName || p.inGameName || p.ign || rosterPlayers[idx].ign,
+            gamingName: p.gamingName || p.inGameName || p.ign || rosterPlayers[idx].gamingName,
+            steamId: p.steamId || '',
+            email: p.email || rosterPlayers[idx].email,
+            role: p.role || rosterPlayers[idx].role,
+            enrollmentNumber: p.enrollmentNumber ? String(p.enrollmentNumber).toUpperCase() : rosterPlayers[idx].enrollmentNumber,
+          }))
+        : rosterPlayers;
+
       const teamObj: Team = {
         id: confirmationId,
         name: res?.data?.teamName || form.teamName.trim(),
         tag: res?.data?.teamTag || form.teamTag.trim().toUpperCase(),
-        university: 'Uva Wellassa University of Sri Lanka',
-        logo: form.logo,
+        university: res?.data?.university || 'Uva Wellassa University of Sri Lanka',
+        logo: res?.data?.teamLogo || form.logo,
         status: (res?.data?.status || 'pending').toLowerCase() as any,
         createdAt: res?.data?.createdAt || nowIso,
-        captain: captainInfo,
-        players: rosterPlayers,
-        degreeProgram: verifiedDegree,
-        year: members[0].year,
-        enrollmentNumber: members[0].enrollmentNumber.trim().toUpperCase(),
-        column1: members[0].enrollmentNumber.trim().toUpperCase(),
-        email: form.email.trim(),
+        captain: {
+          ...captainInfo,
+          name: res?.data?.captain?.name || captainInfo.name,
+          whatsappNumber: res?.data?.captain?.whatsappNumber || captainInfo.whatsappNumber,
+          phone: res?.data?.captain?.phone || captainInfo.phone,
+          gamingName: res?.data?.captain?.gamingName || captainInfo.gamingName,
+          ign: res?.data?.captain?.inGameName || captainInfo.ign,
+          enrollmentNumber: res?.data?.captain?.enrollmentNumber || captainInfo.enrollmentNumber,
+          year: res?.data?.captain?.year ? String(res.data.captain.year) : captainInfo.year,
+        },
+        players: savedPlayers,
+        degreeProgram: res?.data?.degreeProgram || verifiedDegree,
+        year: res?.data?.year ? String(res.data.year) : members[0].year,
+        enrollmentNumber: res?.data?.enrollmentNumber || members[0].enrollmentNumber.trim().toUpperCase(),
+        column1: res?.data?.enrollmentNumber || members[0].enrollmentNumber.trim().toUpperCase(),
+        email: res?.data?.email || form.email.trim(),
       };
+
+      try {
+        const existing = getStoredTeams();
+        const updated = [teamObj, ...existing.filter((t) => t.id !== confirmationId && t.tag !== teamObj.tag)];
+        setStoredTeams(updated);
+      } catch (storageErr) {
+        console.warn('Could not update localStorage team roster:', storageErr);
+      }
 
       setCreatedTeam(teamObj);
       setIsSubmitted(true);

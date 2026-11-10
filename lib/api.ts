@@ -42,14 +42,25 @@ class ApiClient {
       }
     }
 
-    const targetUrls = [url];
+    const targetUrls: string[] = [];
     if (typeof window !== 'undefined') {
-      const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      if (isLocalHost && !url.includes('localhost:5000')) {
+      const isLocalHost =
+        window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1';
+      if (isLocalHost) {
+        // Prioritize local backend on port 5000 when developing locally
         targetUrls.push(`http://localhost:5000/api${endpoint}`);
-      } else if (url.includes('localhost:5000')) {
-        targetUrls.push(`https://lan-chalange-backend.vercel.app/api${endpoint}`);
+        if (!url.includes('localhost:5000')) {
+          targetUrls.push(url);
+        }
+      } else {
+        targetUrls.push(url);
+        if (!url.includes('lan-chalange-backend.vercel.app')) {
+          targetUrls.push(`https://lan-chalange-backend.vercel.app/api${endpoint}`);
+        }
       }
+    } else {
+      targetUrls.push(url);
     }
 
     let lastError: any = null;
