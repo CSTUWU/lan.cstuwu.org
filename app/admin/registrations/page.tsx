@@ -474,7 +474,7 @@ export default function AdminRegistrationsPage() {
                         {p.steamId && p.steamId !== p.ign && (
                           <span>ID: <strong className="text-tacticalWhite">{p.steamId}</strong></span>
                         )}
-                        {p.configFile && (
+                        {p.configFile && (p.configFile.filename || p.configFile.url || p.configFile.content) && (
                           <div className="flex items-center gap-1.5">
                             <span className="text-[10px] px-2 py-0.5 bg-olive/30 border border-olive text-sand font-bold">
                               {p.configFile.filename || 'config.cfg'}

@@ -484,7 +484,7 @@ export default function AdminTeamsPage() {
                                   )}
                                 </div>
 
-                                {player.configFile && (
+                                {player.configFile && (player.configFile.filename || player.configFile.url || player.configFile.content) && (
                                   <div className="mt-2 pt-2 border-t border-gunmetal/40 flex items-center justify-between text-[10px]">
                                     <span className="text-sand font-mono truncate max-w-[110px]" title={player.configFile.filename}>
                                       {player.configFile.filename || 'config.cfg'}

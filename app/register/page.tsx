@@ -615,11 +615,11 @@ export default function RegisterPage() {
                     whatsappNumber: '',
                   });
                   setMembers([
-                    { fullName: '', gamingName: '', year: '1', enrollmentNumber: '' },
-                    { fullName: '', gamingName: '', year: '1', enrollmentNumber: '' },
-                    { fullName: '', gamingName: '', year: '1', enrollmentNumber: '' },
-                    { fullName: '', gamingName: '', year: '1', enrollmentNumber: '' },
-                    { fullName: '', gamingName: '', year: '1', enrollmentNumber: '' },
+                    { fullName: '', gamingName: '', year: '1', enrollmentNumber: '', configFile: null, configFileName: '' },
+                    { fullName: '', gamingName: '', year: '1', enrollmentNumber: '', configFile: null, configFileName: '' },
+                    { fullName: '', gamingName: '', year: '1', enrollmentNumber: '', configFile: null, configFileName: '' },
+                    { fullName: '', gamingName: '', year: '1', enrollmentNumber: '', configFile: null, configFileName: '' },
+                    { fullName: '', gamingName: '', year: '1', enrollmentNumber: '', configFile: null, configFileName: '' },
                   ]);
                 }}
                 variant="ghost"
