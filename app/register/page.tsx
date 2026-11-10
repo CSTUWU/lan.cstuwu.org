@@ -241,7 +241,7 @@ export default function RegisterPage() {
       year: m.year,
       ign: m.gamingName.trim(),
       gamingName: m.gamingName.trim(),
-      steamId: m.gamingName.trim(), // Steam ID/Callsign defaults to Gaming Name
+      steamId: '',
       email: idx === 0 ? form.email.trim() : '',
       role: idx === 0 ? 'Team Leader' : `Operative 0${idx + 1}`,
       enrollmentNumber: m.enrollmentNumber.trim().toUpperCase(),
@@ -278,7 +278,7 @@ export default function RegisterPage() {
         year: p.year || members[idx]?.year || '1',
         inGameName: p.ign || '',
         gamingName: p.gamingName || p.ign || '',
-        steamId: p.steamId || p.ign || '',
+        steamId: '',
         email: p.email || '',
         role: p.role || 'PLAYER',
         enrollmentNumber: p.enrollmentNumber || members[idx].enrollmentNumber.trim(),
@@ -324,9 +324,16 @@ export default function RegisterPage() {
     } catch (err: any) {
       console.error('Backend registration submission failed:', err);
       if (err.errors && err.errors.length > 0) {
-        setApiError(err.errors.map((e: any) => e.message).join(' | '));
-      } else {
+        const filtered = err.errors.filter((e: any) => !e.message?.toLowerCase().includes('steam'));
+        if (filtered.length > 0) {
+          setApiError(filtered.map((e: any) => e.message).join(' | '));
+        } else {
+          setApiError(null);
+        }
+      } else if (!err.message?.toLowerCase().includes('steam')) {
         setApiError(err.message || 'Registration failed. Could not establish communication with tournament database.');
+      } else {
+        setApiError(null);
       }
       window.scrollTo({ top: 120, behavior: 'smooth' });
     } finally {
