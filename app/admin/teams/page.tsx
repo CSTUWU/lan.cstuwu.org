@@ -483,6 +483,24 @@ export default function AdminTeamsPage() {
                                     </button>
                                   )}
                                 </div>
+
+                                {player.configFile && (
+                                  <div className="mt-2 pt-2 border-t border-gunmetal/40 flex items-center justify-between text-[10px]">
+                                    <span className="text-sand font-mono truncate max-w-[110px]" title={player.configFile.filename}>
+                                      {player.configFile.filename || 'config.cfg'}
+                                    </span>
+                                    <a
+                                      href={api.admin.getTeamPlayerConfigDownloadUrl(team.id, index)}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="px-1.5 py-0.5 bg-sand/20 hover:bg-sand border border-sand/40 text-sand hover:text-black transition-colors flex items-center gap-1 font-bold"
+                                      title="Download .cfg file"
+                                    >
+                                      <Download className="w-2.5 h-2.5" />
+                                      <span>.CFG</span>
+                                    </a>
+                                  </div>
+                                )}
                               </div>
                             );
                           })}

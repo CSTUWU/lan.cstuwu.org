@@ -32,6 +32,15 @@ export type UWUDegreeProgram = (typeof UWU_DEGREE_PROGRAMMES)[number];
 export const ACADEMIC_YEARS = ['1', '2', '3', '4'] as const;
 export type AcademicYear = (typeof ACADEMIC_YEARS)[number];
 
+export interface PlayerConfigFile {
+  filename?: string;
+  url?: string;
+  publicId?: string;
+  size?: number;
+  content?: string;
+  uploadedAt?: string;
+}
+
 export interface Player {
   id: string;
   name: string;
@@ -44,6 +53,7 @@ export interface Player {
   email?: string;
   role?: string;
   enrollmentNumber?: string;
+  configFile?: PlayerConfigFile;
 }
 
 export interface Captain {

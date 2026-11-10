@@ -474,6 +474,23 @@ export default function AdminRegistrationsPage() {
                         {p.steamId && p.steamId !== p.ign && (
                           <span>ID: <strong className="text-tacticalWhite">{p.steamId}</strong></span>
                         )}
+                        {p.configFile && (
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] px-2 py-0.5 bg-olive/30 border border-olive text-sand font-bold">
+                              {p.configFile.filename || 'config.cfg'}
+                            </span>
+                            <a
+                              href={api.admin.getPlayerConfigDownloadUrl(selectedTeam.id, idx)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[10px] px-2 py-0.5 bg-sand/20 hover:bg-sand border border-sand/40 text-sand hover:text-black transition-colors flex items-center gap-1 font-bold"
+                              title="Download player .cfg file"
+                            >
+                              <Download className="w-3 h-3" />
+                              <span>.CFG</span>
+                            </a>
+                          </div>
+                        )}
                       </div>
                     </div>
                   );

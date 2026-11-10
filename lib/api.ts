@@ -235,6 +235,28 @@ class ApiClient {
         body: JSON.stringify({ reason }),
       }),
 
+    getPlayerConfigDownloadUrl: (registrationId: string, playerIndex: number) => {
+      let token = '';
+      if (typeof window !== 'undefined') {
+        try {
+          token = localStorage.getItem('cst_admin_jwt') || '';
+        } catch (e) {}
+      }
+      const qs = token ? `?token=${encodeURIComponent(token)}` : '';
+      return `${API_BASE_URL}/admin/registrations/${registrationId}/players/${playerIndex}/config${qs}`;
+    },
+
+    getTeamPlayerConfigDownloadUrl: (teamId: string, playerIndex: number) => {
+      let token = '';
+      if (typeof window !== 'undefined') {
+        try {
+          token = localStorage.getItem('cst_admin_jwt') || '';
+        } catch (e) {}
+      }
+      const qs = token ? `?token=${encodeURIComponent(token)}` : '';
+      return `${API_BASE_URL}/admin/teams/${teamId}/players/${playerIndex}/config${qs}`;
+    },
+
     getTeams: (params?: { search?: string; active?: string }) => {
       const query = new URLSearchParams();
       if (params?.search) query.set('search', params.search);

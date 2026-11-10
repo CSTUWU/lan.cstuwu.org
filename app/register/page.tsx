@@ -139,6 +139,13 @@ export default function RegisterPage() {
         }));
         return;
       }
+      if (file.size > 2 * 1024 * 1024) {
+        setErrors((prev) => ({
+          ...prev,
+          [`m_${index}_cfg`]: 'Player config file must be 2MB or less',
+        }));
+        return;
+      }
       setErrors((prev) => {
         const next = { ...prev };
         delete next[`m_${index}_cfg`];
@@ -277,6 +284,7 @@ export default function RegisterPage() {
       email: idx === 0 ? form.email.trim() : '',
       role: idx === 0 ? 'Team Leader' : `Operative 0${idx + 1}`,
       enrollmentNumber: m.enrollmentNumber.trim().toUpperCase(),
+      configFile: m.configFileName ? { filename: m.configFileName } : undefined,
     }));
 
     const captainInfo: Captain = {
@@ -314,15 +322,24 @@ export default function RegisterPage() {
         email: p.email || '',
         role: p.role || 'PLAYER',
         enrollmentNumber: p.enrollmentNumber || members[idx].enrollmentNumber.trim(),
+        configFile: p.configFile,
       })),
     };
 
     try {
+      const hasConfigFiles = members.some((m) => !!m.configFile);
       let res;
-      if (form.logoFile) {
+      if (form.logoFile || hasConfigFiles) {
         const formData = new FormData();
         formData.append('data', JSON.stringify(backendPayload));
-        formData.append('logo', form.logoFile);
+        if (form.logoFile) {
+          formData.append('logo', form.logoFile);
+        }
+        members.forEach((m, idx) => {
+          if (m.configFile) {
+            formData.append(`config_${idx}`, m.configFile);
+          }
+        });
         res = await api.registrations.submit(formData);
       } else {
         res = await api.registrations.submit(backendPayload);

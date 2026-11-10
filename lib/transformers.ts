@@ -47,6 +47,7 @@ export function transformBackendTeam(raw: any): Team {
         email: p.email || '',
         role: p.role || `Player 0${idx + 1}`,
         enrollmentNumber: p.enrollmentNumber || enrollmentNumber,
+        configFile: p.configFile || undefined,
       }))
     : [];
 
