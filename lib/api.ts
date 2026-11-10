@@ -317,9 +317,16 @@ class ApiClient {
         method: 'DELETE',
       }),
 
-    generatePlayoffs: () =>
+    generatePlayoffs: (data?: { recreate?: boolean }) =>
       this.request<any>('/admin/matches/generate-playoffs', {
         method: 'POST',
+        body: data ? JSON.stringify(data) : undefined,
+      }),
+
+    recreatePlayoffs: () =>
+      this.request<any>('/admin/matches/recreate-playoffs', {
+        method: 'POST',
+        body: JSON.stringify({ recreate: true }),
       }),
 
     getSettings: () =>

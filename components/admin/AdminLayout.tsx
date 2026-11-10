@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { checkAdminAuth, setAdminAuth, isRegistrationOpen, setRegistrationOpen, isPlayoffTreePublished, setPlayoffTreePublished } from '@/lib/storage';
+import { checkAdminAuth, setAdminAuth, isRegistrationOpen, setRegistrationOpen, isPlayoffTreePublished, setPlayoffTreePublished, recreatePlayoffTree } from '@/lib/storage';
 import { api } from '@/lib/api';
 import {
   Shield,
@@ -21,6 +21,7 @@ import {
   ExternalLink,
   Lock,
   Unlock,
+  RotateCcw,
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -35,6 +36,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const [regToggling, setRegToggling] = useState(false);
   const [isPlayoffTreePub, setIsPlayoffTreePub] = useState<boolean>(() => isPlayoffTreePublished());
   const [treeToggling, setTreeToggling] = useState(false);
+  const [treeRecreating, setTreeRecreating] = useState(false);
 
   useEffect(() => {
     setIsRegOpen(isRegistrationOpen());
@@ -107,6 +109,29 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       console.warn('Backend update playoffTreePublished failed, saved locally', e);
     } finally {
       setTreeToggling(false);
+    }
+  };
+
+  const handleRecreatePlayoffTree = async () => {
+    const confirm = window.confirm(
+      'RECREATE PLAYOFF TREE FROM SCRATCH?\n\n' +
+      '• This will wipe previous playoff brackets and match states.\n' +
+      '• A completely fresh bracket will be generated and seeded from all registered and approved squads.\n' +
+      '• Semifinals, Grand Final & Bronze Decider start clean awaiting match winners.\n' +
+      '• The new tree will be immediately published to the live public site.\n\n' +
+      'Proceed with recreation?'
+    );
+    if (!confirm) return;
+
+    setTreeRecreating(true);
+    try {
+      recreatePlayoffTree();
+      setIsPlayoffTreePub(true);
+      await api.admin.recreatePlayoffs().catch(() => null);
+    } catch (e) {
+      console.warn('Backend recreatePlayoffs failed, updated locally', e);
+    } finally {
+      setTreeRecreating(false);
     }
   };
 
@@ -196,6 +221,17 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <Trophy className={`w-3.5 h-3.5 ${isPlayoffTreePub ? 'text-sand' : 'text-mutedText'}`} />
             <span className="hidden lg:inline">PLAYOFF TREE:</span>
             <span>{isPlayoffTreePub ? 'ACTIVE (DISABLE)' : 'DISABLED'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleRecreatePlayoffTree}
+            disabled={treeRecreating}
+            className="px-2.5 sm:px-3 py-1.5 text-xs font-mono font-bold flex items-center gap-1.5 border border-rose-600/80 bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 transition-all cursor-pointer shadow-[0_0_10px_rgba(244,63,94,0.2)]"
+            title="Wipe previous playoff bracket and generate a fresh tree from all registered squads"
+          >
+            <RotateCcw className={`w-3.5 h-3.5 text-rose-400 ${treeRecreating ? 'animate-spin' : ''}`} />
+            <span className="hidden md:inline">RECREATE TREE</span>
           </button>
 
           <Link

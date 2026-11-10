@@ -59,6 +59,7 @@ import {
   getLiveBroadcastChannel,
   refresh16PlayoffTreeFromApprovedTeams,
   createAndSeedPlayoffTree,
+  recreatePlayoffTree,
   getActiveBracketMode,
   setActiveBracketMode,
   isPlayoffTreePublished,
@@ -348,6 +349,28 @@ export default function PlayoffBracketTree({
     if (onRefresh) onRefresh();
   };
 
+  const handleRecreatePlayoffTree = async () => {
+    const confirm = window.confirm(
+      'RECREATE OFFICIAL PLAYOFF TREE FROM SCRATCH?\n\n' +
+      '• This will wipe previous playoff brackets and match states.\n' +
+      '• A completely fresh bracket will be generated and seeded from all registered approved squads.\n' +
+      '• Semifinals, Grand Final & Bronze Decider start clean awaiting match winners.\n' +
+      '• The new tree will be immediately published to the live public site.\n\n' +
+      'Proceed with recreation?'
+    );
+    if (!confirm) return;
+
+    const fresh = recreatePlayoffTree(teams);
+    setSixteenMatches(fresh);
+    setIsPublished(true);
+    setPlayoffTreePublished(true);
+    try {
+      await api.admin.recreatePlayoffs().catch(() => null);
+    } catch (e) {}
+    triggerNotice('✓ Official Playoff Tree has been RECREATED from scratch and published to public site!');
+    if (onRefresh) onRefresh();
+  };
+
   const handleAutoSimulateChampionship = async () => {
     if (isSimulatingAll) return;
     setIsSimulatingAll(true);
@@ -578,6 +601,15 @@ export default function PlayoffBracketTree({
                 >
                   <Trophy className="w-3.5 h-3.5 text-sand" />
                   <span>CREATE PLAYOFF TREE</span>
+                </button>
+
+                <button
+                  onClick={handleRecreatePlayoffTree}
+                  className="px-3.5 py-2 bg-rose-950/70 hover:bg-rose-900 text-rose-300 font-bold font-mono text-xs uppercase font-black flex items-center gap-1.5 border border-rose-600/80 shadow-[0_2px_12px_rgba(244,63,94,0.3)] transition-all cursor-pointer"
+                  title="Wipe previous playoff bracket and generate a fresh tree from all approved squads"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 text-rose-400" />
+                  <span>RECREATE PLAYOFF TREE</span>
                 </button>
 
                 {activeLayout === '16-squad' ? (

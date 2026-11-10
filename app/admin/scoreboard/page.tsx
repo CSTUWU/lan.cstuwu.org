@@ -18,6 +18,7 @@ import {
   setMatchLiveStatus,
   updateLiveMatch,
   createAndSeedPlayoffTree,
+  recreatePlayoffTree,
   isPlayoffTreePublished,
   setPlayoffTreePublished,
 } from '@/lib/storage';
@@ -41,6 +42,7 @@ import {
   Zap,
   Lock,
   Trash2,
+  RotateCcw,
 } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
@@ -309,6 +311,47 @@ export default function AdminScoreboardPage() {
     );
   };
 
+  const handleRecreatePlayoffTree = async () => {
+    let currentTeams = getStoredTeams();
+    try {
+      const resTeams = await api.admin.getTeams().catch(() => null);
+      if (resTeams?.success && Array.isArray(resTeams.data)) {
+        const fetchedTeams = resTeams.data.map(transformBackendTeam);
+        setStoredTeams(fetchedTeams);
+        currentTeams = fetchedTeams;
+      }
+    } catch (e) {}
+
+    const sourceTeams = currentTeams.filter((t) => (t.status || '').toLowerCase() !== 'rejected');
+    if (sourceTeams.length < 2) {
+      alert(`At least 2 teams are required to recreate the playoff bracket (Currently: ${sourceTeams.length} squads).`);
+      return;
+    }
+
+    const confirmRecreate = window.confirm(
+      'RECREATE OFFICIAL PLAYOFF TREE FROM SCRATCH?\n\n' +
+      '• This will wipe previous playoff brackets and match states.\n' +
+      '• A fresh bracket will be generated and seeded from all registered approved squads.\n' +
+      '• Semifinals, Grand Final & Bronze Decider start clean awaiting match winners.\n' +
+      '• The new tree will be immediately published to the live public site.\n\n' +
+      'Proceed with recreation?'
+    );
+    if (!confirmRecreate) return;
+
+    recreatePlayoffTree(sourceTeams);
+    setIsTreePublished(true);
+    setPlayoffTreePublished(true);
+    try {
+      await api.admin.recreatePlayoffs().catch(() => null);
+    } catch (e) {}
+
+    const updated = getCleanMatches();
+    setMatches(updated);
+    showNotice(
+      '✓ Playoff Tree has been completely RECREATED from scratch and published to live public site!'
+    );
+  };
+
   const handleTogglePublish = async () => {
     const nextState = !isTreePublished;
     setIsTreePublished(nextState);
@@ -349,6 +392,15 @@ export default function AdminScoreboardPage() {
             >
               <Trophy className="w-4 h-4 text-military-black" />
               <span>CREATE PLAYOFF TREE</span>
+            </button>
+
+            <button
+              onClick={handleRecreatePlayoffTree}
+              className="px-4 py-2.5 bg-rose-950/70 hover:bg-rose-900 border border-rose-600 text-rose-300 font-display font-black text-xs uppercase tracking-wider flex items-center gap-2 transition-all shrink-0 cursor-pointer shadow-sm"
+              title="Wipe previous playoff bracket and generate a completely fresh tree from all registered squads"
+            >
+              <RotateCcw className="w-4 h-4 text-rose-400" />
+              <span>RECREATE PLAYOFF TREE</span>
             </button>
 
             <button

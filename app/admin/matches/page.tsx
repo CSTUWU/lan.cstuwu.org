@@ -12,6 +12,7 @@ import {
   deleteStoredMatch,
   generateAndStorePlayoffBracket,
   createAndSeedPlayoffTree,
+  recreatePlayoffTree,
   isPlayoffTreePublished,
   setPlayoffTreePublished,
 } from '@/lib/storage';
@@ -19,7 +20,7 @@ import { api } from '@/lib/api';
 import { transformBackendMatch, transformBackendTeam } from '@/lib/transformers';
 import { Team, Match, CS2Map, MatchStatus } from '@/lib/types';
 import { CS2_MAP_POOL, getMapImage } from '@/lib/mockData';
-import { Swords, Plus, Calendar, Clock, MapPin, CheckCircle2, Shield, RefreshCw, Trophy, GitBranch, Radio, Lock, Trash2 } from 'lucide-react';
+import { Swords, Plus, Calendar, Clock, MapPin, CheckCircle2, Shield, RefreshCw, Trophy, GitBranch, Radio, Lock, Trash2, RotateCcw } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 
@@ -290,6 +291,44 @@ export default function AdminMatchesPage() {
     }
   };
 
+  const handleRecreatePlayoffs = async () => {
+    const candidateTeams = teams.filter((t) => (t.status || '').toLowerCase() !== 'rejected');
+    if (candidateTeams.length < 2) {
+      alert(`At least 2 teams are required to recreate the playoff bracket (Currently: ${candidateTeams.length} squads).`);
+      return;
+    }
+
+    const confirmRecreate = window.confirm(
+      'RECREATE OFFICIAL PLAYOFF TREE FROM SCRATCH?\n\n' +
+      '• This will wipe previous playoff brackets and match states.\n' +
+      '• A fresh bracket will be generated and seeded from all registered approved squads.\n' +
+      '• Semifinals, Grand Final & Bronze Decider start clean awaiting match winners.\n' +
+      '• The new tree will be immediately published to the live public site.\n\n' +
+      'Proceed with recreation?'
+    );
+    if (!confirmRecreate) return;
+
+    setLoading(true);
+    try {
+      recreatePlayoffTree(candidateTeams);
+      setIsTreePublished(true);
+      setPlayoffTreePublished(true);
+      try {
+        await api.admin.recreatePlayoffs().catch(() => null);
+      } catch (e) {}
+      setNotice('✓ Playoff Tree has been completely RECREATED from scratch and published to live public site!');
+    } catch (e) {
+      recreatePlayoffTree(candidateTeams);
+      setIsTreePublished(true);
+      setPlayoffTreePublished(true);
+      setNotice('✓ Playoff tree recreated & published.');
+    } finally {
+      await loadData();
+      setLoading(false);
+      setTimeout(() => setNotice(null), 5000);
+    }
+  };
+
   const handleTogglePublish = async () => {
     const nextState = !isTreePublished;
     setIsTreePublished(nextState);
@@ -341,6 +380,15 @@ export default function AdminMatchesPage() {
               icon={<Trophy className="w-4 h-4 text-military-black" />}
             >
               CREATE PLAYOFF TREE
+            </Button>
+            <Button
+              onClick={handleRecreatePlayoffs}
+              variant="outline"
+              size="md"
+              className="border-rose-600/80 text-rose-300 hover:bg-rose-950/70"
+              icon={<RotateCcw className="w-4 h-4 text-rose-400" />}
+            >
+              RECREATE PLAYOFF TREE
             </Button>
             <Button
               onClick={handleTogglePublish}
