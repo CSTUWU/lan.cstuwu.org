@@ -1,21 +1,28 @@
 # Dependencies
-node_modules
+/node_modules
 /.pnp
 .pnp.js
+.yarn/install-state.gz
 
 # Testing
 /coverage
 
-# Next.js build output
+# Next.js build output & cache
+.next
 .next/
+/.next/
 out/
+/out/
 build/
+/build/
 dist/
+/dist/
 
 # Debug logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+.pnpm-debug.log*
 
 # Local environment variables (Hide from GitHub)
 .env
@@ -25,8 +32,16 @@ yarn-error.log*
 .env.production
 !.env.example
 
-# OS metadata
+# Vercel
+.vercel
+
+# TypeScript build cache
+*.tsbuildinfo
+next-env.d.ts
+
+# OS & Editor metadata
 .DS_Store
 Thumbs.db
 *.pem
-
+.vscode/
+.idea/
