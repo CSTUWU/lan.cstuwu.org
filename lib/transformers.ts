@@ -35,19 +35,26 @@ export function transformBackendTeam(raw: any): Team {
   };
 
   const players: Player[] = Array.isArray(raw.players)
-    ? raw.players.map((p: any, idx: number) => ({
-        id: p._id || p.id || `p-${idx}`,
-        name: p.fullName || p.name || `Player ${idx + 1}`,
-        faculty: p.faculty || degreeProgram || 'Computer Science and Technology (CST)',
-        degreeProgram: p.degreeProgram || degreeProgram,
-        year: p.year ? String(p.year) : (raw.year ? String(raw.year) : '1'),
-        ign: p.inGameName || p.ign || p.gamingName || '',
-        gamingName: p.gamingName || p.inGameName || p.ign || '',
-        steamId: p.steamId || '',
-        email: p.email || '',
-        role: p.role || `Player 0${idx + 1}`,
-        enrollmentNumber: p.enrollmentNumber || enrollmentNumber,
-      }))
+    ? raw.players.map((p: any, idx: number) => {
+        const isLeader = idx === 0 || p.role === 'Team Leader';
+        const memberName = p.fullName || p.name || (isLeader ? captain.name : `Operative 0${idx + 1}`);
+        const memberIgn = p.gamingName || p.inGameName || p.ign || (isLeader ? captain.gamingName : '');
+        const memberYear = p.year ? String(p.year) : (isLeader && year ? year : '1');
+        const memberEnrollment = p.enrollmentNumber ? String(p.enrollmentNumber) : (isLeader ? enrollmentNumber : '');
+        return {
+          id: p._id || p.id || `p-${idx}`,
+          name: memberName,
+          faculty: p.faculty || degreeProgram || 'Faculty of Applied Sciences',
+          degreeProgram: p.degreeProgram || degreeProgram,
+          year: memberYear,
+          ign: memberIgn,
+          gamingName: memberIgn,
+          steamId: p.steamId || '',
+          email: p.email || (isLeader ? email : ''),
+          role: p.role || (isLeader ? 'Team Leader' : `Operative 0${idx + 1}`),
+          enrollmentNumber: memberEnrollment,
+        };
+      })
     : [];
 
   return {

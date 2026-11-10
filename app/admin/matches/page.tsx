@@ -299,8 +299,8 @@ export default function AdminMatchesPage() {
     } catch (e) {}
     setNotice(
       nextState
-        ? '✓ Playoff Championship Tree PUBLISHED to live public scoreboard!'
-        : '✓ Playoff Championship Tree UNPUBLISHED (Standby screen active for public).'
+        ? '✓ Playoff Tree is now DISPLAYED and VISIBLE on public site!'
+        : '✓ Playoff Tree has been DISABLED and hidden from public site.'
     );
     setTimeout(() => setNotice(null), 4000);
   };
@@ -348,7 +348,7 @@ export default function AdminMatchesPage() {
               size="md"
               icon={isTreePublished ? <Lock className="w-4 h-4 text-rose-400" /> : <Radio className="w-4 h-4 text-military-black animate-pulse" />}
             >
-              {isTreePublished ? "UNPUBLISH BRACKET" : "PUBLISH PLAYOFF TREE"}
+              {isTreePublished ? "DISABLE PLAYOFF TREE" : "DISPLAY PLAYOFF TREE"}
             </Button>
             <Button
               onClick={() => setShowCreateModal(true)}

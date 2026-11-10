@@ -318,8 +318,8 @@ export default function AdminScoreboardPage() {
     } catch (e) {}
     showNotice(
       nextState
-        ? '✓ Playoff Championship Tree PUBLISHED to live public scoreboard!'
-        : '✓ Playoff Championship Tree UNPUBLISHED (Standby screen active).'
+        ? '✓ Playoff Tree is now DISPLAYED and VISIBLE on public site!'
+        : '✓ Playoff Tree has been DISABLED and hidden from public site.'
     );
   };
 
@@ -363,12 +363,12 @@ export default function AdminScoreboardPage() {
               {isTreePublished ? (
                 <>
                   <Lock className="w-4 h-4 text-rose-300" />
-                  <span>UNPUBLISH BRACKET</span>
+                  <span>DISABLE PLAYOFF TREE</span>
                 </>
               ) : (
                 <>
                   <Radio className="w-4 h-4 text-tacticalWhite animate-pulse" />
-                  <span>PUBLISH PLAYOFF TREE</span>
+                  <span>DISPLAY PLAYOFF TREE</span>
                 </>
               )}
             </button>

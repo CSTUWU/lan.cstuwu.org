@@ -57,9 +57,9 @@ export function downloadAllMembersExcel(teams: Team[], customFilename?: string) 
     (team.players || []).forEach((player, pIdx) => {
       const isLeader = pIdx === 0 || player.role === 'Team Leader';
       const role = isLeader ? 'Member 1 (Team Leader)' : `Member ${pIdx + 1}`;
-      const fullName = player.name || (isLeader ? team.captain?.name : '') || '';
-      const ign = player.gamingName || player.ign || (isLeader ? (team.captain?.gamingName || team.captain?.ign) : '') || '';
-      const year = player.year ? `Year ${player.year}` : (team.year ? `Year ${team.year}` : 'Year 1');
+      const fullName = player.name || (isLeader ? team.captain?.name : '') || `Operative 0${pIdx + 1}`;
+      const ign = player.gamingName || player.ign || (isLeader ? (team.captain?.gamingName || team.captain?.ign) : '') || '—';
+      const year = player.year ? `Year ${player.year}` : (isLeader && team.year ? `Year ${team.year}` : 'Year 1');
       const enrollmentNo = player.enrollmentNumber || (isLeader ? leaderEnrollment : '') || '';
 
       const row = [
@@ -134,9 +134,9 @@ export function downloadTeamWiseExcel(teams: Team[], customFilename?: string) {
     (team.players || []).forEach((player, pIdx) => {
       const isLeader = pIdx === 0 || player.role === 'Team Leader';
       const role = isLeader ? 'Team Leader // Captain' : `Operative 0${pIdx + 1}`;
-      const fullName = player.name || (isLeader ? team.captain?.name : '') || '';
-      const ign = player.gamingName || player.ign || (isLeader ? (team.captain?.gamingName || team.captain?.ign) : '') || '';
-      const year = player.year ? `Year ${player.year}` : (team.year ? `Year ${team.year}` : 'Year 1');
+      const fullName = player.name || (isLeader ? team.captain?.name : '') || `Operative 0${pIdx + 1}`;
+      const ign = player.gamingName || player.ign || (isLeader ? (team.captain?.gamingName || team.captain?.ign) : '') || '—';
+      const year = player.year ? `Year ${player.year}` : (isLeader && team.year ? `Year ${team.year}` : 'Year 1');
       const enrollmentNo = player.enrollmentNumber || (isLeader ? leaderEnrollment : '') || '';
 
       rows.push([

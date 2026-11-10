@@ -44,8 +44,8 @@ export default function AdminSettingsPage() {
     } catch (e) {}
     setStatusNotice(
       nextState
-        ? '✓ Playoff Championship Tree PUBLISHED to live public scoreboard!'
-        : '✓ Playoff Tree UNPUBLISHED. Public scoreboard is now in Standby mode.'
+        ? '✓ Playoff Championship Tree is now DISPLAYED and VISIBLE on public site!'
+        : '✓ Playoff Tree has been DISABLED and hidden from public site.'
     );
     setTimeout(() => setStatusNotice(null), 4000);
   };
@@ -139,12 +139,12 @@ export default function AdminSettingsPage() {
             {isTreePublished ? (
               <>
                 <Lock className="w-4 h-4 text-rose-300" />
-                <span>DISABLE / UNPUBLISH PLAYOFF TREE</span>
+                <span>DISABLE PLAYOFF TREE (HIDE FROM PUBLIC)</span>
               </>
             ) : (
               <>
                 <Radio className="w-4 h-4 animate-pulse" />
-                <span>PUBLISH PLAYOFF TREE TO PUBLIC</span>
+                <span>DISPLAY PLAYOFF TREE (PUBLISH TO PUBLIC)</span>
               </>
             )}
           </button>

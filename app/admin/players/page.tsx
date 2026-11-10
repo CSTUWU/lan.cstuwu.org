@@ -22,9 +22,52 @@ export default function AdminPlayersPage() {
     const loadData = async () => {
       setTeams(getStoredTeams());
       try {
-        const res = await api.admin.getTeams();
-        if (res.success && Array.isArray(res.data)) {
-          const transformed = res.data.map(transformBackendTeam);
+        const [resTeams, resPlayers] = await Promise.allSettled([
+          api.admin.getTeams(),
+          api.admin.getPlayers(),
+        ]);
+
+        if (resTeams.status === 'fulfilled' && resTeams.value.success && Array.isArray(resTeams.value.data)) {
+          let transformed = resTeams.value.data.map(transformBackendTeam);
+
+          // If dedicated Player table has records, synchronize operatives roster directly
+          if (
+            resPlayers.status === 'fulfilled' &&
+            resPlayers.value.success &&
+            Array.isArray(resPlayers.value.data) &&
+            resPlayers.value.data.length > 0
+          ) {
+            const playerMapByTag: Record<string, any[]> = {};
+            resPlayers.value.data.forEach((p: any) => {
+              const tag = (p.teamTag || '').toUpperCase();
+              if (!playerMapByTag[tag]) playerMapByTag[tag] = [];
+              playerMapByTag[tag].push(p);
+            });
+
+            transformed = transformed.map((t) => {
+              const dbPlayers = playerMapByTag[(t.tag || '').toUpperCase()];
+              if (dbPlayers && dbPlayers.length > 0) {
+                return {
+                  ...t,
+                  players: dbPlayers.map((p, pIdx) => ({
+                    id: p._id || `p-${pIdx}`,
+                    name: p.fullName || `Operative 0${pIdx + 1}`,
+                    faculty: p.faculty || t.faculty || 'Faculty of Applied Sciences',
+                    degreeProgram: p.degreeProgram || t.degreeProgram,
+                    year: p.year || '1',
+                    ign: p.gamingName || p.inGameName || '',
+                    gamingName: p.gamingName || p.inGameName || '',
+                    steamId: p.steamId || '',
+                    email: p.email || '',
+                    role: p.role || (p.isLeader ? 'Team Leader' : `Operative 0${pIdx + 1}`),
+                    enrollmentNumber: p.enrollmentNumber || '',
+                  })),
+                };
+              }
+              return t;
+            });
+          }
+
           setTeams(transformed);
           setStoredTeams(transformed);
         }
@@ -209,53 +252,79 @@ export default function AdminPlayersPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-                  {matchingPlayers.map((player, idx) => (
-                    <div
-                      key={player.id || idx}
-                      className="bg-surface/80 border border-gunmetal p-3 flex flex-col justify-between"
-                    >
-                      <div>
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-[9px] font-mono text-sand font-bold">SLOT 0{idx + 1}</span>
-                          <span className="text-[9px] font-mono text-mutedKhaki bg-card px-1 py-0.5 border border-gunmetal truncate max-w-[80px]">
-                            {player.role || 'Operative'}
-                          </span>
-                        </div>
-                        <div className="font-display font-black text-sm text-tacticalWhite truncate mb-0.5">
-                          {player.name || player.ign}
-                        </div>
-                        <div className="text-[11px] font-mono text-sand truncate mb-2">
-                          {player.faculty || (player.ign ? player.name : '')}
-                        </div>
-                      </div>
-
-                      <div className="pt-2 border-t border-gunmetal/60">
-                        {player.steamId ? (
-                          <div className="flex items-center justify-between gap-1 bg-card px-1.5 py-1 border border-gunmetal">
-                            <span className="text-[9px] font-mono text-sand truncate select-all">
-                              {player.steamId}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                  {matchingPlayers.map((player, idx) => {
+                    const isLeader = idx === 0 || player.role === 'Team Leader';
+                    return (
+                      <div
+                        key={player.id || idx}
+                        className="bg-surface/80 border border-gunmetal p-3 flex flex-col justify-between hover:border-sand/50 transition-colors"
+                      >
+                        <div>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-[9px] font-mono text-sand font-bold">SLOT 0{idx + 1}</span>
+                            <span className="text-[9px] font-mono text-mutedKhaki bg-card px-1 py-0.5 border border-gunmetal truncate max-w-[90px]">
+                              {isLeader ? 'Team Leader' : (player.role || 'Operative')}
                             </span>
-                            <button
-                              onClick={() => copyToClipboard(player.steamId!)}
-                              className="text-mutedKhaki hover:text-tacticalWhite shrink-0"
-                              title="Copy Callsign / ID"
-                            >
-                              {copiedSteamId === player.steamId ? (
-                                <Check className="w-2.5 h-2.5 text-sand" />
-                              ) : (
-                                <Copy className="w-2.5 h-2.5" />
-                              )}
-                            </button>
                           </div>
-                        ) : (
-                          <div className="text-[9px] font-mono text-mutedKhaki truncate">
-                            {player.faculty}
+                          <div className="font-display font-black text-sm text-tacticalWhite truncate mb-1">
+                            {player.name || player.ign}
                           </div>
-                        )}
+                          <div className="text-[11px] font-mono text-sand truncate mb-1">
+                            IGN: <strong className="text-tacticalWhite">{player.gamingName || player.ign || '—'}</strong>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-[10px] font-mono text-mutedKhaki mb-2">
+                            <span className="px-1.5 py-0.2 bg-card border border-gunmetal text-sand font-bold">
+                              Year {player.year || '1'}
+                            </span>
+                            <span className="truncate">{player.degreeProgram || team.degreeProgram || 'UWU'}</span>
+                          </div>
+                        </div>
+
+                        <div className="pt-2 border-t border-gunmetal/60">
+                          {player.enrollmentNumber ? (
+                            <div className="flex items-center justify-between gap-1 bg-card px-1.5 py-1 border border-gunmetal">
+                              <span className="text-[9px] font-mono text-sand truncate select-all">
+                                {player.enrollmentNumber}
+                              </span>
+                              <button
+                                onClick={() => copyToClipboard(player.enrollmentNumber!)}
+                                className="text-mutedKhaki hover:text-tacticalWhite shrink-0"
+                                title="Copy Enrollment Number"
+                              >
+                                {copiedSteamId === player.enrollmentNumber ? (
+                                  <Check className="w-2.5 h-2.5 text-sand" />
+                                ) : (
+                                  <Copy className="w-2.5 h-2.5" />
+                                )}
+                              </button>
+                            </div>
+                          ) : player.steamId ? (
+                            <div className="flex items-center justify-between gap-1 bg-card px-1.5 py-1 border border-gunmetal">
+                              <span className="text-[9px] font-mono text-sand truncate select-all">
+                                {player.steamId}
+                              </span>
+                              <button
+                                onClick={() => copyToClipboard(player.steamId!)}
+                                className="text-mutedKhaki hover:text-tacticalWhite shrink-0"
+                                title="Copy Callsign / ID"
+                              >
+                                {copiedSteamId === player.steamId ? (
+                                  <Check className="w-2.5 h-2.5 text-sand" />
+                                ) : (
+                                  <Copy className="w-2.5 h-2.5" />
+                                )}
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="text-[9px] font-mono text-mutedKhaki truncate">
+                              Slot 0{idx + 1}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ))}
@@ -272,24 +341,34 @@ export default function AdminPlayersPage() {
               <table className="w-full text-left font-mono text-xs">
                 <thead>
                   <tr className="bg-surface/80 border-b border-gunmetal text-mutedKhaki text-[10px] uppercase">
+                    <th className="py-3 px-3">#</th>
                     <th className="py-3 px-4">OPERATIVE NAME</th>
-                    <th className="py-3 px-4">FACULTY</th>
-                    <th className="py-3 px-4">CALLSIGN</th>
+                    <th className="py-3 px-4">CALLSIGN (IGN)</th>
+                    <th className="py-3 px-3">YEAR</th>
+                    <th className="py-3 px-4">ENROLLMENT NO</th>
+                    <th className="py-3 px-4">DEGREE PROGRAMME</th>
                     <th className="py-3 px-4">SQUAD</th>
                     <th className="py-3 px-4">ROLE</th>
-                    <th className="py-3 px-4">STUDENT EMAIL</th>
+                    <th className="py-3 px-4">EMAIL</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gunmetal/60">
                   {filteredFlatPlayers.map(({ player, team }, idx) => (
                     <tr key={`${player.id}-${idx}`} className="hover:bg-surface/40 transition-colors">
+                      <td className="py-3 px-3 text-mutedKhaki text-[10px]">{idx + 1}</td>
                       <td className="py-3 px-4">
                         <span className="font-bold text-tacticalWhite text-sm">{player.name || player.ign}</span>
                       </td>
-                      <td className="py-3 px-4 text-sand">{player.faculty || '—'}</td>
-                      <td className="py-3 px-4 text-mutedKhaki">{player.steamId || player.ign || '—'}</td>
+                      <td className="py-3 px-4 text-sand font-bold">{player.gamingName || player.ign || '—'}</td>
+                      <td className="py-3 px-3">
+                        <span className="px-1.5 py-0.2 bg-card border border-gunmetal text-sand font-bold text-[10px]">
+                          Year {player.year || '1'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-sand font-mono">{player.enrollmentNumber || '—'}</td>
+                      <td className="py-3 px-4 text-mutedKhaki truncate max-w-[180px]">{player.degreeProgram || team.degreeProgram || '—'}</td>
                       <td className="py-3 px-4">
-                        <span className="text-[10px] text-sand">[{team.tag}]</span> {team.name}
+                        <span className="text-[10px] text-sand font-bold">[{team.tag}]</span> {team.name}
                       </td>
                       <td className="py-3 px-4 text-mutedKhaki">{player.role || 'Operative'}</td>
                       <td className="py-3 px-4 text-mutedKhaki">{player.email || '—'}</td>

@@ -201,6 +201,11 @@ class ApiClient {
       this.request<any>('/public/matches/bracket', {
         method: 'GET',
       }),
+
+    getPlayers: () =>
+      this.request<any[]>('/public/players', {
+        method: 'GET',
+      }),
   };
 
   public admin = {
@@ -241,6 +246,18 @@ class ApiClient {
       if (params?.active) query.set('active', params.active);
       const qs = query.toString() ? `?${query.toString()}` : '';
       return this.request<any[]>(`/admin/teams${qs}`, {
+        method: 'GET',
+      });
+    },
+
+    getPlayers: (params?: { search?: string; teamTag?: string; degree?: string; year?: string }) => {
+      const query = new URLSearchParams();
+      if (params?.search) query.set('search', params.search);
+      if (params?.teamTag) query.set('teamTag', params.teamTag);
+      if (params?.degree) query.set('degree', params.degree);
+      if (params?.year) query.set('year', params.year);
+      const qs = query.toString() ? `?${query.toString()}` : '';
+      return this.request<any[]>(`/admin/players${qs}`, {
         method: 'GET',
       });
     },

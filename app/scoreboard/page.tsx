@@ -76,14 +76,7 @@ export default function ScoreboardPage() {
     // Fetch live scoreboard & standings from API
     api.public.getScoreboard().then((res) => {
       if (res?.success && res.data) {
-        const hasPlayoffsInBackend = Boolean(
-          res.data.playoffTreePublished ||
-          (Array.isArray(res.data.playoffMatches) && res.data.playoffMatches.length > 0)
-        );
-        if (hasPlayoffsInBackend) {
-          setIsTreePublished(true);
-          setPlayoffTreePublished(true);
-        } else if (res.data.playoffTreePublished !== undefined) {
+        if (res.data.playoffTreePublished !== undefined) {
           const isPub = Boolean(res.data.playoffTreePublished);
           setIsTreePublished(isPub);
           setPlayoffTreePublished(isPub);
@@ -196,7 +189,7 @@ export default function ScoreboardPage() {
   const hasPlayoffMatches = matches.some(
     (m) => m.bracketRound && m.bracketRound !== 'groups'
   );
-  const showPlayoffTab = isTreePublished || hasPlayoffMatches;
+  const showPlayoffTab = Boolean(isTreePublished);
 
   const liveMatch = matches.find((m) => m.status === 'live');
   const upcomingMatches = matches.filter((m) => m.status === 'upcoming');

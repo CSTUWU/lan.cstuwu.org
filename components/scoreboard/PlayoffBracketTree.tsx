@@ -414,8 +414,8 @@ export default function PlayoffBracketTree({
     return matches.find((m) => m.status === 'live') || sixteenMatches.find((m) => m.status === 'live') || null;
   }, [matches, sixteenMatches]);
 
-  // If playoff bracket is disabled/unpublished and viewer is NOT using admin controls and no playoff matches exist:
-  if (!isPublished && !showAdminControls && !hasPlayoffMatches) {
+  // If playoff bracket is disabled/unpublished and viewer is NOT using admin controls:
+  if (!isPublished && !showAdminControls) {
     return (
       <div className="space-y-6 select-none font-sans" ref={containerRef}>
         <div className="bg-card border-2 border-gunmetal p-8 sm:p-14 text-center relative overflow-hidden clip-tactical shadow-2xl backdrop-blur-md">

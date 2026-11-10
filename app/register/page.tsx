@@ -274,14 +274,15 @@ export default function RegisterPage() {
       captain: captainInfo,
       players: rosterPlayers.map((p, idx) => ({
         fullName: p.name,
-        faculty: form.degreeProgram,
+        faculty: verifiedFaculty,
+        degreeProgram: verifiedDegree,
         year: p.year || members[idx]?.year || '1',
         inGameName: p.ign || '',
         gamingName: p.gamingName || p.ign || '',
         steamId: '',
-        email: p.email || '',
-        role: p.role || 'PLAYER',
-        enrollmentNumber: p.enrollmentNumber || members[idx].enrollmentNumber.trim(),
+        email: p.email || (idx === 0 ? form.email.trim() : ''),
+        role: p.role || (idx === 0 ? 'Team Leader' : `Operative 0${idx + 1}`),
+        enrollmentNumber: p.enrollmentNumber || members[idx].enrollmentNumber.trim().toUpperCase(),
       })),
     };
 

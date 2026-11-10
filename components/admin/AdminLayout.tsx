@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { checkAdminAuth, setAdminAuth, isRegistrationOpen, setRegistrationOpen } from '@/lib/storage';
+import { checkAdminAuth, setAdminAuth, isRegistrationOpen, setRegistrationOpen, isPlayoffTreePublished, setPlayoffTreePublished } from '@/lib/storage';
 import { api } from '@/lib/api';
 import {
   Shield,
@@ -33,23 +33,44 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isRegOpen, setIsRegOpen] = useState<boolean>(true);
   const [regToggling, setRegToggling] = useState(false);
+  const [isPlayoffTreePub, setIsPlayoffTreePub] = useState<boolean>(() => isPlayoffTreePublished());
+  const [treeToggling, setTreeToggling] = useState(false);
 
   useEffect(() => {
     setIsRegOpen(isRegistrationOpen());
+    setIsPlayoffTreePub(isPlayoffTreePublished());
+
     const handleUpdate = () => setIsRegOpen(isRegistrationOpen());
+    const handleTreeUpdate = (e?: Event) => {
+      const customEvent = e as CustomEvent<{ published: boolean }>;
+      if (typeof customEvent?.detail?.published === 'boolean') {
+        setIsPlayoffTreePub(customEvent.detail.published);
+      } else {
+        setIsPlayoffTreePub(isPlayoffTreePublished());
+      }
+    };
+
     window.addEventListener('cst_countdown_updated', handleUpdate);
     window.addEventListener('cst_registration_status_changed', handleUpdate);
+    window.addEventListener('cst_playoff_published_changed', handleTreeUpdate);
 
     // Sync from server if available
     api.public.getSettings().then((res) => {
-      if (res?.success && res.data && typeof res.data.registrationOpen === 'boolean') {
-        setIsRegOpen(res.data.registrationOpen);
+      if (res?.success && res.data) {
+        if (typeof res.data.registrationOpen === 'boolean') {
+          setIsRegOpen(res.data.registrationOpen);
+        }
+        if (typeof res.data.playoffTreePublished === 'boolean') {
+          setIsPlayoffTreePub(res.data.playoffTreePublished);
+          setPlayoffTreePublished(res.data.playoffTreePublished);
+        }
       }
     }).catch(() => {});
 
     return () => {
       window.removeEventListener('cst_countdown_updated', handleUpdate);
       window.removeEventListener('cst_registration_status_changed', handleUpdate);
+      window.removeEventListener('cst_playoff_published_changed', handleTreeUpdate);
     };
   }, []);
 
@@ -69,6 +90,23 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       console.warn('Backend updateSettings failed, saved locally', e);
     } finally {
       setRegToggling(false);
+    }
+  };
+
+  const handleTogglePlayoffTree = async () => {
+    const nextState = !isPlayoffTreePub;
+    setTreeToggling(true);
+    setPlayoffTreePublished(nextState);
+    setIsPlayoffTreePub(nextState);
+
+    try {
+      await api.admin.updateSettings({
+        playoffTreePublished: nextState,
+      });
+    } catch (e) {
+      console.warn('Backend update playoffTreePublished failed, saved locally', e);
+    } finally {
+      setTreeToggling(false);
     }
   };
 
@@ -138,6 +176,26 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             {isRegOpen ? <Unlock className="w-3.5 h-3.5 text-emerald-400" /> : <Lock className="w-3.5 h-3.5 text-rose-400" />}
             <span className="hidden md:inline">REGISTRATION:</span>
             <span>{isRegOpen ? 'OPEN' : 'CLOSED'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleTogglePlayoffTree}
+            disabled={treeToggling}
+            className={`px-2.5 sm:px-3 py-1.5 text-xs font-mono font-bold flex items-center gap-1.5 sm:gap-2 border transition-all cursor-pointer ${
+              isPlayoffTreePub
+                ? 'bg-emerald-950/70 border-emerald-500/80 text-emerald-400 hover:bg-rose-950/80 hover:border-rose-600 hover:text-rose-400 shadow-[0_0_12px_rgba(16,185,129,0.3)]'
+                : 'bg-surface border-gunmetal text-mutedText hover:bg-emerald-950/60 hover:border-emerald-600 hover:text-emerald-400'
+            }`}
+            title={
+              isPlayoffTreePub
+                ? 'Playoff tree is currently DISPLAYED on public site. Click to DISABLE / HIDE it.'
+                : 'Playoff tree is currently DISABLED / HIDDEN. Click to DISPLAY / PUBLISH it on public site.'
+            }
+          >
+            <Trophy className={`w-3.5 h-3.5 ${isPlayoffTreePub ? 'text-sand' : 'text-mutedText'}`} />
+            <span className="hidden lg:inline">PLAYOFF TREE:</span>
+            <span>{isPlayoffTreePub ? 'ACTIVE (DISABLE)' : 'DISABLED'}</span>
           </button>
 
           <Link
