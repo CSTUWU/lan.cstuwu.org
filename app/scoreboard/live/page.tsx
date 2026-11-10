@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
-import { getStoredMatches, getLiveBroadcastChannel, getActiveLiveMatch, getStoredTeams, isPlayoffTreePublished, setPlayoffTreePublished } from '@/lib/storage';
+import { getStoredMatches, getLiveBroadcastChannel, getActiveLiveMatch, getStoredTeams, isPlayoffTreePublished, setPlayoffTreePublished, areSingleMatchesEquivalent, areMatchesEquivalent, syncDatabaseMatchesToStorage } from '@/lib/storage';
 import { INITIAL_MATCHES, INITIAL_TEAMS, getMapImage } from '@/lib/mockData';
 import { api } from '@/lib/api';
 import { transformBackendMatch } from '@/lib/transformers';
@@ -67,7 +67,7 @@ function StageProjectorScoreboardContent() {
     setIsTreePublished(pub);
 
     const allMatches = getStoredMatches();
-    setMatches(allMatches);
+    setMatches((prev) => (areMatchesEquivalent(prev, allMatches) ? prev : allMatches));
     setTeams(getStoredTeams());
 
     let current: Match | undefined;
@@ -75,12 +75,13 @@ function StageProjectorScoreboardContent() {
       current = allMatches.find((m) => m.id === queryMatchId);
     }
     if (!current) {
-      current = allMatches.find((m) => m.status === 'live') || allMatches[0];
+      current = allMatches.find((m) => m.status === 'live');
     }
 
     if (current) {
       setActiveMatch((prev) => {
-        if (prev && (prev.scoreA !== current!.scoreA || prev.scoreB !== current!.scoreB || prev.c4Planted !== current!.c4Planted)) {
+        if (areSingleMatchesEquivalent(prev, current)) return prev;
+        if (prev && prev.id === current!.id && (prev.scoreA !== current!.scoreA || prev.scoreB !== current!.scoreB || prev.c4Planted !== current!.c4Planted)) {
           setLastUpdateEffect(true);
           playBeep(current!.c4Planted ? 440 : 880, 0.2);
           setTimeout(() => setLastUpdateEffect(false), 800);
@@ -94,7 +95,8 @@ function StageProjectorScoreboardContent() {
         const liveBackend = transformBackendMatch(res.data.liveMatches[0]);
         if (!queryMatchId || liveBackend.id === queryMatchId) {
           setActiveMatch((prev) => {
-            if (prev && (prev.scoreA !== liveBackend.scoreA || prev.scoreB !== liveBackend.scoreB || prev.c4Planted !== liveBackend.c4Planted)) {
+            if (areSingleMatchesEquivalent(prev, liveBackend)) return prev;
+            if (prev && prev.id === liveBackend.id && (prev.scoreA !== liveBackend.scoreA || prev.scoreB !== liveBackend.scoreB || prev.c4Planted !== liveBackend.c4Planted)) {
               setLastUpdateEffect(true);
               playBeep(liveBackend.c4Planted ? 440 : 880, 0.2);
               setTimeout(() => setLastUpdateEffect(false), 800);
@@ -102,6 +104,14 @@ function StageProjectorScoreboardContent() {
             return liveBackend;
           });
         }
+        syncDatabaseMatchesToStorage(res.data.liveMatches.map(transformBackendMatch));
+      } else if (!queryMatchId && res?.success && Array.isArray(res.data?.upcomingMatches) && res.data.upcomingMatches.length > 0) {
+        // Fallback to first upcoming match only if no active match
+        setActiveMatch((prev) => {
+          if (prev && prev.status === 'live') return prev;
+          const up = transformBackendMatch(res.data.upcomingMatches[0]);
+          return areSingleMatchesEquivalent(prev, up) ? prev : up;
+        });
       }
     }).catch(() => {});
   }, [queryMatchId, playBeep]);

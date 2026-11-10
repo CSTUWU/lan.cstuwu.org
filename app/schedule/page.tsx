@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { getStoredMatches, isPlayoffTreePublished, setPlayoffTreePublished, getLiveBroadcastChannel } from '@/lib/storage';
+import { getStoredMatches, isPlayoffTreePublished, setPlayoffTreePublished, getLiveBroadcastChannel, syncDatabaseMatchesToStorage, areMatchesEquivalent } from '@/lib/storage';
 import { INITIAL_MATCHES, getMapImage } from '@/lib/mockData';
 import { api } from '@/lib/api';
 import { transformBackendMatch } from '@/lib/transformers';
@@ -29,7 +29,9 @@ export default function SchedulePage() {
 
     api.public.getMatches().then((res) => {
       if (res?.success && Array.isArray(res.data) && res.data.length > 0) {
-        setMatches(res.data.map(transformBackendMatch));
+        const transformed = res.data.map(transformBackendMatch);
+        setMatches((prev) => (areMatchesEquivalent(prev, transformed) ? prev : transformed));
+        syncDatabaseMatchesToStorage(transformed);
       }
     }).catch(() => {});
   };
@@ -40,7 +42,10 @@ export default function SchedulePage() {
 
     fetchMatches();
 
-    const handleUpdate = () => setMatches(getStoredMatches());
+    const handleUpdate = () => {
+      const stored = getStoredMatches();
+      setMatches((prev) => (areMatchesEquivalent(prev, stored) ? prev : stored));
+    };
     const handlePub = () => setIsTreePublished(isPlayoffTreePublished());
 
     window.addEventListener('cst_matches_updated', handleUpdate);

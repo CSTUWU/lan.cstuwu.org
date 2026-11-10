@@ -6,7 +6,8 @@ import { usePathname } from 'next/navigation';
 import { Shield, Menu, X, ChevronRight, Crosshair, Radio } from 'lucide-react';
 import { useRegistrationStatus } from '@/hooks/useRegistrationStatus';
 import { api } from '@/lib/api';
-import { getStoredMatches } from '@/lib/storage';
+import { getStoredMatches, syncDatabaseMatchesToStorage } from '@/lib/storage';
+import { transformBackendMatch } from '@/lib/transformers';
 import Button from '../ui/Button';
 
 export default function Navbar() {
@@ -103,13 +104,14 @@ export default function Navbar() {
         const localLive = stored.some((m) => m.status === 'live');
         if (localLive) {
           setHasLiveMatch(true);
-          return;
         }
         api.public.getMatches({ status: 'LIVE' }).then((res) => {
-          if (res?.success && Array.isArray(res.data) && res.data.length > 0) {
-            setHasLiveMatch(true);
-          } else {
-            setHasLiveMatch(false);
+          if (res?.success && Array.isArray(res.data)) {
+            const isLive = res.data.length > 0;
+            setHasLiveMatch(isLive);
+            if (isLive) {
+              syncDatabaseMatchesToStorage(res.data.map(transformBackendMatch));
+            }
           }
         }).catch(() => {});
       } catch (e) {}

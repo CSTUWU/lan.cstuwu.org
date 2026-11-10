@@ -546,6 +546,67 @@ export const setStoredMatches = (newMatches: Match[]): void => {
   notifyMatchesUpdated(newMatches);
 };
 
+export const syncDatabaseMatchesToStorage = (backendMatches: Match[]): void => {
+  if (typeof window === 'undefined' || !Array.isArray(backendMatches) || backendMatches.length === 0) return;
+  try {
+    const raw = localStorage.getItem(MATCHES_KEY);
+    const existing: Match[] = raw ? JSON.parse(raw) : [];
+
+    const merged = [...backendMatches];
+    for (const ex of existing) {
+      if (!merged.some((m) => m.id === ex.id || (m.matchNumber && m.matchNumber === ex.matchNumber))) {
+        merged.push(ex);
+      }
+    }
+
+    localStorage.setItem(MATCHES_KEY, JSON.stringify(merged));
+  } catch (e) {
+    console.warn('Failed to silently sync matches to storage', e);
+  }
+};
+
+export const areMatchesEquivalent = (a: Match[], b: Match[]): boolean => {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    const m1 = a[i];
+    const m2 = b[i];
+    if (
+      m1.id !== m2.id ||
+      m1.status !== m2.status ||
+      m1.scoreA !== m2.scoreA ||
+      m1.scoreB !== m2.scoreB ||
+      m1.currentRound !== m2.currentRound ||
+      m1.c4Planted !== m2.c4Planted ||
+      m1.teamASide !== m2.teamASide ||
+      m1.teamBSide !== m2.teamBSide ||
+      m1.winnerId !== m2.winnerId ||
+      m1.teamAName !== m2.teamAName ||
+      m1.teamBName !== m2.teamBName
+    ) {
+      return false;
+    }
+  }
+  return true;
+};
+
+export const areSingleMatchesEquivalent = (a?: Match | null, b?: Match | null): boolean => {
+  if (!a && !b) return true;
+  if (!a || !b) return false;
+  return (
+    a.id === b.id &&
+    a.status === b.status &&
+    a.scoreA === b.scoreA &&
+    a.scoreB === b.scoreB &&
+    a.currentRound === b.currentRound &&
+    a.c4Planted === b.c4Planted &&
+    a.teamASide === b.teamASide &&
+    a.teamBSide === b.teamBSide &&
+    a.winnerId === b.winnerId &&
+    a.teamAName === b.teamAName &&
+    a.teamBName === b.teamBName
+  );
+};
+
 export const saveTeam = (newTeam: Omit<Team, 'id' | 'createdAt' | 'status'>): Team => {
   const teams = getStoredTeams();
   const created: Team = {

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { getStoredTeams, setStoredTeams, getStoredMatches, getActiveLiveMatch, isPlayoffTreePublished, setPlayoffTreePublished, getLiveBroadcastChannel } from '@/lib/storage';
+import { getStoredTeams, setStoredTeams, getStoredMatches, getActiveLiveMatch, isPlayoffTreePublished, setPlayoffTreePublished, getLiveBroadcastChannel, syncDatabaseMatchesToStorage, areMatchesEquivalent } from '@/lib/storage';
 import { INITIAL_TEAMS, INITIAL_MATCHES, getMapImage } from '@/lib/mockData';
 import { api } from '@/lib/api';
 import { transformBackendTeam, transformBackendMatch } from '@/lib/transformers';
@@ -38,10 +38,12 @@ export default function ScoreboardPage() {
     isPlayoffTreePublished() ? 'playoffs' : 'standings'
   );
 
-  const reloadData = () => {
-    setTeams(getStoredTeams());
-    setMatches(getStoredMatches());
-    setIsTreePublished(isPlayoffTreePublished());
+  const reloadData = (isInitial: boolean = false) => {
+    if (isInitial) {
+      setTeams(getStoredTeams());
+      setMatches(getStoredMatches());
+      setIsTreePublished(isPlayoffTreePublished());
+    }
 
     // Fetch all registered collegiate squads from API
     api.public.getTeams().then((res) => {
@@ -101,17 +103,21 @@ export default function ScoreboardPage() {
           }
         }
         if (apiMatches.length > 0) {
-          setMatches(apiMatches);
+          setMatches((prev) => (areMatchesEquivalent(prev, apiMatches) ? prev : apiMatches));
+          syncDatabaseMatchesToStorage(apiMatches);
         }
       }
     }).catch(() => {});
   };
 
   useEffect(() => {
-    reloadData();
+    reloadData(true);
 
     const handleTeamsUpdate = () => setTeams(getStoredTeams());
-    const handleMatchesUpdate = () => setMatches(getStoredMatches());
+    const handleMatchesUpdate = () => {
+      const stored = getStoredMatches();
+      setMatches((prev) => (areMatchesEquivalent(prev, stored) ? prev : stored));
+    };
     const handlePubChange = (e?: Event) => {
       const customEvent = e as CustomEvent<{ published: boolean }>;
       const pub = typeof customEvent?.detail?.published === 'boolean'
@@ -143,10 +149,11 @@ export default function ScoreboardPage() {
     window.addEventListener('cst_matches_updated', handleMatchesUpdate);
     window.addEventListener('cst_16_matches_updated', handleMatchesUpdate);
     window.addEventListener('cst_playoff_published_changed', handlePubChange);
-    window.addEventListener('storage', reloadData);
+    const handleStorageChange = () => reloadData(false);
+    window.addEventListener('storage', handleStorageChange);
 
     const pollInterval = setInterval(() => {
-      reloadData();
+      reloadData(false);
     }, 4000);
 
     return () => {
@@ -156,7 +163,7 @@ export default function ScoreboardPage() {
       window.removeEventListener('cst_matches_updated', handleMatchesUpdate);
       window.removeEventListener('cst_16_matches_updated', handleMatchesUpdate);
       window.removeEventListener('cst_playoff_published_changed', handlePubChange);
-      window.removeEventListener('storage', reloadData);
+      window.removeEventListener('storage', handleStorageChange);
     };
   }, []);
 
