@@ -543,7 +543,7 @@ export default function CharacterFaceOff() {
             <div className="mt-4 pt-3 border-t border-gunmetal flex items-center justify-around text-[10px] font-mono">
               <span className="text-sand font-bold">MODERN WARFARE PROTOCOL</span>
               <span className="text-gunmetal">|</span>
-              <span className="text-olive-light font-bold">5v5 MR12 REGULATION</span>
+              <span className="text-olive-light font-bold">SEARCH AND DESTROY PML220</span>
             </div>
           </div>
 

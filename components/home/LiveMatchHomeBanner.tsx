@@ -152,7 +152,7 @@ export default function LiveMatchHomeBanner() {
                 <span>THEATER: <strong className="text-tacticalWhite uppercase">{liveMatch.map}</strong></span>
               </div>
               <span>•</span>
-              <span className="text-tacticalWhite font-bold">MR12 S&amp;D</span>
+              <span className="text-tacticalWhite font-bold">S&amp;D PML220</span>
             </div>
           </div>
 

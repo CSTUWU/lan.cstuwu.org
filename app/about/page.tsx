@@ -110,8 +110,8 @@ export default function AboutPage() {
                 <span className="text-[11px] text-mutedKhaki">Zero-latency Auditorium Command</span>
               </div>
               <div className="p-3 bg-surface border border-gunmetal">
-                <span className="text-olive block font-bold text-lg font-display">5v5 S&amp;D</span>
-                <span className="text-[11px] text-mutedKhaki">MR12 Promod Search &amp; Destroy</span>
+                <span className="text-olive block font-bold text-lg font-display">S&amp;D</span>
+                <span className="text-[11px] text-mutedKhaki">Search and Destroy PML220</span>
               </div>
               <div className="p-3 bg-surface border border-gunmetal">
                 <span className="text-sand block font-bold text-lg font-display">VERIFIED</span>

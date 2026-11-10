@@ -359,7 +359,7 @@ function StageProjectorScoreboardContent() {
               </div>
 
               <div className="text-xs font-mono text-mutedKhaki tracking-wider uppercase">
-                REGULATION MR12 FORMAT • FIRST SQUAD TO 13 ROUNDS WINS
+                SEARCH &amp; DESTROY PML220 • FIRST SQUAD TO 13 ROUNDS WINS
               </div>
             </div>
 
