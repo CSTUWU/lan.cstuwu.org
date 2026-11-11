@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { getStoredTeams, setStoredTeams, updateTeamStatus, createAndSeedPlayoffTree, setPlayoffTreePublished } from '@/lib/storage';
+import { getStoredTeams, setStoredTeams, updateTeamStatus, createAndSeedPlayoffTree, recreatePlayoffTree, isPlayoffTreePublished, setPlayoffTreePublished } from '@/lib/storage';
 import { api } from '@/lib/api';
 import { transformBackendTeam } from '@/lib/transformers';
 import { Team, ApprovalStatus, Player } from '@/lib/types';
@@ -28,6 +28,9 @@ import {
   Trophy,
   FileSpreadsheet,
   Download,
+  Lock,
+  Radio,
+  RotateCcw,
 } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
@@ -41,13 +44,18 @@ export default function AdminTeamsPage() {
   const [copiedSteamId, setCopiedSteamId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [isTreePublished, setIsTreePublished] = useState<boolean>(() => isPlayoffTreePublished());
 
   const loadTeams = async () => {
     setLoading(true);
     try {
-      const res = await api.admin.getTeams();
-      if (res?.success && Array.isArray(res.data)) {
-        const transformed = res.data.map(transformBackendTeam);
+      const [res, resSettings] = await Promise.allSettled([
+        api.admin.getTeams(),
+        api.public.getSettings(),
+      ]);
+
+      if (res.status === 'fulfilled' && res.value?.success && Array.isArray(res.value.data)) {
+        const transformed = res.value.data.map(transformBackendTeam);
         setTeams(transformed);
         
         const expandedMap: Record<string, boolean> = {};
@@ -55,6 +63,11 @@ export default function AdminTeamsPage() {
           expandedMap[t.id] = true;
         });
         setExpandedTeams(expandedMap);
+      }
+
+      if (resSettings.status === 'fulfilled' && resSettings.value?.data?.playoffTreePublished !== undefined) {
+        setIsTreePublished(Boolean(resSettings.value.data.playoffTreePublished));
+        setPlayoffTreePublished(Boolean(resSettings.value.data.playoffTreePublished));
       }
     } catch (e: any) {
       console.error('Failed to load teams from database:', e);
@@ -64,7 +77,19 @@ export default function AdminTeamsPage() {
   };
 
   useEffect(() => {
+    setIsTreePublished(isPlayoffTreePublished());
     loadTeams();
+
+    const handlePubChange = (e?: Event) => {
+      const customEvent = e as CustomEvent<{ published: boolean }>;
+      if (typeof customEvent?.detail?.published === 'boolean') {
+        setIsTreePublished(customEvent.detail.published);
+      } else {
+        setIsTreePublished(isPlayoffTreePublished());
+      }
+    };
+    window.addEventListener('cst_playoff_published_changed', handlePubChange);
+    return () => window.removeEventListener('cst_playoff_published_changed', handlePubChange);
   }, []);
 
   const toggleExpand = (teamId: string) => {
@@ -72,6 +97,21 @@ export default function AdminTeamsPage() {
       ...prev,
       [teamId]: !prev[teamId],
     }));
+  };
+
+  const handleTogglePublish = async () => {
+    const nextState = !isTreePublished;
+    setIsTreePublished(nextState);
+    setPlayoffTreePublished(nextState);
+    try {
+      await api.admin.updateSettings({ playoffTreePublished: nextState });
+    } catch (e) {}
+    setNotice(
+      nextState
+        ? '✓ Playoff Tree is now DISPLAYED and VISIBLE on public site!'
+        : '✓ Playoff Tree has been DISABLED and hidden from public site.'
+    );
+    setTimeout(() => setNotice(null), 4000);
   };
 
   const handleCreatePlayoffTree = () => {
@@ -91,6 +131,7 @@ export default function AdminTeamsPage() {
     if (!confirmSeed) return;
 
     createAndSeedPlayoffTree(candidateTeams);
+    setIsTreePublished(true);
     setPlayoffTreePublished(true);
     try {
       api.admin.generatePlayoffs().catch(() => null);
@@ -98,6 +139,34 @@ export default function AdminTeamsPage() {
     } catch (e) {}
     setNotice(
       `✓ Playoff Tree generated & published to live public site! 1st round fixtures linked. Match wins will automatically advance winners down the tree.`
+    );
+    setTimeout(() => setNotice(null), 5000);
+  };
+
+  const handleRecreatePlayoffTree = () => {
+    const candidateTeams = teams.filter(t => (t.status || '').toLowerCase() !== 'rejected');
+    if (candidateTeams.length < 2) {
+      alert(`At least 2 teams are required to recreate the playoff bracket (Currently: ${candidateTeams.length} squads).`);
+      return;
+    }
+    const confirmRecreate = window.confirm(
+      'RECREATE OFFICIAL PLAYOFF TREE FROM SCRATCH?\n\n' +
+      '• This will wipe previous playoff brackets and match states.\n' +
+      '• A fresh bracket will be generated and seeded from all registered and approved squads.\n' +
+      '• Semifinals, Grand Final & Bronze Decider start clean awaiting match winners.\n' +
+      '• The new tree will be immediately published to the live public site.\n\n' +
+      'Proceed with recreation?'
+    );
+    if (!confirmRecreate) return;
+
+    recreatePlayoffTree(candidateTeams);
+    setIsTreePublished(true);
+    setPlayoffTreePublished(true);
+    try {
+      api.admin.recreatePlayoffs().catch(() => null);
+    } catch (e) {}
+    setNotice(
+      '✓ Playoff Tree has been completely RECREATED from scratch and published to live public site!'
     );
     setTimeout(() => setNotice(null), 5000);
   };
@@ -178,12 +247,47 @@ export default function AdminTeamsPage() {
 
           <div className="flex flex-wrap items-center gap-3">
             <button
+              onClick={handleTogglePublish}
+              className={`px-3.5 py-2 font-display font-black text-xs uppercase tracking-wider flex items-center gap-1.5 border transition-all ${
+                isTreePublished
+                  ? 'bg-rose-950/80 border-rose-700 text-rose-300 hover:bg-rose-900 shadow-sm'
+                  : 'bg-emerald-600 hover:bg-emerald-500 text-tacticalWhite border-emerald-500 shadow-[0_2px_12px_rgba(16,185,129,0.4)]'
+              }`}
+              title={
+                isTreePublished
+                  ? 'Playoff tree is currently DISPLAYED on public site. Click to DISABLE / HIDE it.'
+                  : 'Playoff tree is currently DISABLED / HIDDEN. Click to DISPLAY / PUBLISH it on public site.'
+              }
+            >
+              {isTreePublished ? (
+                <>
+                  <Lock className="w-3.5 h-3.5 text-rose-300" />
+                  <span>DISABLE PLAYOFF TREE</span>
+                </>
+              ) : (
+                <>
+                  <Radio className="w-3.5 h-3.5 text-tacticalWhite animate-pulse" />
+                  <span>DISPLAY PLAYOFF TREE</span>
+                </>
+              )}
+            </button>
+
+            <button
               onClick={handleCreatePlayoffTree}
               className="px-3.5 py-2 bg-sand hover:bg-sand/90 text-military-black font-display font-black text-xs uppercase tracking-wider flex items-center gap-1.5 border border-sand transition-all"
               title="Seed 1st layer with registered squads; Round 2, Semifinals & Finals start free and advance automatically on win"
             >
               <Trophy className="w-3.5 h-3.5 text-military-black" />
-              <span>CREATE PLAYOFF TREE</span>
+              <span>{isTreePublished ? 'RE-SEED PLAYOFF TREE' : 'CREATE PLAYOFF TREE'}</span>
+            </button>
+
+            <button
+              onClick={handleRecreatePlayoffTree}
+              className="px-3.5 py-2 bg-rose-950/70 hover:bg-rose-900 border border-rose-600 text-rose-300 font-display font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
+              title="Wipe previous playoff bracket and recreate a completely fresh tree from all registered squads"
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-rose-400" />
+              <span>RECREATE PLAYOFF TREE</span>
             </button>
             <button
               onClick={() => downloadTeamWiseExcel(filteredTeams)}

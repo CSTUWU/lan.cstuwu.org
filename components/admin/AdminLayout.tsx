@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { checkAdminAuth, setAdminAuth, isRegistrationOpen, setRegistrationOpen } from '@/lib/storage';
+import { checkAdminAuth, setAdminAuth, isRegistrationOpen, setRegistrationOpen, isPlayoffTreePublished, setPlayoffTreePublished, recreatePlayoffTree } from '@/lib/storage';
 import { api } from '@/lib/api';
 import {
   Shield,
@@ -21,6 +22,7 @@ import {
   ExternalLink,
   Lock,
   Unlock,
+  RotateCcw,
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -33,23 +35,45 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isRegOpen, setIsRegOpen] = useState<boolean>(true);
   const [regToggling, setRegToggling] = useState(false);
+  const [isPlayoffTreePub, setIsPlayoffTreePub] = useState<boolean>(() => isPlayoffTreePublished());
+  const [treeToggling, setTreeToggling] = useState(false);
+  const [treeRecreating, setTreeRecreating] = useState(false);
 
   useEffect(() => {
     setIsRegOpen(isRegistrationOpen());
+    setIsPlayoffTreePub(isPlayoffTreePublished());
+
     const handleUpdate = () => setIsRegOpen(isRegistrationOpen());
+    const handleTreeUpdate = (e?: Event) => {
+      const customEvent = e as CustomEvent<{ published: boolean }>;
+      if (typeof customEvent?.detail?.published === 'boolean') {
+        setIsPlayoffTreePub(customEvent.detail.published);
+      } else {
+        setIsPlayoffTreePub(isPlayoffTreePublished());
+      }
+    };
+
     window.addEventListener('cst_countdown_updated', handleUpdate);
     window.addEventListener('cst_registration_status_changed', handleUpdate);
+    window.addEventListener('cst_playoff_published_changed', handleTreeUpdate);
 
     // Sync from server if available
     api.public.getSettings().then((res) => {
-      if (res?.success && res.data && typeof res.data.registrationOpen === 'boolean') {
-        setIsRegOpen(res.data.registrationOpen);
+      if (res?.success && res.data) {
+        if (typeof res.data.registrationOpen === 'boolean') {
+          setIsRegOpen(res.data.registrationOpen);
+        }
+        if (typeof res.data.playoffTreePublished === 'boolean') {
+          setIsPlayoffTreePub(res.data.playoffTreePublished);
+          setPlayoffTreePublished(res.data.playoffTreePublished);
+        }
       }
     }).catch(() => {});
 
     return () => {
       window.removeEventListener('cst_countdown_updated', handleUpdate);
       window.removeEventListener('cst_registration_status_changed', handleUpdate);
+      window.removeEventListener('cst_playoff_published_changed', handleTreeUpdate);
     };
   }, []);
 
@@ -69,6 +93,46 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       console.warn('Backend updateSettings failed, saved locally', e);
     } finally {
       setRegToggling(false);
+    }
+  };
+
+  const handleTogglePlayoffTree = async () => {
+    const nextState = !isPlayoffTreePub;
+    setTreeToggling(true);
+    setPlayoffTreePublished(nextState);
+    setIsPlayoffTreePub(nextState);
+
+    try {
+      await api.admin.updateSettings({
+        playoffTreePublished: nextState,
+      });
+    } catch (e) {
+      console.warn('Backend update playoffTreePublished failed, saved locally', e);
+    } finally {
+      setTreeToggling(false);
+    }
+  };
+
+  const handleRecreatePlayoffTree = async () => {
+    const confirm = window.confirm(
+      'RECREATE PLAYOFF TREE FROM SCRATCH?\n\n' +
+      '• This will wipe previous playoff brackets and match states.\n' +
+      '• A completely fresh bracket will be generated and seeded from all registered and approved squads.\n' +
+      '• Semifinals, Grand Final & Bronze Decider start clean awaiting match winners.\n' +
+      '• The new tree will be immediately published to the live public site.\n\n' +
+      'Proceed with recreation?'
+    );
+    if (!confirm) return;
+
+    setTreeRecreating(true);
+    try {
+      recreatePlayoffTree();
+      setIsPlayoffTreePub(true);
+      await api.admin.recreatePlayoffs().catch(() => null);
+    } catch (e) {
+      console.warn('Backend recreatePlayoffs failed, updated locally', e);
+    } finally {
+      setTreeRecreating(false);
     }
   };
 
@@ -108,16 +172,23 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             {sidebarOpen ? <X className="w-5 h-5 text-sand" /> : <Menu className="w-5 h-5" />}
           </button>
 
-          <Link href="/admin/dashboard" className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-card border border-olive/50 flex items-center justify-center text-sand clip-tactical shadow-[0_2px_8px_rgba(24,30,24,0.6)]">
-              <Shield className="w-4 h-4" />
+          <Link href="/admin/dashboard" className="flex items-center gap-2.5 sm:gap-3 group shrink-0">
+            <div className="relative h-8 sm:h-9 w-auto aspect-[1024/456] shrink-0 transition-transform duration-200 group-hover:scale-105">
+              <Image
+                src="/images/cyber-strike-logo.png"
+                alt="Cyber Strike of Titans 2026"
+                width={100}
+                height={45}
+                priority
+                className="h-8 sm:h-9 w-auto object-contain filter drop-shadow-[0_1px_6px_rgba(255,208,0,0.25)]"
+              />
             </div>
-            <div>
-              <div className="font-display font-black text-sm tracking-wider text-tacticalWhite">
-                CST LAN 2026 <span className="text-sand">{"// TAC-OPS COMMAND"}</span>
+            <div className="hidden md:block border-l border-gunmetal/80 pl-2.5">
+              <div className="font-display font-black text-xs tracking-wider text-tacticalWhite">
+                TAC-OPS <span className="text-sand">COMMAND</span>
               </div>
-              <div className="text-[10px] font-mono text-mutedText tracking-tight hidden sm:block">
-                Computer Science &amp; Technology • Uva Wellassa University of Sri Lanka
+              <div className="text-[9px] font-mono text-mutedText tracking-tight">
+                ADMIN CONSOLE
               </div>
             </div>
           </Link>
@@ -138,6 +209,37 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             {isRegOpen ? <Unlock className="w-3.5 h-3.5 text-emerald-400" /> : <Lock className="w-3.5 h-3.5 text-rose-400" />}
             <span className="hidden md:inline">REGISTRATION:</span>
             <span>{isRegOpen ? 'OPEN' : 'CLOSED'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleTogglePlayoffTree}
+            disabled={treeToggling}
+            className={`px-2.5 sm:px-3 py-1.5 text-xs font-mono font-bold flex items-center gap-1.5 sm:gap-2 border transition-all cursor-pointer ${
+              isPlayoffTreePub
+                ? 'bg-emerald-950/70 border-emerald-500/80 text-emerald-400 hover:bg-rose-950/80 hover:border-rose-600 hover:text-rose-400 shadow-[0_0_12px_rgba(16,185,129,0.3)]'
+                : 'bg-surface border-gunmetal text-mutedText hover:bg-emerald-950/60 hover:border-emerald-600 hover:text-emerald-400'
+            }`}
+            title={
+              isPlayoffTreePub
+                ? 'Playoff tree is currently DISPLAYED on public site. Click to DISABLE / HIDE it.'
+                : 'Playoff tree is currently DISABLED / HIDDEN. Click to DISPLAY / PUBLISH it on public site.'
+            }
+          >
+            <Trophy className={`w-3.5 h-3.5 ${isPlayoffTreePub ? 'text-sand' : 'text-mutedText'}`} />
+            <span className="hidden lg:inline">PLAYOFF TREE:</span>
+            <span>{isPlayoffTreePub ? 'ACTIVE (DISABLE)' : 'DISABLED'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleRecreatePlayoffTree}
+            disabled={treeRecreating}
+            className="px-2.5 sm:px-3 py-1.5 text-xs font-mono font-bold flex items-center gap-1.5 border border-rose-600/80 bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 transition-all cursor-pointer shadow-[0_0_10px_rgba(244,63,94,0.2)]"
+            title="Wipe previous playoff bracket and generate a fresh tree from all registered squads"
+          >
+            <RotateCcw className={`w-3.5 h-3.5 text-rose-400 ${treeRecreating ? 'animate-spin' : ''}`} />
+            <span className="hidden md:inline">RECREATE TREE</span>
           </button>
 
           <Link

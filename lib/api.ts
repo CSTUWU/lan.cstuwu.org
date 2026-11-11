@@ -42,14 +42,25 @@ class ApiClient {
       }
     }
 
-    const targetUrls = [url];
+    const targetUrls: string[] = [];
     if (typeof window !== 'undefined') {
-      const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      if (isLocalHost && !url.includes('localhost:5000')) {
+      const isLocalHost =
+        window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1';
+      if (isLocalHost) {
+        // Prioritize local backend on port 5000 when developing locally
         targetUrls.push(`http://localhost:5000/api${endpoint}`);
-      } else if (url.includes('localhost:5000')) {
-        targetUrls.push(`https://lan-chalange-backend.vercel.app/api${endpoint}`);
+        if (!url.includes('localhost:5000')) {
+          targetUrls.push(url);
+        }
+      } else {
+        targetUrls.push(url);
+        if (!url.includes('lan-chalange-backend.vercel.app')) {
+          targetUrls.push(`https://lan-chalange-backend.vercel.app/api${endpoint}`);
+        }
       }
+    } else {
+      targetUrls.push(url);
     }
 
     let lastError: any = null;
@@ -201,6 +212,11 @@ class ApiClient {
       this.request<any>('/public/matches/bracket', {
         method: 'GET',
       }),
+
+    getPlayers: () =>
+      this.request<any[]>('/public/players', {
+        method: 'GET',
+      }),
   };
 
   public admin = {
@@ -299,6 +315,18 @@ class ApiClient {
       });
     },
 
+    getPlayers: (params?: { search?: string; teamTag?: string; degree?: string; year?: string }) => {
+      const query = new URLSearchParams();
+      if (params?.search) query.set('search', params.search);
+      if (params?.teamTag) query.set('teamTag', params.teamTag);
+      if (params?.degree) query.set('degree', params.degree);
+      if (params?.year) query.set('year', params.year);
+      const qs = query.toString() ? `?${query.toString()}` : '';
+      return this.request<any[]>(`/admin/players${qs}`, {
+        method: 'GET',
+      });
+    },
+
     toggleTeamStatus: (id: string, isActive?: boolean) =>
       this.request<any>(`/admin/teams/${id}/status`, {
         method: 'PATCH',
@@ -343,9 +371,16 @@ class ApiClient {
         method: 'DELETE',
       }),
 
-    generatePlayoffs: () =>
+    generatePlayoffs: (data?: { recreate?: boolean }) =>
       this.request<any>('/admin/matches/generate-playoffs', {
         method: 'POST',
+        body: data ? JSON.stringify(data) : undefined,
+      }),
+
+    recreatePlayoffs: () =>
+      this.request<any>('/admin/matches/recreate-playoffs', {
+        method: 'POST',
+        body: JSON.stringify({ recreate: true }),
       }),
 
     getSettings: () =>

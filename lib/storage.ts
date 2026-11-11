@@ -496,6 +496,94 @@ export const createAndSeedPlayoffTree = (teams?: Team[]): Match[] => {
   }
 };
 
+/**
+ * Administrator Action: RECREATE PLAYOFF TREE FROM SCRATCH
+ * Completely wipes any previous playoff matches and match states.
+ * Rebuilds the bracket fresh from all current approved/registered squads.
+ * Downstream rounds start completely free (0-0, upcoming, awaiting winners).
+ * Immediately publishes the newly generated playoff tree to live public site.
+ */
+export const recreatePlayoffTree = (teams?: Team[]): Match[] => {
+  const currentTeams = teams && teams.length > 0 ? teams : getStoredTeams();
+  const nonRejected = currentTeams.filter((t) => (t.status || '').toLowerCase() !== 'rejected');
+  const sourceTeams = [...nonRejected].sort((a, b) => {
+    const aApp = (a.status || '').toLowerCase() === 'approved' ? 1 : 0;
+    const bApp = (b.status || '').toLowerCase() === 'approved' ? 1 : 0;
+    if (bApp !== aApp) return bApp - aApp;
+    return (b.points || 0) - (a.points || 0);
+  });
+
+  const count = sourceTeams.length;
+  const isEightSquad = count <= 8;
+
+  if (isEightSquad) {
+    // Generate completely fresh 8-squad dual-wing playoff tree without carrying over old manual matches
+    const fresh8Tree = generatePlayoffTreeFromTeams(sourceTeams, []);
+    const clean8Tree = fresh8Tree.map((m) => ({
+      ...m,
+      scoreA: 0,
+      scoreB: 0,
+      status: 'upcoming' as const,
+      winnerId: undefined,
+      currentRound: 0,
+    }));
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(MATCHES_KEY, JSON.stringify(clean8Tree));
+      notifyMatchesUpdated(clean8Tree);
+      setActiveBracketMode('8-squad');
+      recalculateStandings(clean8Tree);
+      setPlayoffTreePublished(true);
+    }
+
+    return clean8Tree;
+  } else {
+    const freshTree = generate16TeamPlayoffTree(sourceTeams);
+    const cleanTree = freshTree.map((m) => {
+      if (m.bracketRound === 'quarterfinals' || m.bracketRound === 'semifinals' || m.bracketRound === 'final') {
+        const pA = getDefaultSlotPlaceholder(m.id, 'teamA');
+        const pB = getDefaultSlotPlaceholder(m.id, 'teamB');
+        return {
+          ...m,
+          teamAId: pA.id,
+          teamAName: pA.name,
+          teamATag: pA.tag,
+          teamALogo: pA.logo,
+          teamBId: pB.id,
+          teamBName: pB.name,
+          teamBTag: pB.tag,
+          teamBLogo: pB.logo,
+          scoreA: 0,
+          scoreB: 0,
+          status: 'upcoming' as const,
+          winnerId: undefined,
+          currentRound: 0,
+        };
+      }
+      return {
+        ...m,
+        scoreA: 0,
+        scoreB: 0,
+        status: 'upcoming' as const,
+        winnerId: undefined,
+        currentRound: 0,
+      };
+    });
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(MATCHES_KEY, JSON.stringify(cleanTree));
+      localStorage.setItem(MATCHES_16_KEY, JSON.stringify(cleanTree));
+      notifyMatchesUpdated(cleanTree);
+      notify16MatchesUpdated(cleanTree);
+      setActiveBracketMode('16-squad');
+      setPlayoffTreePublished(true);
+    }
+
+    generateAndStorePlayoffBracket(sourceTeams);
+    return cleanTree;
+  }
+};
+
 export const getStoredTeams = (): Team[] => {
   if (typeof window === 'undefined') return [];
   try {

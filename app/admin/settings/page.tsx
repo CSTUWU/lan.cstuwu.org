@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { resetAllData, getStoredTeams, getStoredMatches, getStoredCountdown, isPlayoffTreePublished, setPlayoffTreePublished } from '@/lib/storage';
+import { resetAllData, getStoredTeams, getStoredMatches, getStoredCountdown, isPlayoffTreePublished, setPlayoffTreePublished, recreatePlayoffTree } from '@/lib/storage';
 import { api } from '@/lib/api';
 import { Settings, RotateCcw, Download, CheckCircle2, AlertTriangle, Shield, Radio, Lock, Trophy } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
@@ -44,10 +44,31 @@ export default function AdminSettingsPage() {
     } catch (e) {}
     setStatusNotice(
       nextState
-        ? '✓ Playoff Championship Tree PUBLISHED to live public scoreboard!'
-        : '✓ Playoff Tree UNPUBLISHED. Public scoreboard is now in Standby mode.'
+        ? '✓ Playoff Championship Tree is now DISPLAYED and VISIBLE on public site!'
+        : '✓ Playoff Tree has been DISABLED and hidden from public site.'
     );
     setTimeout(() => setStatusNotice(null), 4000);
+  };
+
+  const handleRecreatePlayoffTree = async () => {
+    const confirmRecreate = window.confirm(
+      'RECREATE OFFICIAL PLAYOFF TREE FROM SCRATCH?\n\n' +
+      '• This will wipe previous playoff brackets and match states.\n' +
+      '• A fresh bracket will be generated and seeded from all registered approved squads.\n' +
+      '• Semifinals, Grand Final & Bronze Decider start clean awaiting match winners.\n' +
+      '• The new tree will be immediately published to the live public site.\n\n' +
+      'Proceed with recreation?'
+    );
+    if (!confirmRecreate) return;
+
+    recreatePlayoffTree();
+    setIsTreePublished(true);
+    setPlayoffTreePublished(true);
+    try {
+      await api.admin.recreatePlayoffs().catch(() => null);
+    } catch (e) {}
+    setStatusNotice('✓ Playoff Championship Tree has been completely RECREATED from scratch and published!');
+    setTimeout(() => setStatusNotice(null), 5000);
   };
 
   const handleResetData = () => {
@@ -128,26 +149,37 @@ export default function AdminSettingsPage() {
             </div>
           </div>
 
-          <button
-            onClick={handleTogglePublish}
-            className={`px-5 py-3 font-mono text-xs uppercase font-black tracking-wider flex items-center gap-2 clip-tactical shadow-lg transition-all ${
-              isTreePublished
-                ? 'bg-rose-950/80 border border-rose-700 text-rose-300 hover:bg-rose-900'
-                : 'bg-emerald-600 hover:bg-emerald-500 text-tacticalWhite border border-emerald-500 shadow-[0_2px_14px_rgba(16,185,129,0.4)]'
-            }`}
-          >
-            {isTreePublished ? (
-              <>
-                <Lock className="w-4 h-4 text-rose-300" />
-                <span>DISABLE / UNPUBLISH PLAYOFF TREE</span>
-              </>
-            ) : (
-              <>
-                <Radio className="w-4 h-4 animate-pulse" />
-                <span>PUBLISH PLAYOFF TREE TO PUBLIC</span>
-              </>
-            )}
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={handleTogglePublish}
+              className={`px-5 py-3 font-mono text-xs uppercase font-black tracking-wider flex items-center gap-2 clip-tactical shadow-lg transition-all ${
+                isTreePublished
+                  ? 'bg-rose-950/80 border border-rose-700 text-rose-300 hover:bg-rose-900'
+                  : 'bg-emerald-600 hover:bg-emerald-500 text-tacticalWhite border border-emerald-500 shadow-[0_2px_14px_rgba(16,185,129,0.4)]'
+              }`}
+            >
+              {isTreePublished ? (
+                <>
+                  <Lock className="w-4 h-4 text-rose-300" />
+                  <span>DISABLE PLAYOFF TREE (HIDE FROM PUBLIC)</span>
+                </>
+              ) : (
+                <>
+                  <Radio className="w-4 h-4 animate-pulse" />
+                  <span>DISPLAY PLAYOFF TREE (PUBLISH TO PUBLIC)</span>
+                </>
+              )}
+            </button>
+
+            <button
+              onClick={handleRecreatePlayoffTree}
+              className="px-5 py-3 font-mono text-xs uppercase font-black tracking-wider flex items-center gap-2 clip-tactical shadow-lg transition-all bg-rose-950/70 border border-rose-600 text-rose-300 hover:bg-rose-900 cursor-pointer"
+              title="Wipe previous bracket and generate a fresh tree from all registered squads"
+            >
+              <RotateCcw className="w-4 h-4 text-rose-400" />
+              <span>RECREATE PLAYOFF TREE</span>
+            </button>
+          </div>
         </div>
 
         <div className="bg-card/90 border border-gunmetal p-6 sm:p-8 backdrop-blur-md">
