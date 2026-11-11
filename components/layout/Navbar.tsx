@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { Shield, Menu, X, ChevronRight, Crosshair, Radio } from 'lucide-react';
 import { useRegistrationStatus } from '@/hooks/useRegistrationStatus';
@@ -113,8 +114,8 @@ export default function Navbar() {
               syncDatabaseMatchesToStorage(res.data.map(transformBackendMatch));
             }
           }
-        }).catch(() => {});
-      } catch (e) {}
+        }).catch(() => { });
+      } catch (e) { }
     };
 
     checkLiveMatch();
@@ -153,35 +154,34 @@ export default function Navbar() {
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 z-50 h-16 transition-all duration-300 ease-in-out max-lg:translate-y-0 max-lg:opacity-100 max-lg:pointer-events-auto max-lg:bg-military-black/95 max-lg:backdrop-blur-md max-lg:border-b max-lg:border-gunmetal max-lg:shadow-[0_4px_25px_rgba(0,0,0,0.85)] ${
-          showNavbar
+        className={`fixed top-0 left-0 right-0 z-50 h-16 transition-all duration-300 ease-in-out max-lg:translate-y-0 max-lg:opacity-100 max-lg:pointer-events-auto max-lg:bg-military-black/95 max-lg:backdrop-blur-md max-lg:border-b max-lg:border-gunmetal max-lg:shadow-[0_4px_25px_rgba(0,0,0,0.85)] ${showNavbar
             ? 'translate-y-0 opacity-100 pointer-events-auto'
             : '-translate-y-full opacity-0 pointer-events-none'
-        } ${
-          scrolled || !isHome || mobileMenuOpen
+          } ${scrolled || !isHome || mobileMenuOpen
             ? 'bg-military-black/95 backdrop-blur-md border-b border-gunmetal shadow-[0_4px_25px_rgba(0,0,0,0.85)]'
             : 'bg-gradient-to-b from-military-black/90 via-military-black/60 to-transparent border-b border-transparent'
-        }`}
+          }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between gap-2">
-          <Link href="/" className="flex items-center gap-2 sm:gap-3 group shrink-0">
-            <div className="relative flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 bg-surface border border-olive/50 clip-tactical group-hover:border-sand transition-colors shadow-[0_2px_10px_rgba(24,30,24,0.7)] shrink-0">
-              <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-sand group-hover:scale-110 transition-transform" />
-              <span className="absolute -bottom-1 -right-1 w-1.5 h-1.5 bg-olive" />
+          <Link
+            href="/"
+            className="flex items-center gap-2.5 sm:gap-3 group shrink-0 py-1"
+            title="Cyber Strike of Titans 2026 - CST LAN Challenge"
+          >
+            <div className="relative h-8 sm:h-9 md:h-10 lg:h-11 w-auto aspect-[1024/456] shrink-0 transition-transform duration-200 group-hover:scale-105">
+              <Image
+                src="/images/cyber-strike-logo.png"
+                alt="Cyber Strike of Titans 2026"
+                width={130}
+                height={58}
+                priority
+                className="h-8 sm:h-9 md:h-10 lg:h-11 w-auto object-contain filter drop-shadow-[0_2px_10px_rgba(255,208,0,0.25)]"
+              />
             </div>
-            <div>
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                <span className="font-display font-black text-base sm:text-xl tracking-wider text-tacticalWhite whitespace-nowrap">
-                  <span className="text-sand">LAN</span> <span className="text-tacticalWhite">CHALLENGE</span>
-                </span>
-                <span className="hidden sm:inline-block text-[9px] font-mono font-semibold px-1.5 py-0.5 bg-olive/20 text-sand border border-olive/40 rounded-none">
-                  COD4 MW
-                </span>
-              </div>
-              <p className="text-[10px] text-mutedText tracking-tight font-mono hidden md:block">
-                UWU // TAC-OPS COMMAND
-              </p>
-            </div>
+            {/*<div className="hidden xl:flex flex-col justify-center border-l border-gunmetal/80 pl-2.5 py-0.5">
+              <span className="text-[9px] font-mono font-bold text-olive uppercase tracking-wider">COD4 MW</span>
+              <span className="text-[9px] font-mono text-mutedText tracking-tight uppercase">UWU CST</span>
+            </div>*/}
           </Link>
 
           <nav className="hidden lg:flex items-center gap-1 xl:gap-2">
@@ -189,11 +189,10 @@ export default function Navbar() {
               <Link
                 key={link.name}
                 href={link.href}
-                className={`relative px-3 py-1.5 text-xs font-mono uppercase tracking-wider transition-colors duration-200 flex items-center gap-1.5 ${
-                  isActive(link.href)
+                className={`relative px-3 py-1.5 text-xs font-mono uppercase tracking-wider transition-colors duration-200 flex items-center gap-1.5 ${isActive(link.href)
                     ? 'text-sand font-bold'
                     : 'text-mutedText hover:text-tacticalWhite'
-                }`}
+                  }`}
               >
                 <span>{link.name}</span>
                 {link.name === 'Scoreboard' && hasLiveMatch && (
@@ -255,13 +254,26 @@ export default function Navbar() {
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-40 lg:hidden bg-military-black/98 backdrop-blur-2xl pt-20 px-6 pb-8 flex flex-col justify-between border-b border-gunmetal overflow-y-auto overscroll-contain">
           <div className="flex flex-col gap-2.5">
-            <div className="text-[10px] font-mono text-mutedText uppercase tracking-widest border-b border-gunmetal pb-2 flex items-center justify-between">
-              <span>Tactical Operations Directory</span>
-              {hasLiveMatch && (
-                <span className="text-rose-400 font-bold flex items-center gap-1">
+            <div className="border-b border-gunmetal pb-3 flex items-center justify-between">
+              <div className="relative h-9 sm:h-10 w-auto aspect-[1024/456]">
+                <Image
+                  src="/images/cyber-strike-logo.png"
+                  alt="Cyber Strike of Titans 2026"
+                  width={115}
+                  height={51}
+                  className="h-9 sm:h-10 w-auto object-contain filter drop-shadow-[0_2px_8px_rgba(255,208,0,0.25)]"
+                />
+              </div>
+              {hasLiveMatch ? (
+                <span className="text-rose-400 font-bold flex items-center gap-1 text-[10px] font-mono">
                   <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
                   STAGE MATCH LIVE
                 </span>
+              ) : (
+                <div className="text-right">
+                  <div className="text-[10px] font-mono text-sand font-bold">UWU CST 2026</div>
+                  <div className="text-[9px] font-mono text-mutedText">TAC-OPS DIRECTORY</div>
+                </div>
               )}
             </div>
             {hasLiveMatch && (
@@ -283,9 +295,8 @@ export default function Navbar() {
                 key={link.name}
                 href={link.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center justify-between py-2.5 text-base font-display uppercase tracking-wider border-b border-gunmetal/60 ${
-                  isActive(link.href) ? 'text-sand font-bold' : 'text-tacticalWhite/80 hover:text-sand'
-                }`}
+                className={`flex items-center justify-between py-2.5 text-base font-display uppercase tracking-wider border-b border-gunmetal/60 ${isActive(link.href) ? 'text-sand font-bold' : 'text-tacticalWhite/80 hover:text-sand'
+                  }`}
               >
                 <span>{link.name}</span>
                 <ChevronRight className="w-4 h-4 text-mutedText" />
