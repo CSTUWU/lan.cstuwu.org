@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { checkAdminAuth, setAdminAuth, isRegistrationOpen, setRegistrationOpen, isPlayoffTreePublished, setPlayoffTreePublished, recreatePlayoffTree } from '@/lib/storage';
 import { api } from '@/lib/api';
@@ -171,16 +172,23 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             {sidebarOpen ? <X className="w-5 h-5 text-sand" /> : <Menu className="w-5 h-5" />}
           </button>
 
-          <Link href="/admin/dashboard" className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-card border border-olive/50 flex items-center justify-center text-sand clip-tactical shadow-[0_2px_8px_rgba(24,30,24,0.6)]">
-              <Shield className="w-4 h-4" />
+          <Link href="/admin/dashboard" className="flex items-center gap-2.5 sm:gap-3 group shrink-0">
+            <div className="relative h-8 sm:h-9 w-auto aspect-[1024/456] shrink-0 transition-transform duration-200 group-hover:scale-105">
+              <Image
+                src="/images/cyber-strike-logo.png"
+                alt="Cyber Strike of Titans 2026"
+                width={100}
+                height={45}
+                priority
+                className="h-8 sm:h-9 w-auto object-contain filter drop-shadow-[0_1px_6px_rgba(255,208,0,0.25)]"
+              />
             </div>
-            <div>
-              <div className="font-display font-black text-sm tracking-wider text-tacticalWhite">
-                CST LAN 2026 <span className="text-sand">{"// TAC-OPS COMMAND"}</span>
+            <div className="hidden md:block border-l border-gunmetal/80 pl-2.5">
+              <div className="font-display font-black text-xs tracking-wider text-tacticalWhite">
+                TAC-OPS <span className="text-sand">COMMAND</span>
               </div>
-              <div className="text-[10px] font-mono text-mutedText tracking-tight hidden sm:block">
-                Computer Science &amp; Technology • Uva Wellassa University of Sri Lanka
+              <div className="text-[9px] font-mono text-mutedText tracking-tight">
+                ADMIN CONSOLE
               </div>
             </div>
           </Link>
