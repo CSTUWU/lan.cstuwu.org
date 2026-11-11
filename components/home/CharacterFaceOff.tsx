@@ -69,19 +69,64 @@ export default function CharacterFaceOff() {
       { r: 204, g: 34, b: 0 },    // Deep Ember Red #cc2200
     ];
 
+    // Pre-render sprite textures for zero GC overhead at 60/120fps
+    const spriteSize = 64;
+    const center = spriteSize / 2;
+    const radius = spriteSize / 2;
+
+    const sprites = EMBER_PALETTE.map((color) => {
+      const c = document.createElement('canvas');
+      c.width = spriteSize;
+      c.height = spriteSize;
+      const cCtx = c.getContext('2d');
+      if (!cCtx) return c;
+
+      const grad = cCtx.createRadialGradient(center, center, 0, center, center, radius);
+      grad.addColorStop(0, 'rgba(255, 252, 235, 1)');
+      grad.addColorStop(0.24, `rgba(${color.r}, ${color.g}, ${color.b}, 0.95)`);
+      grad.addColorStop(0.58, `rgba(${Math.min(255, color.r + 20)}, ${Math.floor(color.g * 0.38)}, 0, 0.4)`);
+      grad.addColorStop(0.85, 'rgba(204, 34, 0, 0.12)');
+      grad.addColorStop(1, 'rgba(204, 34, 0, 0)');
+
+      cCtx.fillStyle = grad;
+      cCtx.beginPath();
+      cCtx.arc(center, center, radius, 0, Math.PI * 2);
+      cCtx.fill();
+      return c;
+    });
+
+    // High-intensity white-hot clash sprite
+    const clashSprite = document.createElement('canvas');
+    clashSprite.width = spriteSize;
+    clashSprite.height = spriteSize;
+    const clashCtx = clashSprite.getContext('2d');
+    if (clashCtx) {
+      const grad = clashCtx.createRadialGradient(center, center, 0, center, center, radius);
+      grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+      grad.addColorStop(0.2, 'rgba(255, 250, 215, 0.95)');
+      grad.addColorStop(0.45, 'rgba(255, 208, 0, 0.7)');
+      grad.addColorStop(0.75, 'rgba(255, 102, 0, 0.25)');
+      grad.addColorStop(1, 'rgba(204, 34, 0, 0)');
+      clashCtx.fillStyle = grad;
+      clashCtx.beginPath();
+      clashCtx.arc(center, center, radius, 0, Math.PI * 2);
+      clashCtx.fill();
+    }
+
     interface FaceOffEmber {
       x: number;
       y: number;
       baseRadius: number;
       baseVy: number;
       vy: number;
-      color: { r: number; g: number; b: number };
+      spriteIndex: number;
       isLarge: boolean;
       alpha: number;
       targetAlpha: number;
       swayPhase: number;
       swaySpeed: number;
       swayAmp: number;
+      windDrift: number;
       flickerPhase: number;
       flickerSpeed: number;
       draftPhase: number;
@@ -93,24 +138,27 @@ export default function CharacterFaceOff() {
 
     const createFaceOffEmber = (spawnRandomY = true): FaceOffEmber => {
       const isLarge = Math.random() < 0.2;
-      const color = EMBER_PALETTE[Math.floor(Math.random() * EMBER_PALETTE.length)];
+      const spriteIndex = Math.floor(Math.random() * sprites.length);
       const baseRadius = isLarge ? 2.0 + Math.random() * 1.8 : 0.7 + Math.random() * 1.1;
       const baseVy = isLarge ? -(0.35 + Math.random() * 0.45) : -(0.65 + Math.random() * 0.95);
       const targetAlpha = isLarge ? 0.6 + Math.random() * 0.35 : 0.35 + Math.random() * 0.45;
 
       return {
-        x: Math.random() * width,
-        y: spawnRandomY ? Math.random() * height : height + 10 + Math.random() * 25,
+        x: Math.random() * (width || window.innerWidth),
+        y: spawnRandomY
+          ? Math.random() * (height || window.innerHeight)
+          : (height || window.innerHeight) + 10 + Math.random() * 25,
         baseRadius,
         baseVy,
         vy: baseVy,
-        color,
+        spriteIndex,
         isLarge,
         alpha: spawnRandomY ? Math.random() * targetAlpha : 0,
         targetAlpha,
         swayPhase: Math.random() * Math.PI * 2,
         swaySpeed: 0.02 + Math.random() * 0.03,
         swayAmp: isLarge ? 0.8 + Math.random() * 0.9 : 0.4 + Math.random() * 0.5,
+        windDrift: (Math.random() - 0.45) * 0.2,
         flickerPhase: Math.random() * Math.PI * 2,
         flickerSpeed: isLarge ? 0.03 + Math.random() * 0.04 : 0.06 + Math.random() * 0.07,
         draftPhase: Math.random() * Math.PI * 2,
@@ -118,17 +166,55 @@ export default function CharacterFaceOff() {
       };
     };
 
+    const drawStaticEmbers = () => {
+      ctx.clearRect(0, 0, width, height);
+      ctx.globalCompositeOperation = 'lighter';
+      particles.forEach((p) => {
+        const glowRadius = p.isLarge ? p.baseRadius * 4.2 : p.baseRadius * 3.2;
+        const drawSize = glowRadius * 2;
+        const distFromCenter = Math.abs(p.x - width / 2) / (width / 2);
+        const sprite = distFromCenter < 0.22 ? clashSprite : sprites[p.spriteIndex];
+
+        ctx.globalAlpha = p.targetAlpha * 0.75;
+        ctx.drawImage(sprite, p.x - glowRadius, p.y - glowRadius, drawSize, drawSize);
+
+        const coreSize = Math.max(1.2, p.baseRadius * 1.3);
+        ctx.drawImage(clashSprite, p.x - coreSize / 2, p.y - coreSize / 2, coreSize, coreSize);
+      });
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = 'source-over';
+    };
+
     const handleResize = () => {
       if (!canvas) return;
+      const newWidth = window.innerWidth;
+      const newHeight = window.innerHeight;
+
+      // Prevent resets during mobile URL bar hide/show scroll
+      if (width === newWidth && Math.abs(height - newHeight) < 80) return;
+
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      width = window.innerWidth;
-      height = window.innerHeight;
+      width = newWidth;
+      height = newHeight;
       canvas.width = Math.floor(width * dpr);
       canvas.height = Math.floor(height * dpr);
       canvas.style.width = `${width}px`;
       canvas.style.height = `${height}px`;
-      ctx.scale(dpr, dpr);
-      particles = Array.from({ length: particleCount }, () => createFaceOffEmber(true));
+
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      if (particles.length === 0) {
+        particles = Array.from({ length: particleCount }, () => createFaceOffEmber(true));
+      } else {
+        particles.forEach((p) => {
+          if (p.x > width) p.x = Math.random() * width;
+          if (p.y > height) p.y = Math.random() * height;
+        });
+      }
+
+      if (prefersReducedMotion) {
+        drawStaticEmbers();
+      }
     };
 
     handleResize();
@@ -141,48 +227,43 @@ export default function CharacterFaceOff() {
     window.addEventListener('resize', debouncedResize);
 
     if (prefersReducedMotion) {
-      ctx.clearRect(0, 0, width, height);
-      ctx.globalCompositeOperation = 'lighter';
-      particles.forEach((p) => {
-        const glowRadius = p.baseRadius * 3;
-        const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowRadius);
-        gradient.addColorStop(0, `rgba(255, 250, 220, ${p.targetAlpha * 0.7})`);
-        gradient.addColorStop(0.35, `rgba(${p.color.r}, ${p.color.g}, ${p.color.b}, ${p.targetAlpha * 0.5})`);
-        gradient.addColorStop(1, 'rgba(204, 34, 0, 0)');
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, glowRadius, 0, Math.PI * 2);
-        ctx.fillStyle = gradient;
-        ctx.fill();
-      });
-      ctx.globalCompositeOperation = 'source-over';
+      drawStaticEmbers();
       return () => {
         window.removeEventListener('resize', debouncedResize);
         clearTimeout(resizeTimer);
       };
     }
 
-    const render = () => {
+    let lastTime = performance.now();
+
+    const render = (currentTime: number) => {
+      const dt = Math.min((currentTime - lastTime) / 1000, 0.05);
+      lastTime = currentTime;
+      const timeScale = dt * 60; // 1.0 at standard 60fps
+
       ctx.clearRect(0, 0, width, height);
       ctx.globalCompositeOperation = 'lighter';
 
-      particles.forEach((p) => {
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+
         if (p.alpha < p.targetAlpha) {
-          p.alpha = Math.min(p.targetAlpha, p.alpha + 0.008);
+          p.alpha = Math.min(p.targetAlpha, p.alpha + 0.008 * timeScale);
         }
 
-        p.flickerPhase += p.flickerSpeed;
+        p.flickerPhase += p.flickerSpeed * timeScale;
         const flicker = Math.sin(p.flickerPhase) * 0.65 + Math.sin(p.flickerPhase * 2.3) * 0.35;
 
-        p.draftPhase += p.draftSpeed;
+        p.draftPhase += p.draftSpeed * timeScale;
         const draftMod = 1 + Math.sin(p.draftPhase) * 0.25;
         p.vy = p.baseVy * draftMod;
 
         // Upward floating motion
-        p.y += p.vy;
+        p.y += p.vy * timeScale;
 
         // Horizontal sway / wind oscillation
-        p.swayPhase += p.swaySpeed;
-        p.x += Math.sin(p.swayPhase) * p.swayAmp;
+        p.swayPhase += p.swaySpeed * timeScale;
+        p.x += (Math.sin(p.swayPhase) * p.swayAmp + p.windDrift) * timeScale;
 
         // Respawn when floating past the top
         if (p.y < -30) {
@@ -190,6 +271,7 @@ export default function CharacterFaceOff() {
           p.x = Math.random() * width;
           p.alpha = 0;
           p.swayPhase = Math.random() * Math.PI * 2;
+          p.draftPhase = Math.random() * Math.PI * 2;
         }
         if (p.x < -30) p.x = width + 20;
         else if (p.x > width + 30) p.x = -20;
@@ -198,33 +280,24 @@ export default function CharacterFaceOff() {
         const currentAlpha = Math.max(0.04, Math.min(1, (p.alpha + flicker * 0.2) * topCooldown));
         const currentRadius = p.baseRadius * (1 + flicker * 0.1);
         const glowRadius = p.isLarge ? currentRadius * 4.2 : currentRadius * 3.2;
+        const drawSize = glowRadius * 2;
 
-        const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowRadius);
         // Clash center intensifies to incandescent yellow/gold
         const distFromCenter = Math.abs(p.x - width / 2) / (width / 2);
         const isCenterClash = distFromCenter < 0.22;
+        const sprite = isCenterClash ? clashSprite : sprites[p.spriteIndex];
 
-        gradient.addColorStop(0, `rgba(255, 252, 225, ${currentAlpha})`);
-        if (isCenterClash) {
-          gradient.addColorStop(0.3, `rgba(255, 208, 0, ${currentAlpha * 0.95})`);
-          gradient.addColorStop(0.65, `rgba(255, 183, 0, ${currentAlpha * 0.4})`);
-        } else {
-          gradient.addColorStop(0.3, `rgba(${p.color.r}, ${p.color.g}, ${p.color.b}, ${currentAlpha * 0.85})`);
-          gradient.addColorStop(0.65, `rgba(${Math.min(255, p.color.r + 20)}, ${Math.floor(p.color.g * 0.35)}, 0, ${currentAlpha * 0.25})`);
-        }
-        gradient.addColorStop(1, 'rgba(204, 34, 0, 0)');
+        // Draw glow aura
+        ctx.globalAlpha = isCenterClash ? currentAlpha * 1.15 : currentAlpha;
+        ctx.drawImage(sprite, p.x - glowRadius, p.y - glowRadius, drawSize, drawSize);
 
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, glowRadius, 0, Math.PI * 2);
-        ctx.fillStyle = gradient;
-        ctx.fill();
+        // Draw white-hot center core
+        const coreSize = Math.max(1.2, currentRadius * 1.4);
+        ctx.globalAlpha = Math.min(1, currentAlpha * 1.4);
+        ctx.drawImage(clashSprite, p.x - coreSize / 2, p.y - coreSize / 2, coreSize, coreSize);
+      }
 
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, Math.max(0.4, currentRadius * 0.6), 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255, 245, 195, ${Math.min(1, currentAlpha * 1.3)})`;
-        ctx.fill();
-      });
-
+      ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = 'source-over';
       animId = requestAnimationFrame(render);
     };
