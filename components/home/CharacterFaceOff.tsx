@@ -45,81 +45,195 @@ export default function CharacterFaceOff() {
   const telemetryStatusRef = useRef<HTMLSpanElement>(null);
   const [scrollPercent, setScrollPercent] = useState(0);
 
-  // 1. Dynamic Interactive Canvas: Atmospheric Fog & Clash Sparks
+  // 1. Dynamic Interactive Canvas: Atmospheric Fire Sparks & Clash Embers
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // Check for reduced motion preference
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
     let animId: number;
-    let width = (canvas.width = window.innerWidth);
-    let height = (canvas.height = window.innerHeight);
+    let width = 0;
+    let height = 0;
+
+    // Warm ember & fire spark palette: #ffd000, #ffb700, #ff6600, incandescent amber #ff8800, #cc2200
+    const EMBER_PALETTE = [
+      { r: 255, g: 208, b: 0 },   // Glowing Yellow #ffd000
+      { r: 255, g: 208, b: 0 },   // Glowing Yellow (weighted)
+      { r: 255, g: 183, b: 0 },   // Hot Gold #ffb700
+      { r: 255, g: 102, b: 0 },   // Orange #ff6600
+      { r: 255, g: 136, b: 0 },   // Incandescent Amber #ff8800
+      { r: 204, g: 34, b: 0 },    // Deep Ember Red #cc2200
+    ];
+
+    interface FaceOffEmber {
+      x: number;
+      y: number;
+      baseRadius: number;
+      baseVy: number;
+      vy: number;
+      color: { r: number; g: number; b: number };
+      isLarge: boolean;
+      alpha: number;
+      targetAlpha: number;
+      swayPhase: number;
+      swaySpeed: number;
+      swayAmp: number;
+      flickerPhase: number;
+      flickerSpeed: number;
+      draftPhase: number;
+      draftSpeed: number;
+    }
+
+    const particleCount = 70;
+    let particles: FaceOffEmber[] = [];
+
+    const createFaceOffEmber = (spawnRandomY = true): FaceOffEmber => {
+      const isLarge = Math.random() < 0.2;
+      const color = EMBER_PALETTE[Math.floor(Math.random() * EMBER_PALETTE.length)];
+      const baseRadius = isLarge ? 2.0 + Math.random() * 1.8 : 0.7 + Math.random() * 1.1;
+      const baseVy = isLarge ? -(0.35 + Math.random() * 0.45) : -(0.65 + Math.random() * 0.95);
+      const targetAlpha = isLarge ? 0.6 + Math.random() * 0.35 : 0.35 + Math.random() * 0.45;
+
+      return {
+        x: Math.random() * width,
+        y: spawnRandomY ? Math.random() * height : height + 10 + Math.random() * 25,
+        baseRadius,
+        baseVy,
+        vy: baseVy,
+        color,
+        isLarge,
+        alpha: spawnRandomY ? Math.random() * targetAlpha : 0,
+        targetAlpha,
+        swayPhase: Math.random() * Math.PI * 2,
+        swaySpeed: 0.02 + Math.random() * 0.03,
+        swayAmp: isLarge ? 0.8 + Math.random() * 0.9 : 0.4 + Math.random() * 0.5,
+        flickerPhase: Math.random() * Math.PI * 2,
+        flickerSpeed: isLarge ? 0.03 + Math.random() * 0.04 : 0.06 + Math.random() * 0.07,
+        draftPhase: Math.random() * Math.PI * 2,
+        draftSpeed: 0.015 + Math.random() * 0.025,
+      };
+    };
 
     const handleResize = () => {
       if (!canvas) return;
-      if (width === window.innerWidth && Math.abs(height - window.innerHeight) < 80) return;
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      ctx.scale(dpr, dpr);
+      particles = Array.from({ length: particleCount }, () => createFaceOffEmber(true));
     };
-    window.addEventListener('resize', handleResize);
 
-    const particleCount = 75;
-    const particles = Array.from({ length: particleCount }).map(() => ({
-      x: Math.random() * width,
-      y: Math.random() * height,
-      vx: (Math.random() - 0.5) * 0.9,
-      vy: (Math.random() - 0.5) * 0.9,
-      size: 1 + Math.random() * 2.5,
-      alpha: 0.15 + Math.random() * 0.65,
-      color: Math.random() > 0.5 ? '#ffd000' : '#C2B28A',
-      pulse: Math.random() * Math.PI,
-    }));
+    handleResize();
+
+    let resizeTimer: NodeJS.Timeout;
+    const debouncedResize = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(handleResize, 150);
+    };
+    window.addEventListener('resize', debouncedResize);
+
+    if (prefersReducedMotion) {
+      ctx.clearRect(0, 0, width, height);
+      ctx.globalCompositeOperation = 'lighter';
+      particles.forEach((p) => {
+        const glowRadius = p.baseRadius * 3;
+        const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowRadius);
+        gradient.addColorStop(0, `rgba(255, 250, 220, ${p.targetAlpha * 0.7})`);
+        gradient.addColorStop(0.35, `rgba(${p.color.r}, ${p.color.g}, ${p.color.b}, ${p.targetAlpha * 0.5})`);
+        gradient.addColorStop(1, 'rgba(204, 34, 0, 0)');
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, glowRadius, 0, Math.PI * 2);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+      });
+      ctx.globalCompositeOperation = 'source-over';
+      return () => {
+        window.removeEventListener('resize', debouncedResize);
+        clearTimeout(resizeTimer);
+      };
+    }
 
     const render = () => {
       ctx.clearRect(0, 0, width, height);
+      ctx.globalCompositeOperation = 'lighter';
 
       particles.forEach((p) => {
-        p.x += p.vx;
-        p.y += p.vy;
-        p.pulse += 0.03;
-
-        if (p.x < 0) p.x = width;
-        if (p.x > width) p.x = 0;
-        if (p.y < 0) p.y = height;
-        if (p.y > height) p.y = 0;
-
-        const currentAlpha = p.alpha * (0.7 + Math.sin(p.pulse) * 0.3);
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-
-        const distFromCenter = Math.abs(p.x - width / 2) / (width / 2);
-        if (distFromCenter < 0.2) {
-          ctx.fillStyle = `rgba(229, 229, 220, ${currentAlpha * 1.2})`;
-          ctx.shadowColor = '#C2B28A';
-          ctx.shadowBlur = 8;
-        } else if (p.x < width / 2) {
-          ctx.fillStyle = `rgba(89, 99, 74, ${currentAlpha})`;
-          ctx.shadowColor = '#ffd000';
-          ctx.shadowBlur = 5;
-        } else {
-          ctx.fillStyle = `rgba(194, 178, 138, ${currentAlpha})`;
-          ctx.shadowColor = '#C2B28A';
-          ctx.shadowBlur = 5;
+        if (p.alpha < p.targetAlpha) {
+          p.alpha = Math.min(p.targetAlpha, p.alpha + 0.008);
         }
 
+        p.flickerPhase += p.flickerSpeed;
+        const flicker = Math.sin(p.flickerPhase) * 0.65 + Math.sin(p.flickerPhase * 2.3) * 0.35;
+
+        p.draftPhase += p.draftSpeed;
+        const draftMod = 1 + Math.sin(p.draftPhase) * 0.25;
+        p.vy = p.baseVy * draftMod;
+
+        // Upward floating motion
+        p.y += p.vy;
+
+        // Horizontal sway / wind oscillation
+        p.swayPhase += p.swaySpeed;
+        p.x += Math.sin(p.swayPhase) * p.swayAmp;
+
+        // Respawn when floating past the top
+        if (p.y < -30) {
+          p.y = height + 10 + Math.random() * 20;
+          p.x = Math.random() * width;
+          p.alpha = 0;
+          p.swayPhase = Math.random() * Math.PI * 2;
+        }
+        if (p.x < -30) p.x = width + 20;
+        else if (p.x > width + 30) p.x = -20;
+
+        const topCooldown = p.y < height * 0.18 ? Math.max(0, p.y / (height * 0.18)) : 1;
+        const currentAlpha = Math.max(0.04, Math.min(1, (p.alpha + flicker * 0.2) * topCooldown));
+        const currentRadius = p.baseRadius * (1 + flicker * 0.1);
+        const glowRadius = p.isLarge ? currentRadius * 4.2 : currentRadius * 3.2;
+
+        const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowRadius);
+        // Clash center intensifies to incandescent yellow/gold
+        const distFromCenter = Math.abs(p.x - width / 2) / (width / 2);
+        const isCenterClash = distFromCenter < 0.22;
+
+        gradient.addColorStop(0, `rgba(255, 252, 225, ${currentAlpha})`);
+        if (isCenterClash) {
+          gradient.addColorStop(0.3, `rgba(255, 208, 0, ${currentAlpha * 0.95})`);
+          gradient.addColorStop(0.65, `rgba(255, 183, 0, ${currentAlpha * 0.4})`);
+        } else {
+          gradient.addColorStop(0.3, `rgba(${p.color.r}, ${p.color.g}, ${p.color.b}, ${currentAlpha * 0.85})`);
+          gradient.addColorStop(0.65, `rgba(${Math.min(255, p.color.r + 20)}, ${Math.floor(p.color.g * 0.35)}, 0, ${currentAlpha * 0.25})`);
+        }
+        gradient.addColorStop(1, 'rgba(204, 34, 0, 0)');
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, glowRadius, 0, Math.PI * 2);
+        ctx.fillStyle = gradient;
         ctx.fill();
-        ctx.shadowBlur = 0;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, Math.max(0.4, currentRadius * 0.6), 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 245, 195, ${Math.min(1, currentAlpha * 1.3)})`;
+        ctx.fill();
       });
 
+      ctx.globalCompositeOperation = 'source-over';
       animId = requestAnimationFrame(render);
     };
 
-    render();
+    animId = requestAnimationFrame(render);
 
     return () => {
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('resize', debouncedResize);
+      clearTimeout(resizeTimer);
       cancelAnimationFrame(animId);
     };
   }, []);
