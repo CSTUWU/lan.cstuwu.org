@@ -149,7 +149,7 @@ export default function SchedulePage() {
                   <Image src={getMapImage(liveMatch.map)} alt={liveMatch.map} fill className="object-cover" sizes="32px" />
                 </div>
                 <span>
-                  THEATER: <strong className="text-tacticalWhite uppercase">{liveMatch.map}</strong> • FORMAT: MR12 PROMOD
+                  THEATER: <strong className="text-tacticalWhite uppercase">{liveMatch.map}</strong> • FORMAT: S&amp;D PML220
                 </span>
               </div>
             </div>

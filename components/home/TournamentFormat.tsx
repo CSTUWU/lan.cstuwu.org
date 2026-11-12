@@ -24,7 +24,7 @@ export default function TournamentFormat() {
     },
     {
       num: '03',
-      title: 'MR12 TOURNAMENT RULES',
+      title: 'SEARCH & DESTROY PML220 RULES',
       subtitle: 'Max Rounds 12 per Half',
       desc: 'First team to 13 rounds claims victory. In the event of a 12-12 deadlock, sudden death overtime decides the winner in intense tactical rounds.',
       tag: 'ENGAGEMENT PROTOCOL',

@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { Shield, Radio, Terminal, Cpu, Trophy, MessageSquare, Twitter, Youtube, Twitch } from 'lucide-react';
 import { useRegistrationStatus } from '@/hooks/useRegistrationStatus';
@@ -24,12 +25,15 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-12 border-b border-gunmetal/70">
           <div className="lg:col-span-2 flex flex-col gap-4">
             <Link href="/" className="flex items-center gap-3 group">
-              <div className="flex items-center justify-center w-10 h-10 bg-surface border border-olive/50 clip-tactical group-hover:border-sand shadow-[0_2px_10px_rgba(24,30,24,0.6)]">
-                <Shield className="w-5 h-5 text-sand" />
+              <div className="relative h-12 w-auto aspect-[1024/456] transition-transform duration-200 group-hover:scale-105">
+                <Image
+                  src="/images/cyber-strike-logo.png"
+                  alt="Cyber Strike of Titans 2026"
+                  width={130}
+                  height={58}
+                  className="h-12 w-auto object-contain filter drop-shadow-[0_2px_10px_rgba(255,208,0,0.2)]"
+                />
               </div>
-              <span className="font-display font-black text-xl tracking-wider text-tacticalWhite">
-                CST <span className="text-sand">LAN</span> <span className="text-olive-light">2026</span>
-              </span>
             </Link>
 
             <p className="text-xs text-mutedText leading-relaxed max-w-sm">

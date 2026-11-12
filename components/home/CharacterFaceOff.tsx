@@ -45,81 +45,268 @@ export default function CharacterFaceOff() {
   const telemetryStatusRef = useRef<HTMLSpanElement>(null);
   const [scrollPercent, setScrollPercent] = useState(0);
 
-  // 1. Dynamic Interactive Canvas: Atmospheric Fog & Clash Sparks
+  // 1. Dynamic Interactive Canvas: Atmospheric Fire Sparks & Clash Embers
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // Check for reduced motion preference
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
     let animId: number;
-    let width = (canvas.width = window.innerWidth);
-    let height = (canvas.height = window.innerHeight);
+    let width = 0;
+    let height = 0;
+
+    // Warm ember & fire spark palette: #ffd000, #ffb700, #ff6600, incandescent amber #ff8800, #cc2200
+    const EMBER_PALETTE = [
+      { r: 255, g: 208, b: 0 },   // Glowing Yellow #ffd000
+      { r: 255, g: 208, b: 0 },   // Glowing Yellow (weighted)
+      { r: 255, g: 183, b: 0 },   // Hot Gold #ffb700
+      { r: 255, g: 102, b: 0 },   // Orange #ff6600
+      { r: 255, g: 136, b: 0 },   // Incandescent Amber #ff8800
+      { r: 204, g: 34, b: 0 },    // Deep Ember Red #cc2200
+    ];
+
+    // Pre-render sprite textures for zero GC overhead at 60/120fps
+    const spriteSize = 64;
+    const center = spriteSize / 2;
+    const radius = spriteSize / 2;
+
+    const sprites = EMBER_PALETTE.map((color) => {
+      const c = document.createElement('canvas');
+      c.width = spriteSize;
+      c.height = spriteSize;
+      const cCtx = c.getContext('2d');
+      if (!cCtx) return c;
+
+      const grad = cCtx.createRadialGradient(center, center, 0, center, center, radius);
+      grad.addColorStop(0, 'rgba(255, 252, 235, 1)');
+      grad.addColorStop(0.24, `rgba(${color.r}, ${color.g}, ${color.b}, 0.95)`);
+      grad.addColorStop(0.58, `rgba(${Math.min(255, color.r + 20)}, ${Math.floor(color.g * 0.38)}, 0, 0.4)`);
+      grad.addColorStop(0.85, 'rgba(204, 34, 0, 0.12)');
+      grad.addColorStop(1, 'rgba(204, 34, 0, 0)');
+
+      cCtx.fillStyle = grad;
+      cCtx.beginPath();
+      cCtx.arc(center, center, radius, 0, Math.PI * 2);
+      cCtx.fill();
+      return c;
+    });
+
+    // High-intensity white-hot clash sprite
+    const clashSprite = document.createElement('canvas');
+    clashSprite.width = spriteSize;
+    clashSprite.height = spriteSize;
+    const clashCtx = clashSprite.getContext('2d');
+    if (clashCtx) {
+      const grad = clashCtx.createRadialGradient(center, center, 0, center, center, radius);
+      grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+      grad.addColorStop(0.2, 'rgba(255, 250, 215, 0.95)');
+      grad.addColorStop(0.45, 'rgba(255, 208, 0, 0.7)');
+      grad.addColorStop(0.75, 'rgba(255, 102, 0, 0.25)');
+      grad.addColorStop(1, 'rgba(204, 34, 0, 0)');
+      clashCtx.fillStyle = grad;
+      clashCtx.beginPath();
+      clashCtx.arc(center, center, radius, 0, Math.PI * 2);
+      clashCtx.fill();
+    }
+
+    interface FaceOffEmber {
+      x: number;
+      y: number;
+      baseRadius: number;
+      baseVy: number;
+      vy: number;
+      spriteIndex: number;
+      isLarge: boolean;
+      alpha: number;
+      targetAlpha: number;
+      swayPhase: number;
+      swaySpeed: number;
+      swayAmp: number;
+      windDrift: number;
+      flickerPhase: number;
+      flickerSpeed: number;
+      draftPhase: number;
+      draftSpeed: number;
+    }
+
+    const particleCount = 70;
+    let particles: FaceOffEmber[] = [];
+
+    const createFaceOffEmber = (spawnRandomY = true): FaceOffEmber => {
+      const isLarge = Math.random() < 0.2;
+      const spriteIndex = Math.floor(Math.random() * sprites.length);
+      const baseRadius = isLarge ? 2.0 + Math.random() * 1.8 : 0.7 + Math.random() * 1.1;
+      const baseVy = isLarge ? -(0.35 + Math.random() * 0.45) : -(0.65 + Math.random() * 0.95);
+      const targetAlpha = isLarge ? 0.6 + Math.random() * 0.35 : 0.35 + Math.random() * 0.45;
+
+      return {
+        x: Math.random() * (width || window.innerWidth),
+        y: spawnRandomY
+          ? Math.random() * (height || window.innerHeight)
+          : (height || window.innerHeight) + 10 + Math.random() * 25,
+        baseRadius,
+        baseVy,
+        vy: baseVy,
+        spriteIndex,
+        isLarge,
+        alpha: spawnRandomY ? Math.random() * targetAlpha : 0,
+        targetAlpha,
+        swayPhase: Math.random() * Math.PI * 2,
+        swaySpeed: 0.02 + Math.random() * 0.03,
+        swayAmp: isLarge ? 0.8 + Math.random() * 0.9 : 0.4 + Math.random() * 0.5,
+        windDrift: (Math.random() - 0.45) * 0.2,
+        flickerPhase: Math.random() * Math.PI * 2,
+        flickerSpeed: isLarge ? 0.03 + Math.random() * 0.04 : 0.06 + Math.random() * 0.07,
+        draftPhase: Math.random() * Math.PI * 2,
+        draftSpeed: 0.015 + Math.random() * 0.025,
+      };
+    };
+
+    const drawStaticEmbers = () => {
+      ctx.clearRect(0, 0, width, height);
+      ctx.globalCompositeOperation = 'lighter';
+      particles.forEach((p) => {
+        const glowRadius = p.isLarge ? p.baseRadius * 4.2 : p.baseRadius * 3.2;
+        const drawSize = glowRadius * 2;
+        const distFromCenter = Math.abs(p.x - width / 2) / (width / 2);
+        const sprite = distFromCenter < 0.22 ? clashSprite : sprites[p.spriteIndex];
+
+        ctx.globalAlpha = p.targetAlpha * 0.75;
+        ctx.drawImage(sprite, p.x - glowRadius, p.y - glowRadius, drawSize, drawSize);
+
+        const coreSize = Math.max(1.2, p.baseRadius * 1.3);
+        ctx.drawImage(clashSprite, p.x - coreSize / 2, p.y - coreSize / 2, coreSize, coreSize);
+      });
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = 'source-over';
+    };
 
     const handleResize = () => {
       if (!canvas) return;
-      if (width === window.innerWidth && Math.abs(height - window.innerHeight) < 80) return;
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
+      const newWidth = window.innerWidth;
+      const newHeight = window.innerHeight;
+
+      // Prevent resets during mobile URL bar hide/show scroll
+      if (width === newWidth && Math.abs(height - newHeight) < 80) return;
+
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      width = newWidth;
+      height = newHeight;
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      if (particles.length === 0) {
+        particles = Array.from({ length: particleCount }, () => createFaceOffEmber(true));
+      } else {
+        particles.forEach((p) => {
+          if (p.x > width) p.x = Math.random() * width;
+          if (p.y > height) p.y = Math.random() * height;
+        });
+      }
+
+      if (prefersReducedMotion) {
+        drawStaticEmbers();
+      }
     };
-    window.addEventListener('resize', handleResize);
 
-    const particleCount = 75;
-    const particles = Array.from({ length: particleCount }).map(() => ({
-      x: Math.random() * width,
-      y: Math.random() * height,
-      vx: (Math.random() - 0.5) * 0.9,
-      vy: (Math.random() - 0.5) * 0.9,
-      size: 1 + Math.random() * 2.5,
-      alpha: 0.15 + Math.random() * 0.65,
-      color: Math.random() > 0.5 ? '#ffd000' : '#C2B28A',
-      pulse: Math.random() * Math.PI,
-    }));
+    handleResize();
 
-    const render = () => {
+    let resizeTimer: NodeJS.Timeout;
+    const debouncedResize = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(handleResize, 150);
+    };
+    window.addEventListener('resize', debouncedResize);
+
+    if (prefersReducedMotion) {
+      drawStaticEmbers();
+      return () => {
+        window.removeEventListener('resize', debouncedResize);
+        clearTimeout(resizeTimer);
+      };
+    }
+
+    let lastTime = performance.now();
+
+    const render = (currentTime: number) => {
+      const dt = Math.min((currentTime - lastTime) / 1000, 0.05);
+      lastTime = currentTime;
+      const timeScale = dt * 60; // 1.0 at standard 60fps
+
       ctx.clearRect(0, 0, width, height);
+      ctx.globalCompositeOperation = 'lighter';
 
-      particles.forEach((p) => {
-        p.x += p.vx;
-        p.y += p.vy;
-        p.pulse += 0.03;
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
 
-        if (p.x < 0) p.x = width;
-        if (p.x > width) p.x = 0;
-        if (p.y < 0) p.y = height;
-        if (p.y > height) p.y = 0;
-
-        const currentAlpha = p.alpha * (0.7 + Math.sin(p.pulse) * 0.3);
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-
-        const distFromCenter = Math.abs(p.x - width / 2) / (width / 2);
-        if (distFromCenter < 0.2) {
-          ctx.fillStyle = `rgba(229, 229, 220, ${currentAlpha * 1.2})`;
-          ctx.shadowColor = '#C2B28A';
-          ctx.shadowBlur = 8;
-        } else if (p.x < width / 2) {
-          ctx.fillStyle = `rgba(89, 99, 74, ${currentAlpha})`;
-          ctx.shadowColor = '#ffd000';
-          ctx.shadowBlur = 5;
-        } else {
-          ctx.fillStyle = `rgba(194, 178, 138, ${currentAlpha})`;
-          ctx.shadowColor = '#C2B28A';
-          ctx.shadowBlur = 5;
+        if (p.alpha < p.targetAlpha) {
+          p.alpha = Math.min(p.targetAlpha, p.alpha + 0.008 * timeScale);
         }
 
-        ctx.fill();
-        ctx.shadowBlur = 0;
-      });
+        p.flickerPhase += p.flickerSpeed * timeScale;
+        const flicker = Math.sin(p.flickerPhase) * 0.65 + Math.sin(p.flickerPhase * 2.3) * 0.35;
 
+        p.draftPhase += p.draftSpeed * timeScale;
+        const draftMod = 1 + Math.sin(p.draftPhase) * 0.25;
+        p.vy = p.baseVy * draftMod;
+
+        // Upward floating motion
+        p.y += p.vy * timeScale;
+
+        // Horizontal sway / wind oscillation
+        p.swayPhase += p.swaySpeed * timeScale;
+        p.x += (Math.sin(p.swayPhase) * p.swayAmp + p.windDrift) * timeScale;
+
+        // Respawn when floating past the top
+        if (p.y < -30) {
+          p.y = height + 10 + Math.random() * 20;
+          p.x = Math.random() * width;
+          p.alpha = 0;
+          p.swayPhase = Math.random() * Math.PI * 2;
+          p.draftPhase = Math.random() * Math.PI * 2;
+        }
+        if (p.x < -30) p.x = width + 20;
+        else if (p.x > width + 30) p.x = -20;
+
+        const topCooldown = p.y < height * 0.18 ? Math.max(0, p.y / (height * 0.18)) : 1;
+        const currentAlpha = Math.max(0.04, Math.min(1, (p.alpha + flicker * 0.2) * topCooldown));
+        const currentRadius = p.baseRadius * (1 + flicker * 0.1);
+        const glowRadius = p.isLarge ? currentRadius * 4.2 : currentRadius * 3.2;
+        const drawSize = glowRadius * 2;
+
+        // Clash center intensifies to incandescent yellow/gold
+        const distFromCenter = Math.abs(p.x - width / 2) / (width / 2);
+        const isCenterClash = distFromCenter < 0.22;
+        const sprite = isCenterClash ? clashSprite : sprites[p.spriteIndex];
+
+        // Draw glow aura
+        ctx.globalAlpha = isCenterClash ? currentAlpha * 1.15 : currentAlpha;
+        ctx.drawImage(sprite, p.x - glowRadius, p.y - glowRadius, drawSize, drawSize);
+
+        // Draw white-hot center core
+        const coreSize = Math.max(1.2, currentRadius * 1.4);
+        ctx.globalAlpha = Math.min(1, currentAlpha * 1.4);
+        ctx.drawImage(clashSprite, p.x - coreSize / 2, p.y - coreSize / 2, coreSize, coreSize);
+      }
+
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = 'source-over';
       animId = requestAnimationFrame(render);
     };
 
-    render();
+    animId = requestAnimationFrame(render);
 
     return () => {
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('resize', debouncedResize);
+      clearTimeout(resizeTimer);
       cancelAnimationFrame(animId);
     };
   }, []);
@@ -543,7 +730,7 @@ export default function CharacterFaceOff() {
             <div className="mt-4 pt-3 border-t border-gunmetal flex items-center justify-around text-[10px] font-mono">
               <span className="text-sand font-bold">MODERN WARFARE PROTOCOL</span>
               <span className="text-gunmetal">|</span>
-              <span className="text-olive-light font-bold">5v5 MR12 REGULATION</span>
+              <span className="text-olive-light font-bold">SEARCH AND DESTROY PML220</span>
             </div>
           </div>
 

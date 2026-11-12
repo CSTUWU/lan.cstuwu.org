@@ -53,6 +53,7 @@ export function transformBackendTeam(raw: any): Team {
           email: p.email || (isLeader ? email : ''),
           role: p.role || (isLeader ? 'Team Leader' : `Operative 0${idx + 1}`),
           enrollmentNumber: memberEnrollment,
+          configFile: p.configFile && (p.configFile.filename || p.configFile.url || p.configFile.content) ? p.configFile : undefined,
         };
       })
     : [];
