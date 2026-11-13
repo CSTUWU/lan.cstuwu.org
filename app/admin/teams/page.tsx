@@ -34,6 +34,11 @@ import {
 } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
+import TeamLogoAvatar from '@/components/ui/TeamLogoAvatar';
+import StatusBadge from '@/components/ui/StatusBadge';
+import NoticeAlert from '@/components/ui/NoticeAlert';
+import SearchFilterBar from '@/components/ui/SearchFilterBar';
+import PlayoffTreeActions from '@/components/admin/PlayoffTreeActions';
 import { downloadTeamWiseExcel, downloadAllMembersExcel } from '@/lib/exportExcel';
 
 export default function AdminTeamsPage() {
@@ -330,12 +335,14 @@ export default function AdminTeamsPage() {
           </div>
         </div>
 
-        {notice && (
-          <div className="p-3 bg-olive/20 border border-olive text-xs font-mono text-sand flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-olive" />
-            <span>{notice}</span>
-          </div>
-        )}
+        <NoticeAlert message={notice} variant="success" onClose={() => setNotice(null)} />
+
+        <PlayoffTreeActions
+          isTreePublished={isTreePublished}
+          onTogglePublish={handleTogglePublish}
+          onSeedTree={(action) => (action === 'recreate' ? handleRecreatePlayoffTree() : handleCreatePlayoffTree())}
+          teamsCount={teams.length}
+        />
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-card/90 border border-gunmetal p-4">
@@ -358,37 +365,18 @@ export default function AdminTeamsPage() {
           </div>
         </div>
 
-        <div className="bg-card/90 border border-gunmetal p-4 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="relative w-full md:w-96">
-            <Search className="w-4 h-4 text-mutedKhaki absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Search team, IGN, player real name, callsign..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-surface border border-gunmetal pl-10 pr-4 py-2 text-xs font-mono text-tacticalWhite placeholder-mutedKhaki/60 focus:outline-none focus:border-olive"
-            />
-          </div>
-
-          <div className="flex items-center gap-2 w-full md:w-auto">
-            <span className="text-xs font-mono text-mutedKhaki uppercase flex items-center gap-1.5 mr-2">
-              <Filter className="w-3.5 h-3.5 text-sand" /> STATUS:
-            </span>
-            {(['all', 'approved', 'pending'] as const).map((filter) => (
-              <button
-                key={filter}
-                onClick={() => setStatusFilter(filter)}
-                className={`px-3 py-1.5 text-xs font-mono uppercase font-bold tracking-wider transition-colors border ${
-                  statusFilter === filter
-                    ? 'bg-olive text-black font-bold border-olive'
-                    : 'bg-surface text-mutedKhaki border-gunmetal hover:text-tacticalWhite'
-                }`}
-              >
-                {filter} ({filter === 'all' ? teams.length : teams.filter((t) => t.status === filter).length})
-              </button>
-            ))}
-          </div>
-        </div>
+        <SearchFilterBar<'all' | 'approved' | 'pending'>
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Search team, IGN, player real name, callsign..."
+          activeFilter={statusFilter}
+          onFilterChange={setStatusFilter}
+          filterOptions={[
+            { value: 'all', label: 'all', count: teams.length },
+            { value: 'approved', label: 'approved', count: teams.filter((t) => t.status === 'approved').length },
+            { value: 'pending', label: 'pending', count: teams.filter((t) => t.status === 'pending').length },
+          ]}
+        />
 
         <div className="space-y-4">
           {filteredTeams.length === 0 ? (

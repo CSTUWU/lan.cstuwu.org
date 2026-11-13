@@ -24,6 +24,8 @@ import {
 } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
+import TeamLogoAvatar from '@/components/ui/TeamLogoAvatar';
+import StatusBadge from '@/components/ui/StatusBadge';
 
 export default function AdminDashboardPage() {
   const [teams, setTeams] = useState<Team[]>([]);
@@ -227,9 +229,7 @@ export default function AdminDashboardPage() {
                     <tr key={team.id} className="hover:bg-surface/40 transition-colors">
                       <td className="py-3">
                         <div className="flex items-center gap-2.5">
-                          <div className="relative w-8 h-8 bg-surface border border-gunmetal shrink-0 overflow-hidden">
-                            <Image src={team.logo || '/images/team-placeholder.svg'} alt={team.name} fill className="object-cover" sizes="32px" />
-                          </div>
+                          <TeamLogoAvatar src={team.logo || ''} name={team.name} size="sm" />
                           <div>
                             <span className="text-[10px] text-sand block font-bold">[{team.tag}]</span>
                             <span className="text-tacticalWhite font-semibold truncate block max-w-[130px]">{team.name}</span>
@@ -240,21 +240,7 @@ export default function AdminDashboardPage() {
                         {team.degreeProgram || team.captain?.degreeProgram || team.faculty || team.university || 'CST'}
                       </td>
                       <td className="py-3 text-center">
-                        {team.status === 'approved' && (
-                          <span className="text-[10px] text-sand font-bold px-1.5 py-0.5 bg-olive/20 border border-olive">
-                            APPROVED
-                          </span>
-                        )}
-                        {team.status === 'pending' && (
-                          <span className="text-[10px] text-sand font-bold px-1.5 py-0.5 bg-sand/10 border border-sand/40">
-                            PENDING
-                          </span>
-                        )}
-                        {team.status === 'rejected' && (
-                          <span className="text-[10px] text-rose-400 font-bold px-1.5 py-0.5 bg-rose-500/10 border border-rose-500/30">
-                            REJECTED
-                          </span>
-                        )}
+                        <StatusBadge status={team.status} />
                       </td>
                       <td className="py-3 text-right">
                         {team.status === 'pending' ? (
