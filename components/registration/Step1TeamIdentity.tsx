@@ -122,8 +122,13 @@ export default function Step1TeamIdentity({
             type="email"
             placeholder="e.g. leader@std.uwu.ac.lk"
             value={form.email}
-            onChange={(e) => onChange({ email: e.target.value })}
-            className="w-full bg-surface border border-gunmetal px-4 py-2.5 text-xs font-mono text-tacticalWhite focus:outline-none focus:border-olive"
+            onChange={(e) => {
+              const val = e.target.value;
+              onChange({ email: val });
+            }}
+            className={`w-full bg-surface border px-4 py-2.5 text-xs font-mono text-tacticalWhite focus:outline-none ${
+              errors.email ? 'border-rose-500' : 'border-gunmetal focus:border-olive'
+            }`}
           />
           {errors.email && <p className="text-[11px] font-mono text-rose-500 mt-1">{errors.email}</p>}
         </div>
@@ -142,9 +147,21 @@ export default function Step1TeamIdentity({
               const val = e.target.value.replace(/\D/g, '').slice(0, 10);
               onChange({ whatsappNumber: val });
             }}
-            className="w-full bg-surface border border-gunmetal px-4 py-2.5 text-xs font-mono text-tacticalWhite focus:outline-none focus:border-olive"
+            className={`w-full bg-surface border px-4 py-2.5 text-xs font-mono text-tacticalWhite focus:outline-none ${
+              errors.whatsappNumber ? 'border-rose-500' : 'border-gunmetal focus:border-olive'
+            }`}
           />
-          {errors.whatsappNumber && <p className="text-[11px] font-mono text-rose-500 mt-1">{errors.whatsappNumber}</p>}
+          {errors.whatsappNumber ? (
+            <p className="text-[11px] font-mono text-rose-500 mt-1">{errors.whatsappNumber}</p>
+          ) : form.whatsappNumber.length > 0 && form.whatsappNumber.length < 10 ? (
+            <p className="text-[11px] font-mono text-amber-400 mt-1">
+              Enter {10 - form.whatsappNumber.length} more digit{10 - form.whatsappNumber.length > 1 ? 's' : ''} (10 digits starting with 0)
+            </p>
+          ) : form.whatsappNumber.length === 10 && !form.whatsappNumber.startsWith('0') ? (
+            <p className="text-[11px] font-mono text-rose-500 mt-1">
+              Must start with 0 (e.g. 0771234567)
+            </p>
+          ) : null}
         </div>
       </div>
 

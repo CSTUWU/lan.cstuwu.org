@@ -182,12 +182,14 @@ export default function RegisterPage() {
       if (!form.email.trim()) {
         newErrors.email = 'Contact email address is required';
       } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
-        newErrors.email = 'Valid email address required (e.g. operative@std.uwu.ac.lk)';
+        newErrors.email = 'Valid email address required (e.g. leader@std.uwu.ac.lk)';
       }
 
-      const cleanWa = form.whatsappNumber.replace(/[\s\-\+]/g, '');
-      if (!cleanWa || cleanWa.length < 9) {
-        newErrors.whatsappNumber = 'Valid WhatsApp contact number required (e.g. 0771234567)';
+      const cleanWa = form.whatsappNumber.trim().replace(/[\s\-]/g, '');
+      if (!cleanWa) {
+        newErrors.whatsappNumber = 'WhatsApp contact number is required';
+      } else if (!/^0\d{9}$/.test(cleanWa)) {
+        newErrors.whatsappNumber = 'Must be a valid 10-digit number starting with 0 (e.g. 0771234567)';
       }
     }
 
