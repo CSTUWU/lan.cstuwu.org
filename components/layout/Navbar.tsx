@@ -113,21 +113,35 @@ export default function Navbar() {
     ...(NAV_VISIBILITY.scoreboard ? [{ name: 'Scoreboard', href: '/scoreboard' }] : []),
   ];
 
-  const handleNavClick = (href: string) => {
+  const handleNavClick = (href: string, e?: React.MouseEvent) => {
     if (href.includes('#')) {
       const hash = href.substring(href.indexOf('#'));
       setCurrentHash(hash);
+
       if (pathname === '/' && typeof window !== 'undefined') {
+        if (e) {
+          e.preventDefault();
+        }
         const id = hash.replace(/^#/, '');
         const elem = document.getElementById(id);
         if (elem) {
-          elem.scrollIntoView({ behavior: 'smooth' });
+          const yOffset = -80; // Navbar height offset
+          const y = elem.getBoundingClientRect().top + window.pageYOffset + yOffset;
+          window.scrollTo({ top: y, behavior: 'auto' });
+          window.history.pushState(null, '', href);
         }
+      } else if (typeof window !== 'undefined') {
+        // Navigating from another route (e.g. /about or /register) to /#prizepool
+        sessionStorage.setItem('cst_pending_scroll_hash', hash);
       }
     } else {
       setCurrentHash('');
       if (href === '/' && pathname === '/' && typeof window !== 'undefined') {
+        if (e) {
+          e.preventDefault();
+        }
         window.scrollTo({ top: 0, behavior: 'smooth' });
+        window.history.pushState(null, '', '/');
       }
     }
   };
@@ -192,7 +206,7 @@ export default function Navbar() {
                 <Link
                   key={link.name}
                   href={link.href}
-                  onClick={() => handleNavClick(link.href)}
+                  onClick={(e) => handleNavClick(link.href, e)}
                   className={`group relative px-2 xl:px-3 py-1.5 text-xs font-mono font-semibold uppercase tracking-wider transition-colors duration-200 flex items-center shrink-0 whitespace-nowrap ${
                     active ? 'text-sand' : 'text-mutedText hover:text-sand'
                   }`}
@@ -315,8 +329,8 @@ export default function Navbar() {
               <Link
                 key={link.name}
                 href={link.href}
-                onClick={() => {
-                  handleNavClick(link.href);
+                onClick={(e) => {
+                  handleNavClick(link.href, e);
                   setMobileMenuOpen(false);
                 }}
                 className={`flex items-center justify-between py-2.5 text-base font-display uppercase tracking-wider border-b border-gunmetal/60 ${
