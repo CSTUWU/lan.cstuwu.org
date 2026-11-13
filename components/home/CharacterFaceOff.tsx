@@ -236,7 +236,11 @@ export default function CharacterFaceOff() {
 
     let lastTime = performance.now();
 
+    let isVisible = true;
+
     const render = (currentTime: number) => {
+      if (!isVisible) return;
+
       const dt = Math.min((currentTime - lastTime) / 1000, 0.05);
       lastTime = currentTime;
       const timeScale = dt * 60; // 1.0 at standard 60fps
@@ -302,9 +306,26 @@ export default function CharacterFaceOff() {
       animId = requestAnimationFrame(render);
     };
 
+    // Pause rendering when this component is scrolled off-screen
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        isVisible = entry.isIntersecting;
+        if (isVisible) {
+          lastTime = performance.now();
+          cancelAnimationFrame(animId);
+          animId = requestAnimationFrame(render);
+        } else {
+          cancelAnimationFrame(animId);
+        }
+      },
+      { threshold: 0.05 }
+    );
+    observer.observe(canvas);
+
     animId = requestAnimationFrame(render);
 
     return () => {
+      observer.disconnect();
       window.removeEventListener('resize', debouncedResize);
       clearTimeout(resizeTimer);
       cancelAnimationFrame(animId);

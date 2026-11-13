@@ -6,9 +6,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { Menu, X, ChevronRight, Crosshair, Radio } from 'lucide-react';
 import { useRegistrationStatus } from '@/hooks/useRegistrationStatus';
-import { api } from '@/lib/api';
-import { getStoredMatches, getStored16Matches, syncDatabaseMatchesToStorage, getLiveBroadcastChannel } from '@/lib/storage';
-import { transformBackendMatch } from '@/lib/transformers';
+import { useLiveMatch } from '@/hooks/useLiveMatch';
 import Button from '../ui/Button';
 
 // Manual toggles to show/hide sections from the navbar (set true to re-enable manually)
@@ -20,9 +18,9 @@ export const NAV_VISIBILITY = {
 
 export default function Navbar() {
   const { isOpen } = useRegistrationStatus();
+  const { hasLiveMatch } = useLiveMatch();
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [hasLiveMatch, setHasLiveMatch] = useState(false);
   const [currentHash, setCurrentHash] = useState('');
   const pathname = usePathname();
   const isHome = pathname === '/';
@@ -80,37 +78,6 @@ export default function Navbar() {
     }
   }, [isHome]);
 
-  const checkLiveMatch = useCallback(() => {
-    try {
-      const stored = getStoredMatches();
-      const stored16 = getStored16Matches();
-      const localLive =
-        (Array.isArray(stored) && stored.some((m) => m.status === 'live')) ||
-        (Array.isArray(stored16) && stored16.some((m) => m.status === 'live'));
-
-      api.public
-        .getMatches({ status: 'LIVE' })
-        .then((res) => {
-          if (res?.success && Array.isArray(res.data)) {
-            const serverLive = res.data.length > 0;
-            if (serverLive) {
-              setHasLiveMatch(true);
-              syncDatabaseMatchesToStorage(res.data.map(transformBackendMatch));
-            } else {
-              setHasLiveMatch(localLive);
-            }
-          } else {
-            setHasLiveMatch(localLive);
-          }
-        })
-        .catch(() => {
-          setHasLiveMatch(localLive);
-        });
-    } catch {
-      // Fallback gracefully
-    }
-  }, []);
-
   useEffect(() => {
     const handleScroll = () => {
       checkScrollState();
@@ -129,44 +96,11 @@ export default function Navbar() {
     // Initial check on mount
     checkScrollState();
 
-    // Check storage immediately to prevent flicker on mount
-    try {
-      const stored = getStoredMatches();
-      const stored16 = getStored16Matches();
-      if (
-        (Array.isArray(stored) && stored.some((m) => m.status === 'live')) ||
-        (Array.isArray(stored16) && stored16.some((m) => m.status === 'live'))
-      ) {
-        setHasLiveMatch(true);
-      }
-    } catch {}
-
-    checkLiveMatch();
-    const liveInterval = setInterval(checkLiveMatch, 4000);
-
-    window.addEventListener('cst_matches_updated', checkLiveMatch);
-    window.addEventListener('cst_16_matches_updated', checkLiveMatch);
-
-    const channel = getLiveBroadcastChannel();
-    const handleBroadcast = (event: MessageEvent) => {
-      if (
-        event.data?.type === 'CST_LIVE_MATCH_UPDATE' ||
-        event.data?.type === 'CST_16_MATCHES_UPDATE'
-      ) {
-        checkLiveMatch();
-      }
-    };
-    channel?.addEventListener('message', handleBroadcast);
-
     return () => {
-      clearInterval(liveInterval);
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('resize', handleResize);
-      window.removeEventListener('cst_matches_updated', checkLiveMatch);
-      window.removeEventListener('cst_16_matches_updated', checkLiveMatch);
-      channel?.removeEventListener('message', handleBroadcast);
     };
-  }, [checkScrollState, checkLiveMatch, mobileMenuOpen]);
+  }, [checkScrollState, mobileMenuOpen]);
 
   const navLinks = [
     { name: 'Home', href: '/' },
