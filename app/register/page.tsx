@@ -243,9 +243,18 @@ export default function RegisterPage() {
     window.scrollTo({ top: 100, behavior: 'smooth' });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setApiError(null);
+
+    // Strictly ensure submission ONLY happens on Step 3
+    if (currentStep !== 3) {
+      console.warn('Blocked submit because currentStep is not 3. Current step:', currentStep);
+      return;
+    }
 
     if (!validateStep(1) || !validateStep(2)) {
       alert('Please fill out all required team and member fields.');
@@ -517,7 +526,23 @@ export default function RegisterPage() {
             }}
           />
         ) : (
-          <form onSubmit={handleSubmit} className="bg-card/90 border border-gunmetal p-6 sm:p-10 backdrop-blur-md">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (currentStep === 3) {
+                handleSubmit(e);
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                const target = e.target as HTMLElement;
+                if (target.tagName === 'INPUT') {
+                  e.preventDefault();
+                }
+              }
+            }}
+            className="bg-card/90 border border-gunmetal p-6 sm:p-10 backdrop-blur-md"
+          >
             
             {/* STEP 1: TEAM IDENTITY & ACADEMIC COHORT */}
             {currentStep === 1 && (
@@ -554,7 +579,7 @@ export default function RegisterPage() {
                 <div />
               )}
 
-              {currentStep < 3 ? (
+              {currentStep < 3 && (
                 <Button
                   type="button"
                   onClick={handleNext}
@@ -565,9 +590,12 @@ export default function RegisterPage() {
                 >
                   CONTINUE TO STEP 0{currentStep + 1}
                 </Button>
-              ) : (
+              )}
+
+              {currentStep === 3 && (
                 <Button
-                  type="submit"
+                  type="button"
+                  onClick={() => handleSubmit()}
                   variant="olive"
                   size="lg"
                   disabled={isSubmitting}
