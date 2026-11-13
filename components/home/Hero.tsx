@@ -20,7 +20,6 @@ export default function Hero() {
   const scrollHintRef = useRef<HTMLDivElement>(null);
   const topStandoffBadgeRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
-  const hudRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLDivElement>(null);
   const countdownBlockRef = useRef<HTMLDivElement>(null);
   const ctaBlockRef = useRef<HTMLDivElement>(null);
@@ -208,7 +207,6 @@ export default function Hero() {
         contentWrapperRef.current.style.opacity = '1';
         contentWrapperRef.current.style.pointerEvents = 'auto';
       }
-      window.dispatchEvent(new CustomEvent('cst_hero_text_visible', { detail: { visible: true } }));
       return;
     }
 
@@ -222,7 +220,6 @@ export default function Hero() {
       (context) => {
         const { isMobile } = context.conditions as { isDesktop: boolean; isMobile: boolean };
         const frameObj = { frame: 0 };
-        let lastNotifiedVisible: boolean | null = null;
         let enterTl: gsap.core.Timeline | null = null;
 
         const scrubTimeline = gsap.timeline({
@@ -261,14 +258,6 @@ export default function Hero() {
                 if (scrollHintRef.current) {
                   scrollHintRef.current.style.pointerEvents = 'auto';
                 }
-              }
-
-              const isTextVisible = self.progress >= (isMobile ? 0.32 : 0.40);
-              if (lastNotifiedVisible !== isTextVisible) {
-                lastNotifiedVisible = isTextVisible;
-                window.dispatchEvent(
-                  new CustomEvent('cst_hero_text_visible', { detail: { visible: isTextVisible } })
-                );
               }
             },
           },
@@ -361,13 +350,6 @@ export default function Hero() {
         );
 
         enterTl.fromTo(
-          hudRef.current?.children || [],
-          { opacity: 0, y: -10 },
-          { opacity: 1, y: 0, stagger: 0.08, duration: 0.7 },
-          '-=0.8'
-        );
-
-        enterTl.fromTo(
           topStandoffBadgeRef.current,
           { autoAlpha: 0, y: -15 },
           { autoAlpha: 1, y: 0, duration: 0.8 },
@@ -452,36 +434,10 @@ export default function Hero() {
         </div>
       </div>
 
-      <div
-        ref={hudRef}
-        className="absolute inset-0 pointer-events-none max-w-7xl mx-auto px-6 lg:px-12 pt-24 pb-16 hidden lg:flex flex-col justify-between z-20"
-      >
-        <div className="flex justify-between items-start text-[11px] font-mono tracking-widest">
-          <div className="flex items-center gap-2 border-l-2 border-olive pl-3 py-1 bg-surface/80 backdrop-blur-md border-t border-olive/30">
-            <span className="w-2 h-2 rounded-full bg-olive-light animate-pulse" />
-            <span className="text-tacticalWhite font-bold">TAC_OP // SECTOR_01 [TASK FORCE]</span>
-          </div>
-          <div className="flex items-center gap-2 border-r-2 border-sand pr-3 py-1 bg-surface/80 backdrop-blur-md border-t border-sand/30 text-right">
-            <span className="text-tacticalWhite font-bold">TAC_OP // SECTOR_02 [OPFOR ASSAULT]</span>
-            <span className="w-2 h-2 rounded-full bg-sand animate-pulse" />
-          </div>
-        </div>
-
-        <div className="flex justify-between items-end text-[10px] font-mono">
-          <div className="bg-surface/80 backdrop-blur-md px-3 py-1.5 border-l-2 border-b border-gunmetal border-l-olive">
-            <p className="text-mutedText">LAT: 6.9934° N, LON: 81.0550° E</p>
-            <p className="text-sand font-bold">BADULLA // UVA WELLASSA UNIVERSITY</p>
-          </div>
-          <div className="text-right bg-surface/80 backdrop-blur-md px-3 py-1.5 border-r-2 border-b border-gunmetal border-r-sand">
-            <p className="text-mutedText">THEATER: MODERN WARFARE PROTOCOL</p>
-            <p className="text-sand font-bold">STATUS: 5v5 COMPETITIVE TOURNAMENT READY</p>
-          </div>
-        </div>
-      </div>
 
       <div
         ref={topStandoffBadgeRef}
-        className="absolute top-20 sm:top-24 lg:top-10 left-1/2 -translate-x-1/2 z-20 pointer-events-none px-2 w-max max-w-[95vw] text-center"
+        className="absolute top-20 sm:top-24 lg:top-20 left-1/2 -translate-x-1/2 z-20 pointer-events-none px-2 w-max max-w-[95vw] text-center"
       >
         <div className="inline-flex items-center gap-2.5 px-3 sm:px-4 py-1.5 bg-military-black/90 border border-gunmetal clip-badge backdrop-blur-md shadow-2xl">
           <Shield className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-sand shrink-0" />
