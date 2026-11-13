@@ -503,9 +503,8 @@ export default function CinematicShowcase() {
           className="absolute left-1/2 -translate-x-1/2 w-[94vw] max-w-xl sm:max-w-2xl px-2 sm:px-4 text-center opacity-0 pointer-events-none will-change-transform"
         >
           <div className="relative p-6 sm:p-8 bg-card/95 border border-sand/60 backdrop-blur-2xl rounded-md shadow-[0_4px_40px_rgba(0,0,0,0.85)]">
-            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 bg-sand text-military-black font-mono text-[10px] font-black uppercase tracking-widest clip-tactical shadow-lg flex items-center gap-1.5">
-              <Swords className="w-3.5 h-3.5 text-military-black" />
-              <span>THE GRAND CONFRONTATION</span>
+            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 bg-sand text-black font-mono text-[10px] font-black uppercase tracking-widest clip-tactical shadow-lg flex items-center justify-center">
+              <span className="text-black font-black">THE GRAND CONFRONTATION</span>
             </div>
 
             <span className="absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2 border-sand" />
