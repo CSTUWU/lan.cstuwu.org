@@ -31,7 +31,7 @@ export default function AboutSection() {
   ];
 
   return (
-    <section id="about" className="relative py-28 bg-military-black border-t border-b border-gunmetal overflow-hidden">
+    <section id="about" className="relative py-28 bg-military-black border-t border-b border-gunmetal overflow-hidden scroll-mt-20">
       <div className="absolute top-1/2 left-0 w-80 h-80 bg-olive/5 rounded-full blur-[140px] pointer-events-none" />
       <div className="absolute bottom-0 right-0 w-80 h-80 bg-sand/5 rounded-full blur-[140px] pointer-events-none" />
 
