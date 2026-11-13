@@ -110,7 +110,10 @@ export default function AdminLoginView() {
                 <input
                   type="text"
                   value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  onChange={(e) => {
+                    setUsername(e.target.value);
+                    if (errorMessage) setErrorMessage('');
+                  }}
                   placeholder="Enter username"
                   required
                   autoComplete="off"
@@ -128,7 +131,10 @@ export default function AdminLoginView() {
                 <input
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (errorMessage) setErrorMessage('');
+                  }}
                   placeholder="Enter password"
                   required
                   autoComplete="off"

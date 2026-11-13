@@ -175,13 +175,13 @@ export default function AboutPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveRuleTab(tab.id)}
-                className={`px-3.5 py-2 text-xs font-mono font-bold uppercase tracking-wider whitespace-nowrap transition-all flex items-center gap-2 border ${activeRuleTab === tab.id
-                    ? 'bg-sand text-military-black border-sand shadow-[0_2px_10px_rgba(194,178,138,0.4)]'
+                className={`px-3.5 py-2 text-xs font-mono font-black uppercase tracking-wider whitespace-nowrap transition-all flex items-center gap-2 border ${activeRuleTab === tab.id
+                    ? 'bg-sand text-black border-sand shadow-[0_2px_10px_rgba(194,178,138,0.4)]'
                     : 'bg-surface text-mutedKhaki border-gunmetal hover:border-olive hover:text-tacticalWhite'
                   }`}
               >
                 {tab.icon}
-                <span>{tab.label}</span>
+                <span className={activeRuleTab === tab.id ? 'text-black font-black' : ''}>{tab.label}</span>
               </button>
             ))}
           </div>

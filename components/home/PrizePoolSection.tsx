@@ -145,9 +145,8 @@ export default function PrizePoolSection() {
               className={`relative rounded-lg border p-6 sm:p-8 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 ${tier.bgColor} ${tier.borderColor} ${tier.glowColor} ${tier.orderClass}`}
             >
               {tier.isChampion && (
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 bg-sand text-military-black font-mono text-[10px] font-black uppercase tracking-widest clip-tactical shadow-lg flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-military-black" />
-                  <span>CST 2026 GRAND WINNER</span>
+                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 bg-sand text-black font-mono text-[10px] font-black uppercase tracking-widest clip-tactical shadow-lg flex items-center justify-center">
+                  <span className="text-black font-black">CST 2026 GRAND WINNER</span>
                 </div>
               )}
 

@@ -9,11 +9,13 @@ import { getStoredCountdown, saveCountdown, getStoredMatches } from '@/lib/stora
 import { api } from '@/lib/api';
 import { transformBackendSettings } from '@/lib/transformers';
 import { useRegistrationStatus } from '@/hooks/useRegistrationStatus';
+import { useLiveMatch } from '@/hooks/useLiveMatch';
 
 const TOTAL_FRAMES = 199;
 
 export default function Hero() {
   const { isOpen } = useRegistrationStatus();
+  const { liveMatch, hasLiveMatch } = useLiveMatch();
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const contentWrapperRef = useRef<HTMLDivElement>(null);
@@ -36,35 +38,17 @@ export default function Hero() {
     minutes: 45,
     seconds: 0,
   });
-  const [hasLiveMatch, setHasLiveMatch] = useState(false);
-  const [liveInfo, setLiveInfo] = useState<{ scoreA: number; scoreB: number; teamATag: string; teamBTag: string } | null>(null);
+
+  const liveInfo = liveMatch
+    ? {
+        scoreA: liveMatch.scoreA ?? 0,
+        scoreB: liveMatch.scoreB ?? 0,
+        teamATag: liveMatch.teamATag || 'TMA',
+        teamBTag: liveMatch.teamBTag || 'TMB',
+      }
+    : null;
 
   useEffect(() => {
-    const checkLive = () => {
-      try {
-        const stored = getStoredMatches();
-        const lm = stored.find((m) => m.status === 'live');
-        if (lm) {
-          setHasLiveMatch(true);
-          setLiveInfo({ scoreA: lm.scoreA, scoreB: lm.scoreB, teamATag: lm.teamATag, teamBTag: lm.teamBTag });
-        }
-        api.public.getMatches({ status: 'LIVE' }).then((res) => {
-          if (res?.success && Array.isArray(res.data) && res.data.length > 0) {
-            const m = res.data[0];
-            setHasLiveMatch(true);
-            setLiveInfo({ scoreA: m.scoreA ?? 0, scoreB: m.scoreB ?? 0, teamATag: m.teamATag || 'TMA', teamBTag: m.teamBTag || 'TMB' });
-          } else if (!lm) {
-            setHasLiveMatch(false);
-            setLiveInfo(null);
-          }
-        }).catch(() => {});
-      } catch (e) {}
-    };
-
-    checkLive();
-    const liveInterval = setInterval(checkLive, 4000);
-    window.addEventListener('cst_matches_updated', checkLive);
-
     const updateCountdown = () => {
       const active = getStoredCountdown();
       const target = new Date(active.tournamentDate).getTime();
@@ -103,9 +87,7 @@ export default function Hero() {
     const interval = setInterval(updateCountdown, 1000);
     return () => {
       clearInterval(interval);
-      clearInterval(liveInterval);
       window.removeEventListener('cst_countdown_updated', handleUpdate);
-      window.removeEventListener('cst_matches_updated', checkLive);
     };
   }, []);
 

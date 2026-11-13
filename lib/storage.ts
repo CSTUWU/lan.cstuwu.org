@@ -700,39 +700,6 @@ export const areSingleMatchesEquivalent = (a?: Match | null, b?: Match | null): 
   );
 };
 
-export const saveTeam = (newTeam: Omit<Team, 'id' | 'createdAt' | 'status'>): Team => {
-  const teams = getStoredTeams();
-  const created: Team = {
-    ...newTeam,
-    id: `team-${Date.now()}`,
-    createdAt: new Date().toISOString(),
-    status: 'pending',
-    matchesPlayed: 0,
-    wins: 0,
-    losses: 0,
-    roundsWon: 0,
-    roundsLost: 0,
-    roundDiff: 0,
-    winRate: 0,
-    form: [],
-    points: 0,
-  };
-  const updated = [created, ...teams];
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(TEAMS_KEY, JSON.stringify(updated));
-    window.dispatchEvent(new Event('cst_teams_updated'));
-    try {
-      const channel = getLiveBroadcastChannel();
-      channel?.postMessage({
-        type: 'CST_TEAMS_UPDATE',
-        teams: updated,
-        timestamp: Date.now(),
-      });
-    } catch (e) {}
-  }
-  return created;
-};
-
 export const updateTeam = (teamId: string, partial: Partial<Team>): boolean => {
   const teams = getStoredTeams();
   const index = teams.findIndex((t) => t.id === teamId);
@@ -825,13 +792,6 @@ export const generateAndStorePlayoffBracket = (teams?: Team[]): Match[] => {
     recalculateStandings(playoffMatches);
   }
   return playoffMatches;
-};
-
-export const getMatchById = (matchId: string): Match | undefined => {
-  const matches = getStoredMatches();
-  const found = matches.find((m) => m.id === matchId);
-  if (found) return found;
-  return getStored16Matches().find((m) => m.id === matchId);
 };
 
 export const getActiveLiveMatch = (): Match | undefined => {

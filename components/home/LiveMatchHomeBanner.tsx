@@ -1,88 +1,18 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Radio, ExternalLink, Bomb, Activity } from 'lucide-react';
-import { api } from '@/lib/api';
-import {
-  getStoredMatches,
-  getLiveBroadcastChannel,
-  areSingleMatchesEquivalent,
-  syncDatabaseMatchesToStorage,
-} from '@/lib/storage';
-import { transformBackendMatch } from '@/lib/transformers';
-import { Match } from '@/lib/types';
+import { useLiveMatch } from '@/hooks/useLiveMatch';
 
 export default function LiveMatchHomeBanner() {
   const [mounted, setMounted] = useState(false);
-  const [liveMatch, setLiveMatch] = useState<Match | null>(null);
-
-  const checkLive = useCallback(() => {
-    api.public
-      .getMatches({ status: 'LIVE' })
-      .then((res) => {
-        if (res?.success && Array.isArray(res.data)) {
-          if (res.data.length > 0) {
-            const transformed = transformBackendMatch(res.data[0]);
-            setLiveMatch((prev) => (areSingleMatchesEquivalent(prev, transformed) ? prev : transformed));
-            syncDatabaseMatchesToStorage([transformed]);
-          } else {
-            // Check local fallback
-            const stored = getStoredMatches();
-            const localLive = stored.find((m) => m.status === 'live');
-            setLiveMatch((prev) => (areSingleMatchesEquivalent(prev, localLive || null) ? prev : (localLive || null)));
-          }
-        }
-      })
-      .catch(() => {
-        try {
-          const stored = getStoredMatches();
-          const localLive = stored.find((m) => m.status === 'live');
-          if (localLive) {
-            setLiveMatch((prev) => (areSingleMatchesEquivalent(prev, localLive) ? prev : localLive));
-          }
-        } catch (e) {}
-      });
-  }, []);
+  const { liveMatch } = useLiveMatch();
 
   useEffect(() => {
     setMounted(true);
-
-    try {
-      const stored = getStoredMatches();
-      const localLive = stored.find((m) => m.status === 'live');
-      if (localLive) {
-        setLiveMatch(localLive);
-      }
-    } catch (e) {}
-
-    checkLive();
-
-    const handleUpdate = () => checkLive();
-    window.addEventListener('cst_matches_updated', handleUpdate);
-    window.addEventListener('cst_16_matches_updated', handleUpdate);
-
-    const channel = getLiveBroadcastChannel();
-    const handleBroadcast = (event: MessageEvent) => {
-      if (
-        event.data?.type === 'CST_LIVE_MATCH_UPDATE' ||
-        event.data?.type === 'CST_16_MATCHES_UPDATE'
-      ) {
-        checkLive();
-      }
-    };
-    channel?.addEventListener('message', handleBroadcast);
-
-    const interval = setInterval(checkLive, 4000);
-
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('cst_matches_updated', handleUpdate);
-      window.removeEventListener('cst_16_matches_updated', handleUpdate);
-      channel?.removeEventListener('message', handleBroadcast);
-    };
-  }, [checkLive]);
+  }, []);
 
   // Always return a stable persistent container to preserve React DOM tree hierarchy with GSAP pinned siblings
   if (!mounted || !liveMatch) {
