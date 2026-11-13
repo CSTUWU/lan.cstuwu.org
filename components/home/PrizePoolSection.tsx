@@ -113,7 +113,7 @@ export default function PrizePoolSection() {
   return (
     <section
       id="prizepool"
-      className="relative py-24 sm:py-32 bg-military-black border-t border-b border-gunmetal overflow-hidden"
+      className="relative py-24 sm:py-32 bg-military-black border-t border-b border-gunmetal overflow-hidden scroll-mt-20"
     >
       <div className="absolute inset-0 tactical-grid-bg opacity-20 pointer-events-none" />
       <div className="absolute top-1/3 -left-36 w-[550px] h-[550px] bg-olive/5 rounded-full blur-[160px] pointer-events-none" />

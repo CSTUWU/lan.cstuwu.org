@@ -10,7 +10,7 @@ export default function MapPoolSection() {
   const [selectedMap, setSelectedMap] = useState(CS2_MAP_POOL[0]);
 
   return (
-    <section id="maps" className="relative py-28 bg-military-black border-t border-b border-gunmetal overflow-hidden">
+    <section id="maps" className="relative py-28 bg-military-black border-t border-b border-gunmetal overflow-hidden scroll-mt-20">
       <div className="absolute top-1/2 right-1/4 w-[500px] h-[500px] bg-olive/5 rounded-full blur-[150px] pointer-events-none" />
       <div className="absolute inset-0 tactical-grid-bg opacity-15 pointer-events-none" />
 

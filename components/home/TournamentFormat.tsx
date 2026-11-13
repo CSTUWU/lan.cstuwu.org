@@ -41,7 +41,7 @@ export default function TournamentFormat() {
   ];
 
   return (
-    <section id="format" className="relative py-28 bg-military-black border-t border-b border-gunmetal overflow-hidden">
+    <section id="format" className="relative py-28 bg-military-black border-t border-b border-gunmetal overflow-hidden scroll-mt-20">
       <div className="absolute inset-0 tactical-grid-bg opacity-20 pointer-events-none" />
       <div className="absolute top-1/3 right-10 w-96 h-96 bg-olive/5 rounded-full blur-[140px] pointer-events-none" />
 
