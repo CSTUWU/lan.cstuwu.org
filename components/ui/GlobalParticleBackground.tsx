@@ -126,9 +126,9 @@ export default function GlobalParticleBackground() {
     let particles: Particle[] = [];
 
     const getParticleCount = (w: number) => {
-      if (w < 640) return 38;       // Mobile
-      if (w < 1024) return 60;      // Tablet
-      return 90;                    // Desktop
+      if (w < 640) return 16;       // Mobile: sleek, battery/CPU-friendly
+      if (w < 1024) return 36;      // Tablet
+      return 85;                    // Desktop: full immersive embers
     };
 
     const createParticle = (spawnRandomY = true): Particle => {
