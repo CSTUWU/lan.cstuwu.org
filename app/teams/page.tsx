@@ -11,6 +11,10 @@ import { Team, Player } from '@/lib/types';
 import { Search, Filter, Users, CheckCircle2, Clock, XCircle, Shield, X, Mail, Phone, ExternalLink } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
+import Breadcrumb from '@/components/ui/Breadcrumb';
+import PageHeader from '@/components/ui/PageHeader';
+import TeamLogoAvatar from '@/components/ui/TeamLogoAvatar';
+import StatusBadge from '@/components/ui/StatusBadge';
 import { useRegistrationStatus } from '@/hooks/useRegistrationStatus';
 
 export default function TeamsPage() {
@@ -59,24 +63,16 @@ export default function TeamsPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
-        <div className="flex items-center gap-2 text-xs font-mono text-mutedText mb-8">
-          <Link href="/" className="hover:text-sand transition-colors">HOME</Link>
-          <span>/</span>
-          <span className="text-tacticalWhite">DEPLOYED SQUADS</span>
-        </div>
+        <Breadcrumb crumbs={[{ label: 'HOME', href: '/' }, { label: 'DEPLOYED SQUADS' }]} />
 
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-gunmetal mb-10">
-          <div>
-            <div className="inline-flex items-center gap-2 mb-2">
-              <Badge variant="cyan" size="sm">ROSTER REGISTRY</Badge>
-            </div>
-            <h1 className="font-display font-black text-4xl sm:text-5xl uppercase text-tacticalWhite tracking-tight">
-              REGISTERED <span className="text-sand">SQUADS</span>
-            </h1>
-            <p className="text-xs sm:text-sm font-mono text-mutedText mt-1">
-              Collegiate tactical rosters verified under CST LAN Challenge regulations.
-            </p>
-          </div>
+          <PageHeader
+            badge="ROSTER REGISTRY"
+            titleStart="REGISTERED"
+            titleHighlight="SQUADS"
+            description="Collegiate tactical rosters verified under CST LAN Challenge regulations."
+            className="mb-0"
+          />
 
           {isOpen && (
             <Button href="/register" variant="cyan" size="md">
@@ -146,21 +142,7 @@ export default function TeamsPage() {
                 <span className="absolute top-0 right-0 w-2.5 h-2.5 border-t-2 border-r-2 border-sand opacity-40 group-hover:opacity-100" />
 
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="relative w-14 h-14 bg-surface border border-gunmetal shrink-0 overflow-hidden flex items-center justify-center">
-                    {team.logo && !team.logo.includes('team-placeholder.svg') ? (
-                      <Image
-                        src={team.logo}
-                        alt={team.name}
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform"
-                        sizes="56px"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center font-mono text-xs text-sand font-bold bg-darkGreen/40 border border-olive/30">
-                        {team.tag?.slice(0, 3) || 'SQUAD'}
-                      </div>
-                    )}
-                  </div>
+                  <TeamLogoAvatar src={team.logo} name={team.name} size="lg" />
                   <div className="min-w-0 flex-1">
                     <span className="text-[11px] font-mono text-sand tracking-wider font-bold">
                       [{team.tag}]
@@ -192,21 +174,7 @@ export default function TeamsPage() {
 
                 <div className="flex items-center justify-between text-xs font-mono">
                   <span className="text-mutedText text-[11px]">APPROVAL:</span>
-                  {team.status === 'approved' && (
-                    <span className="inline-flex items-center gap-1 text-emerald-400 font-semibold">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> APPROVED
-                    </span>
-                  )}
-                  {team.status === 'pending' && (
-                    <span className="inline-flex items-center gap-1 text-sand font-semibold">
-                      <Clock className="w-3.5 h-3.5" /> PENDING REVIEW
-                    </span>
-                  )}
-                  {team.status === 'rejected' && (
-                    <span className="inline-flex items-center gap-1 text-rose-500 font-semibold">
-                      <XCircle className="w-3.5 h-3.5" /> REJECTED
-                    </span>
-                  )}
+                  <StatusBadge status={team.status} />
                 </div>
 
                 <div className="mt-3 text-[10px] font-mono text-center text-sand/70 group-hover:text-sand transition-colors">
@@ -230,18 +198,12 @@ export default function TeamsPage() {
             </button>
 
             <div className="flex items-center gap-4 border-b border-gunmetal pb-6 mb-6">
-              <div className="relative w-16 h-16 bg-surface border border-olive/50 shrink-0 overflow-hidden">
-                <Image
-                  src={selectedTeam.logo}
-                  alt={selectedTeam.name}
-                  fill
-                  className="object-cover"
-                  sizes="64px"
-                />
-              </div>
+              <TeamLogoAvatar src={selectedTeam.logo} name={selectedTeam.name} size="xl" />
               <div>
-                <span className="text-xs font-mono text-sand uppercase tracking-widest font-bold">
-                  [{selectedTeam.tag}] • {selectedTeam.status.toUpperCase()}
+                <span className="text-xs font-mono text-sand uppercase tracking-widest font-bold flex items-center gap-2">
+                  <span>[{selectedTeam.tag}]</span>
+                  <span>•</span>
+                  <StatusBadge status={selectedTeam.status} />
                 </span>
                 <h2 className="font-display font-black text-2xl text-tacticalWhite uppercase tracking-wider">
                   {selectedTeam.name}

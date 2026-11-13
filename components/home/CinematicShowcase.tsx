@@ -101,17 +101,21 @@ export default function CinematicShowcase() {
       } catch (e) {}
     };
 
-    for (let i = 1; i < TOTAL_FRAMES; i++) {
-      const img = new Image();
-      const frameNum = String(i + 1).padStart(4, '0');
-      img.src = `/frames/home/frame_${frameNum}.webp?v=3`;
-      img.onload = () => {
-        if (isCancelled) return;
-        images[i] = img;
-      };
-      img.onerror = () => {
-        if (isCancelled) return;
-      };
+    // On mobile devices (< 768px), we use the lightweight 1.5MB home-video.mp4 instead of downloading 200 image frames
+    const isMobileDevice = typeof window !== 'undefined' && window.innerWidth < 768;
+    if (!isMobileDevice) {
+      for (let i = 1; i < TOTAL_FRAMES; i++) {
+        const img = new Image();
+        const frameNum = String(i + 1).padStart(4, '0');
+        img.src = `/frames/home/frame_${frameNum}.webp?v=3`;
+        img.onload = () => {
+          if (isCancelled) return;
+          images[i] = img;
+        };
+        img.onerror = () => {
+          if (isCancelled) return;
+        };
+      }
     }
 
     imagesRef.current = images;
@@ -291,16 +295,32 @@ export default function CinematicShowcase() {
       ref={containerRef}
       className="relative w-full h-screen bg-military-black overflow-hidden select-none border-b border-gunmetal"
     >
+      {/* Mobile Video Background Fallback (Fast 1.5MB stream, eliminates 200 frame downloads) */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="metadata"
+        className="md:hidden absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
+        style={{ filter: 'contrast(1.08) brightness(0.90)' }}
+      >
+        <source src="/home-video.mp4" type="video/mp4" />
+      </video>
+
+      {/* Desktop Frame sequence canvas */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/frames/home/frame_0001.webp?v=3"
         alt="Tactical Engagement Preview"
-        className="absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
+        width={1920}
+        height={1080}
+        className="hidden md:block absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
         style={{ filter: 'contrast(1.08) brightness(0.90)' }}
       />
       <canvas
         ref={canvasRef}
-        className="absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
+        className="hidden md:block absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
         style={{ filter: 'contrast(1.08) brightness(0.90)' }}
       />
 
