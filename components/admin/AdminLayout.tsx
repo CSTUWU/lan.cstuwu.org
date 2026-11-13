@@ -32,14 +32,16 @@ interface AdminLayoutProps {
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isRegOpen, setIsRegOpen] = useState<boolean>(true);
   const [regToggling, setRegToggling] = useState(false);
-  const [isPlayoffTreePub, setIsPlayoffTreePub] = useState<boolean>(() => isPlayoffTreePublished());
+  const [isPlayoffTreePub, setIsPlayoffTreePub] = useState<boolean>(false);
   const [treeToggling, setTreeToggling] = useState(false);
   const [treeRecreating, setTreeRecreating] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     setIsRegOpen(isRegistrationOpen());
     setIsPlayoffTreePub(isPlayoffTreePublished());
 
@@ -68,7 +70,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           setPlayoffTreePublished(res.data.playoffTreePublished);
         }
       }
-    }).catch(() => {});
+    }).catch(() => { });
 
     return () => {
       window.removeEventListener('cst_countdown_updated', handleUpdate);
@@ -161,7 +163,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   return (
     <div className="min-h-screen bg-military-black text-tacticalWhite flex flex-col font-sans">
-      
+
       <header className="h-16 bg-surface border-b border-gunmetal px-4 sm:px-6 flex items-center justify-between sticky top-0 z-40">
         <div className="flex items-center gap-4">
           <button
@@ -199,36 +201,54 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             type="button"
             onClick={handleToggleRegistration}
             disabled={regToggling}
-            className={`px-2.5 sm:px-3 py-1.5 text-xs font-mono font-bold flex items-center gap-1.5 sm:gap-2 border transition-all cursor-pointer ${
-              isRegOpen
+            className={`px-2.5 sm:px-3 py-1.5 text-xs font-mono font-bold flex items-center gap-1.5 sm:gap-2 border transition-all cursor-pointer ${isRegOpen
                 ? 'bg-emerald-950/60 border-emerald-600/80 text-emerald-400 hover:bg-emerald-900/60 shadow-[0_0_12px_rgba(16,185,129,0.3)]'
                 : 'bg-rose-950/60 border-rose-600/80 text-rose-400 hover:bg-rose-900/60 shadow-[0_0_12px_rgba(244,63,94,0.3)]'
-            }`}
+              }`}
             title={isRegOpen ? 'Click to CLOSE registration across entire site' : 'Click to OPEN registration across entire site'}
           >
-            {isRegOpen ? <Unlock className="w-3.5 h-3.5 text-emerald-400" /> : <Lock className="w-3.5 h-3.5 text-rose-400" />}
-            <span className="hidden md:inline">REGISTRATION:</span>
-            <span>{isRegOpen ? 'OPEN' : 'CLOSED'}</span>
+            {mounted ? (
+              <>
+                {isRegOpen ? <Unlock className="w-3.5 h-3.5 text-emerald-400" /> : <Lock className="w-3.5 h-3.5 text-rose-400" />}
+                <span className="hidden md:inline">REGISTRATION:</span>
+                <span>{isRegOpen ? 'OPEN' : 'CLOSED'}</span>
+              </>
+            ) : (
+              <>
+                <Unlock className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="hidden md:inline">REGISTRATION:</span>
+                <span>OPEN</span>
+              </>
+            )}
           </button>
 
           <button
             type="button"
             onClick={handleTogglePlayoffTree}
             disabled={treeToggling}
-            className={`px-2.5 sm:px-3 py-1.5 text-xs font-mono font-bold flex items-center gap-1.5 sm:gap-2 border transition-all cursor-pointer ${
-              isPlayoffTreePub
+            className={`px-2.5 sm:px-3 py-1.5 text-xs font-mono font-bold flex items-center gap-1.5 sm:gap-2 border transition-all cursor-pointer ${isPlayoffTreePub
                 ? 'bg-emerald-950/70 border-emerald-500/80 text-emerald-400 hover:bg-rose-950/80 hover:border-rose-600 hover:text-rose-400 shadow-[0_0_12px_rgba(16,185,129,0.3)]'
                 : 'bg-surface border-gunmetal text-mutedText hover:bg-emerald-950/60 hover:border-emerald-600 hover:text-emerald-400'
-            }`}
+              }`}
             title={
               isPlayoffTreePub
                 ? 'Playoff tree is currently DISPLAYED on public site. Click to DISABLE / HIDE it.'
                 : 'Playoff tree is currently DISABLED / HIDDEN. Click to DISPLAY / PUBLISH it on public site.'
             }
           >
-            <Trophy className={`w-3.5 h-3.5 ${isPlayoffTreePub ? 'text-sand' : 'text-mutedText'}`} />
-            <span className="hidden lg:inline">PLAYOFF TREE:</span>
-            <span>{isPlayoffTreePub ? 'ACTIVE (DISABLE)' : 'DISABLED'}</span>
+            {mounted ? (
+              <>
+                <Trophy className={`w-3.5 h-3.5 ${isPlayoffTreePub ? 'text-sand' : 'text-mutedText'}`} />
+                <span className="hidden lg:inline">PLAYOFF TREE:</span>
+                <span>{isPlayoffTreePub ? 'ACTIVE (DISABLE)' : 'DISABLED'}</span>
+              </>
+            ) : (
+              <>
+                <Trophy className="w-3.5 h-3.5 text-mutedText" />
+                <span className="hidden lg:inline">PLAYOFF TREE:</span>
+                <span>DISABLED</span>
+              </>
+            )}
           </button>
 
           <button
@@ -261,12 +281,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </div>
       </header>
 
-      <div className="flex-1 flex overflow-hidden">
-        
+      <div className="flex-1 flex min-h-[calc(100vh-4rem)]">
+
         <aside
-          className={`fixed lg:static top-16 bottom-0 lg:top-0 left-0 z-30 w-64 bg-surface border-r border-gunmetal flex flex-col justify-between transition-transform duration-300 lg:translate-x-0 ${
-            sidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
-          }`}
+          className={`fixed top-16 bottom-0 left-0 z-30 w-64 bg-surface border-r border-gunmetal flex flex-col justify-between transition-transform duration-300 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
+            }`}
         >
           <div className="p-4 space-y-1">
             <div className="text-[10px] font-mono text-mutedText uppercase tracking-widest px-3 py-2">
@@ -280,11 +299,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   key={item.name}
                   href={item.href}
                   onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 text-xs font-mono uppercase tracking-wider transition-colors border-l-2 ${
-                    active
+                  className={`flex items-center gap-3 px-3 py-2.5 text-xs font-mono uppercase tracking-wider transition-colors border-l-2 ${active
                       ? 'bg-olive/20 border-olive text-sand font-bold shadow-[inset_0_0_10px_rgba(89,99,74,0.3)]'
                       : 'border-transparent text-mutedText hover:text-tacticalWhite hover:bg-card/50'
-                  }`}
+                    }`}
                 >
                   {item.icon}
                   <span>{item.name}</span>
@@ -310,7 +328,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           />
         )}
 
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-military-black">
+        <main className="flex-1 lg:ml-64 p-4 sm:p-6 lg:p-8 bg-military-black min-h-[calc(100vh-4rem)]">
           {children}
         </main>
 
