@@ -1,6 +1,6 @@
 import React from 'react';
 import Image from 'next/image';
-import { GraduationCap, Mail, Phone, Upload } from 'lucide-react';
+import { GraduationCap, Mail, Phone, Upload, CheckCircle2, AlertCircle } from 'lucide-react';
 import { UWU_DEGREE_PROGRAMMES } from '@/lib/types';
 import { getDegreeCodeFromName } from '@/lib/degreeUtils';
 
@@ -28,6 +28,11 @@ export default function Step1TeamIdentity({
   onChange,
   onLogoFileSelect,
 }: Step1TeamIdentityProps) {
+  const isEmailValid = Boolean(form.email.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()));
+  const isWhatsappValid = Boolean(form.whatsappNumber.length === 10 && form.whatsappNumber.startsWith('0'));
+  const isTeamTagValid = Boolean(form.teamTag.trim().length >= 2 && form.teamTag.trim().length <= 10);
+  const isTeamNameValid = Boolean(form.teamName.trim().length >= 2);
+
   return (
     <div className="space-y-6">
       <div className="border-b border-gunmetal pb-4 mb-6">
@@ -57,9 +62,25 @@ export default function Step1TeamIdentity({
                 teamTag: form.teamTag ? form.teamTag : suggestedTag,
               });
             }}
-            className="w-full bg-surface border border-gunmetal px-4 py-2.5 text-xs font-mono text-tacticalWhite focus:outline-none focus:border-olive"
+            className={`w-full bg-surface border px-4 py-2.5 text-xs font-mono text-tacticalWhite focus:outline-none transition-colors ${
+              errors.teamName
+                ? 'border-rose-500'
+                : isTeamNameValid
+                ? 'border-emerald-500/70 focus:border-emerald-400'
+                : 'border-gunmetal focus:border-olive'
+            }`}
           />
-          {errors.teamName && <p className="text-[11px] font-mono text-rose-500 mt-1">{errors.teamName}</p>}
+          {errors.teamName ? (
+            <p className="text-[11px] font-mono text-rose-500 mt-1 flex items-center gap-1">
+              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+              <span>{errors.teamName}</span>
+            </p>
+          ) : isTeamNameValid ? (
+            <p className="text-[10px] font-mono text-emerald-400 mt-1 flex items-center gap-1">
+              <CheckCircle2 className="w-3 h-3 shrink-0" />
+              <span>Team name valid</span>
+            </p>
+          ) : null}
         </div>
 
         <div>
@@ -72,9 +93,25 @@ export default function Step1TeamIdentity({
             maxLength={10}
             value={form.teamTag}
             onChange={(e) => onChange({ teamTag: e.target.value.toUpperCase() })}
-            className="w-full bg-surface border border-gunmetal px-4 py-2.5 text-xs font-mono text-tacticalWhite focus:outline-none focus:border-olive uppercase"
+            className={`w-full bg-surface border px-4 py-2.5 text-xs font-mono text-tacticalWhite focus:outline-none uppercase transition-colors ${
+              errors.teamTag
+                ? 'border-rose-500'
+                : isTeamTagValid
+                ? 'border-emerald-500/70 focus:border-emerald-400'
+                : 'border-gunmetal focus:border-olive'
+            }`}
           />
-          {errors.teamTag && <p className="text-[11px] font-mono text-rose-500 mt-1">{errors.teamTag}</p>}
+          {errors.teamTag ? (
+            <p className="text-[11px] font-mono text-rose-500 mt-1 flex items-center gap-1">
+              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+              <span>{errors.teamTag}</span>
+            </p>
+          ) : isTeamTagValid ? (
+            <p className="text-[10px] font-mono text-emerald-400 mt-1 flex items-center gap-1">
+              <CheckCircle2 className="w-3 h-3 shrink-0" />
+              <span>Tag valid ({form.teamTag.trim().length}/10)</span>
+            </p>
+          ) : null}
         </div>
       </div>
 
@@ -97,7 +134,9 @@ export default function Step1TeamIdentity({
         <select
           value={form.degreeProgram}
           onChange={(e) => onChange({ degreeProgram: e.target.value })}
-          className="w-full bg-surface border border-gunmetal px-4 py-2.5 text-xs font-mono text-tacticalWhite focus:outline-none focus:border-olive"
+          className={`w-full bg-surface border px-4 py-2.5 text-xs font-mono text-tacticalWhite focus:outline-none transition-colors ${
+            errors.degreeProgram ? 'border-rose-500' : 'border-gunmetal focus:border-olive'
+          }`}
         >
           {UWU_DEGREE_PROGRAMMES.map((deg) => (
             <option key={deg} value={deg} className="bg-military-black text-tacticalWhite">
@@ -105,7 +144,12 @@ export default function Step1TeamIdentity({
             </option>
           ))}
         </select>
-        {errors.degreeProgram && <p className="text-[11px] font-mono text-rose-500 mt-1">{errors.degreeProgram}</p>}
+        {errors.degreeProgram && (
+          <p className="text-[11px] font-mono text-rose-500 mt-1 flex items-center gap-1">
+            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+            <span>{errors.degreeProgram}</span>
+          </p>
+        )}
         <p className="text-[10px] font-mono text-mutedKhaki mt-1">
           Every squad member must be enrolled in this same degree programme. Verified from individual enrolment numbers (e.g. <span className="text-sand font-bold">UWU/{getDegreeCodeFromName(form.degreeProgram) || 'CST'}/...</span>).
         </p>
@@ -126,11 +170,25 @@ export default function Step1TeamIdentity({
               const val = e.target.value;
               onChange({ email: val });
             }}
-            className={`w-full bg-surface border px-4 py-2.5 text-xs font-mono text-tacticalWhite focus:outline-none ${
-              errors.email ? 'border-rose-500' : 'border-gunmetal focus:border-olive'
+            className={`w-full bg-surface border px-4 py-2.5 text-xs font-mono text-tacticalWhite focus:outline-none transition-colors ${
+              errors.email
+                ? 'border-rose-500'
+                : isEmailValid
+                ? 'border-emerald-500/70 focus:border-emerald-400'
+                : 'border-gunmetal focus:border-olive'
             }`}
           />
-          {errors.email && <p className="text-[11px] font-mono text-rose-500 mt-1">{errors.email}</p>}
+          {errors.email ? (
+            <p className="text-[11px] font-mono text-rose-500 mt-1 flex items-center gap-1">
+              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+              <span>{errors.email}</span>
+            </p>
+          ) : isEmailValid ? (
+            <p className="text-[10px] font-mono text-emerald-400 mt-1 flex items-center gap-1 font-semibold">
+              <CheckCircle2 className="w-3 h-3 shrink-0" />
+              <span>Valid email format</span>
+            </p>
+          ) : null}
         </div>
 
         <div>
@@ -147,19 +205,35 @@ export default function Step1TeamIdentity({
               const val = e.target.value.replace(/\D/g, '').slice(0, 10);
               onChange({ whatsappNumber: val });
             }}
-            className={`w-full bg-surface border px-4 py-2.5 text-xs font-mono text-tacticalWhite focus:outline-none ${
-              errors.whatsappNumber ? 'border-rose-500' : 'border-gunmetal focus:border-olive'
+            className={`w-full bg-surface border px-4 py-2.5 text-xs font-mono text-tacticalWhite focus:outline-none transition-colors ${
+              errors.whatsappNumber
+                ? 'border-rose-500'
+                : isWhatsappValid
+                ? 'border-emerald-500/70 focus:border-emerald-400'
+                : 'border-gunmetal focus:border-olive'
             }`}
           />
           {errors.whatsappNumber ? (
-            <p className="text-[11px] font-mono text-rose-500 mt-1">{errors.whatsappNumber}</p>
-          ) : form.whatsappNumber.length > 0 && form.whatsappNumber.length < 10 ? (
-            <p className="text-[11px] font-mono text-amber-400 mt-1">
-              Enter {10 - form.whatsappNumber.length} more digit{10 - form.whatsappNumber.length > 1 ? 's' : ''} (10 digits starting with 0)
+            <p className="text-[11px] font-mono text-rose-500 mt-1 flex items-center gap-1">
+              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+              <span>{errors.whatsappNumber}</span>
             </p>
-          ) : form.whatsappNumber.length === 10 && !form.whatsappNumber.startsWith('0') ? (
-            <p className="text-[11px] font-mono text-rose-500 mt-1">
-              Must start with 0 (e.g. 0771234567)
+          ) : form.whatsappNumber.length > 0 && !form.whatsappNumber.startsWith('0') ? (
+            <p className="text-[11px] font-mono text-rose-500 mt-1 flex items-center gap-1 font-semibold">
+              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+              <span>Must start with 0 (e.g. 0771234567)</span>
+            </p>
+          ) : form.whatsappNumber.length > 0 && form.whatsappNumber.length < 10 ? (
+            <p className="text-[11px] font-mono text-amber-400 mt-1 flex items-center gap-1">
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+              <span>
+                Enter {10 - form.whatsappNumber.length} more digit{10 - form.whatsappNumber.length > 1 ? 's' : ''} (10 digits starting with 0)
+              </span>
+            </p>
+          ) : isWhatsappValid ? (
+            <p className="text-[11px] font-mono text-emerald-400 mt-1 flex items-center gap-1 font-semibold">
+              <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+              <span>Valid 10-digit WhatsApp number</span>
             </p>
           ) : null}
         </div>

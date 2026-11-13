@@ -105,10 +105,19 @@ export default function Step2MemberRoster({
                     placeholder={isLeader ? 'Team leader full name (e.g. Kasun Bandara)' : `Member 0${idx + 1} full name`}
                     value={member.fullName}
                     onChange={(e) => onMemberChange(idx, 'fullName', e.target.value)}
-                    className="h-10 w-full bg-surface border border-gunmetal px-3.5 text-xs font-mono text-tacticalWhite focus:outline-none focus:border-olive transition-colors"
+                    className={`h-10 w-full bg-surface border px-3.5 text-xs font-mono text-tacticalWhite focus:outline-none transition-colors ${
+                      errors[`m_${idx}_fullName`]
+                        ? 'border-rose-500'
+                        : member.fullName.trim().length >= 2
+                        ? 'border-emerald-500/70 focus:border-emerald-400'
+                        : 'border-gunmetal focus:border-olive'
+                    }`}
                   />
                   {errors[`m_${idx}_fullName`] && (
-                    <p className="text-[10px] font-mono text-rose-500 mt-1">{errors[`m_${idx}_fullName`]}</p>
+                    <p className="text-[10px] font-mono text-rose-500 mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3 shrink-0" />
+                      <span>{errors[`m_${idx}_fullName`]}</span>
+                    </p>
                   )}
                 </div>
 
@@ -127,10 +136,19 @@ export default function Step2MemberRoster({
                     placeholder="e.g. Viper, Ghost, Apex"
                     value={member.gamingName}
                     onChange={(e) => onMemberChange(idx, 'gamingName', e.target.value)}
-                    className="h-10 w-full bg-surface border border-gunmetal px-3.5 text-xs font-mono text-tacticalWhite focus:outline-none focus:border-olive transition-colors"
+                    className={`h-10 w-full bg-surface border px-3.5 text-xs font-mono text-tacticalWhite focus:outline-none transition-colors ${
+                      errors[`m_${idx}_gamingName`]
+                        ? 'border-rose-500'
+                        : member.gamingName.trim().length >= 1
+                        ? 'border-emerald-500/70 focus:border-emerald-400'
+                        : 'border-gunmetal focus:border-olive'
+                    }`}
                   />
                   {errors[`m_${idx}_gamingName`] && (
-                    <p className="text-[10px] font-mono text-rose-500 mt-1">{errors[`m_${idx}_gamingName`]}</p>
+                    <p className="text-[10px] font-mono text-rose-500 mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3 shrink-0" />
+                      <span>{errors[`m_${idx}_gamingName`]}</span>
+                    </p>
                   )}
                 </div>
 
@@ -147,7 +165,9 @@ export default function Step2MemberRoster({
                   <select
                     value={member.year}
                     onChange={(e) => onMemberChange(idx, 'year', e.target.value)}
-                    className="h-10 w-full bg-surface border border-gunmetal px-3 text-xs font-mono text-tacticalWhite focus:outline-none focus:border-olive transition-colors"
+                    className={`h-10 w-full bg-surface border px-3 text-xs font-mono text-tacticalWhite focus:outline-none transition-colors ${
+                      errors[`m_${idx}_year`] ? 'border-rose-500' : 'border-gunmetal focus:border-olive'
+                    }`}
                   >
                     {ACADEMIC_YEARS.map((y) => (
                       <option key={y} value={y} className="bg-military-black text-tacticalWhite">
@@ -156,7 +176,10 @@ export default function Step2MemberRoster({
                     ))}
                   </select>
                   {errors[`m_${idx}_year`] && (
-                    <p className="text-[10px] font-mono text-rose-500 mt-1">{errors[`m_${idx}_year`]}</p>
+                    <p className="text-[10px] font-mono text-rose-500 mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3 shrink-0" />
+                      <span>{errors[`m_${idx}_year`]}</span>
+                    </p>
                   )}
                 </div>
 
@@ -170,13 +193,37 @@ export default function Step2MemberRoster({
                       UWU/{degreeCode || 'DEG'}/YY/NNN
                     </span>
                   </div>
-                  <input
-                    type="text"
-                    placeholder={`e.g. UWU/${degreeCode || 'CST'}/22/00${idx + 1}`}
-                    value={member.enrollmentNumber}
-                    onChange={(e) => onMemberChange(idx, 'enrollmentNumber', e.target.value.toUpperCase())}
-                    className="h-10 w-full bg-surface border border-gunmetal px-3.5 text-xs font-mono text-tacticalWhite focus:outline-none focus:border-olive uppercase tracking-wider font-semibold transition-colors"
-                  />
+                  {(() => {
+                    const val = member.enrollmentNumber.trim();
+                    const hasError = Boolean(errors[`m_${idx}_enrollmentNumber`]);
+                    let borderClass = 'border-gunmetal focus:border-olive';
+
+                    if (hasError) {
+                      borderClass = 'border-rose-500';
+                    } else if (val) {
+                      const strictCheck = validateStrictEnrollmentFormat(val);
+                      const deg = extractDegreeFromEnrollment(val);
+                      const expectedCode = getDegreeCodeFromName(degreeProgram);
+                      const isDup = members.some(
+                        (m, i) => i !== idx && m.enrollmentNumber.trim().toUpperCase() === val.toUpperCase()
+                      );
+                      if (strictCheck.isValid && !isDup && deg && (!expectedCode || deg.code === expectedCode)) {
+                        borderClass = 'border-emerald-500/70 focus:border-emerald-400';
+                      } else if (!strictCheck.isValid || isDup || (deg && expectedCode && deg.code !== expectedCode)) {
+                        borderClass = 'border-rose-500';
+                      }
+                    }
+
+                    return (
+                      <input
+                        type="text"
+                        placeholder={`e.g. UWU/${degreeCode || 'CST'}/22/00${idx + 1}`}
+                        value={member.enrollmentNumber}
+                        onChange={(e) => onMemberChange(idx, 'enrollmentNumber', e.target.value.toUpperCase())}
+                        className={`h-10 w-full bg-surface border px-3.5 text-xs font-mono text-tacticalWhite focus:outline-none uppercase tracking-wider font-semibold transition-colors ${borderClass}`}
+                      />
+                    );
+                  })()}
 
                   {/* Real-time degree recognition badge */}
                   {(() => {
@@ -234,7 +281,10 @@ export default function Step2MemberRoster({
                   })()}
 
                   {errors[`m_${idx}_enrollmentNumber`] && (
-                    <p className="text-[10px] font-mono text-rose-500 mt-1">{errors[`m_${idx}_enrollmentNumber`]}</p>
+                    <p className="text-[10px] font-mono text-rose-500 mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3 shrink-0" />
+                      <span>{errors[`m_${idx}_enrollmentNumber`]}</span>
+                    </p>
                   )}
                 </div>
 

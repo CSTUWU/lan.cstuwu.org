@@ -11,6 +11,7 @@ import {
   extractDegreeFromEnrollment,
   getDegreeCodeFromName,
   validateSquadEnrollmentDegrees,
+  validateStrictEnrollmentFormat,
 } from '@/lib/degreeUtils';
 import {
   Shield,
@@ -112,10 +113,84 @@ export default function RegisterPage() {
     }
   };
 
+  // Step 1: Realtime validation and error clearing
+  const handleStep1Change = (updates: Partial<RegistrationFormState>) => {
+    setForm((prev) => {
+      const updated = { ...prev, ...updates };
+
+      // Realtime validation & immediate error removal
+      setErrors((prevErrors) => {
+        const nextErrors = { ...prevErrors };
+
+        if ('teamName' in updates) {
+          if (updated.teamName.trim().length >= 2) {
+            delete nextErrors.teamName;
+          } else if (prevErrors.teamName) {
+            nextErrors.teamName = 'Team name is required';
+          }
+        }
+
+        if ('teamTag' in updates) {
+          const tag = updated.teamTag.trim();
+          if (tag.length >= 2 && tag.length <= 10) {
+            delete nextErrors.teamTag;
+          } else if (prevErrors.teamTag) {
+            if (!tag) {
+              nextErrors.teamTag = 'Team tag (e.g. CST.A) is required';
+            } else if (tag.length < 2 || tag.length > 10) {
+              nextErrors.teamTag = 'Team tag must be 2 to 10 characters';
+            }
+          }
+        }
+
+        if ('degreeProgram' in updates) {
+          if (updated.degreeProgram.trim()) {
+            delete nextErrors.degreeProgram;
+          }
+        }
+
+        if ('email' in updates) {
+          const emailVal = updated.email.trim();
+          if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
+            delete nextErrors.email;
+          } else if (prevErrors.email) {
+            if (!emailVal) {
+              nextErrors.email = 'Contact email address is required';
+            } else {
+              nextErrors.email = 'Valid email address required (e.g. leader@std.uwu.ac.lk)';
+            }
+          }
+        }
+
+        if ('whatsappNumber' in updates) {
+          const cleanWa = updated.whatsappNumber.trim().replace(/[\s\-]/g, '');
+          if (/^0\d{9}$/.test(cleanWa)) {
+            // Ewelema eka haduwoth error msg eka ain wenna one
+            delete nextErrors.whatsappNumber;
+          } else if (prevErrors.whatsappNumber) {
+            if (!cleanWa) {
+              nextErrors.whatsappNumber = 'WhatsApp contact number is required';
+            } else if (cleanWa.length === 10 && !cleanWa.startsWith('0')) {
+              nextErrors.whatsappNumber = 'Must start with 0 (e.g. 0771234567)';
+            } else if (cleanWa.length < 10) {
+              nextErrors.whatsappNumber = 'Must be a valid 10-digit number starting with 0 (e.g. 0771234567)';
+            }
+          }
+        }
+
+        return nextErrors;
+      });
+
+      return updated;
+    });
+  };
+
   const handleMemberChange = (index: number, field: keyof MemberFormState, value: string) => {
+    let nextMembers: MemberFormState[] = [];
     setMembers((prev) => {
       const updated = [...prev];
       updated[index] = { ...updated[index], [field]: value };
+      nextMembers = updated;
       return updated;
     });
 
@@ -129,6 +204,64 @@ export default function RegisterPage() {
         }));
       }
     }
+
+    // Realtime error removal for Member Roster fields
+    setErrors((prevErrors) => {
+      const nextErrors = { ...prevErrors };
+
+      if (field === 'fullName') {
+        if (value.trim()) {
+          delete nextErrors[`m_${index}_fullName`];
+        }
+      }
+
+      if (field === 'gamingName') {
+        if (value.trim()) {
+          delete nextErrors[`m_${index}_gamingName`];
+        }
+      }
+
+      if (field === 'year') {
+        if (value.trim()) {
+          delete nextErrors[`m_${index}_year`];
+        }
+      }
+
+      if (field === 'enrollmentNumber') {
+        const val = value.trim().toUpperCase();
+        if (val) {
+          const strictCheck = validateStrictEnrollmentFormat(val);
+          const deg = extractDegreeFromEnrollment(val);
+          const expectedCode = getDegreeCodeFromName(form.degreeProgram);
+
+          // Check if duplicate exists with other members
+          const isDuplicate = nextMembers.some(
+            (m, i) => i !== index && m.enrollmentNumber.trim().toUpperCase() === val
+          );
+
+          if (strictCheck.isValid && !isDuplicate && deg && (!expectedCode || deg.code === expectedCode)) {
+            delete nextErrors[`m_${index}_enrollmentNumber`];
+          }
+
+          // Clear duplicate warning on other member if this resolved it
+          nextMembers.forEach((m, otherIdx) => {
+            if (otherIdx !== index) {
+              const otherVal = m.enrollmentNumber.trim().toUpperCase();
+              if (otherVal && nextErrors[`m_${otherIdx}_enrollmentNumber`]?.includes('Duplicate')) {
+                const stillDuplicate = nextMembers.some(
+                  (otherM, oi) => oi !== otherIdx && otherM.enrollmentNumber.trim().toUpperCase() === otherVal
+                );
+                if (!stillDuplicate) {
+                  delete nextErrors[`m_${otherIdx}_enrollmentNumber`];
+                }
+              }
+            }
+          });
+        }
+      }
+
+      return nextErrors;
+    });
   };
 
   const handleMemberConfigFile = (index: number, file: File | null) => {
@@ -566,7 +699,7 @@ export default function RegisterPage() {
               <Step1TeamIdentity
                 form={form}
                 errors={errors}
-                onChange={(updates) => setForm({ ...form, ...updates })}
+                onChange={handleStep1Change}
                 onLogoFileSelect={handleLogoUpload}
               />
             )}
