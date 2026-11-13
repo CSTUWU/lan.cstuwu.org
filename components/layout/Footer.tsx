@@ -128,9 +128,12 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-[11px] font-mono">
-          <p>© 2026 CST LAN Challenge. Computer Science and Technology Degree Programme, Uva Wellassa University. All rights reserved.</p>
-          <div className="flex items-center gap-4 text-mutedText">
+        <div className="pt-8 flex flex-col md:flex-row items-center md:items-baseline justify-between gap-4 text-[11px] font-mono text-center md:text-left">
+          <div>
+            <p>© 2026 CST LAN Challenge. Computer Science and Technology Degree Programme, Uva Wellassa University.</p>
+            <p className="text-mutedText mt-0.5">All rights reserved.</p>
+          </div>
+          <div className="flex items-center gap-4 text-mutedText self-center md:self-auto shrink-0">
             <span>TACTICAL ESPORTS OPERATIONS</span>
             <span className="hidden sm:inline">•</span>
             <span>OFFICIAL UNIVERSITY CHAMPIONSHIP</span>

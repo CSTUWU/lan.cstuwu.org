@@ -6,9 +6,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { Menu, X, ChevronRight, Crosshair, Radio } from 'lucide-react';
 import { useRegistrationStatus } from '@/hooks/useRegistrationStatus';
-import { api } from '@/lib/api';
-import { getStoredMatches, getStored16Matches, syncDatabaseMatchesToStorage, getLiveBroadcastChannel } from '@/lib/storage';
-import { transformBackendMatch } from '@/lib/transformers';
+import { useLiveMatch } from '@/hooks/useLiveMatch';
 import Button from '../ui/Button';
 
 // Manual toggles to show/hide sections from the navbar (set true to re-enable manually)
@@ -20,9 +18,9 @@ export const NAV_VISIBILITY = {
 
 export default function Navbar() {
   const { isOpen } = useRegistrationStatus();
+  const { hasLiveMatch } = useLiveMatch();
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [hasLiveMatch, setHasLiveMatch] = useState(false);
   const [currentHash, setCurrentHash] = useState('');
   const pathname = usePathname();
   const isHome = pathname === '/';
@@ -80,37 +78,6 @@ export default function Navbar() {
     }
   }, [isHome]);
 
-  const checkLiveMatch = useCallback(() => {
-    try {
-      const stored = getStoredMatches();
-      const stored16 = getStored16Matches();
-      const localLive =
-        (Array.isArray(stored) && stored.some((m) => m.status === 'live')) ||
-        (Array.isArray(stored16) && stored16.some((m) => m.status === 'live'));
-
-      api.public
-        .getMatches({ status: 'LIVE' })
-        .then((res) => {
-          if (res?.success && Array.isArray(res.data)) {
-            const serverLive = res.data.length > 0;
-            if (serverLive) {
-              setHasLiveMatch(true);
-              syncDatabaseMatchesToStorage(res.data.map(transformBackendMatch));
-            } else {
-              setHasLiveMatch(localLive);
-            }
-          } else {
-            setHasLiveMatch(localLive);
-          }
-        })
-        .catch(() => {
-          setHasLiveMatch(localLive);
-        });
-    } catch {
-      // Fallback gracefully
-    }
-  }, []);
-
   useEffect(() => {
     const handleScroll = () => {
       checkScrollState();
@@ -129,44 +96,11 @@ export default function Navbar() {
     // Initial check on mount
     checkScrollState();
 
-    // Check storage immediately to prevent flicker on mount
-    try {
-      const stored = getStoredMatches();
-      const stored16 = getStored16Matches();
-      if (
-        (Array.isArray(stored) && stored.some((m) => m.status === 'live')) ||
-        (Array.isArray(stored16) && stored16.some((m) => m.status === 'live'))
-      ) {
-        setHasLiveMatch(true);
-      }
-    } catch {}
-
-    checkLiveMatch();
-    const liveInterval = setInterval(checkLiveMatch, 4000);
-
-    window.addEventListener('cst_matches_updated', checkLiveMatch);
-    window.addEventListener('cst_16_matches_updated', checkLiveMatch);
-
-    const channel = getLiveBroadcastChannel();
-    const handleBroadcast = (event: MessageEvent) => {
-      if (
-        event.data?.type === 'CST_LIVE_MATCH_UPDATE' ||
-        event.data?.type === 'CST_16_MATCHES_UPDATE'
-      ) {
-        checkLiveMatch();
-      }
-    };
-    channel?.addEventListener('message', handleBroadcast);
-
     return () => {
-      clearInterval(liveInterval);
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('resize', handleResize);
-      window.removeEventListener('cst_matches_updated', checkLiveMatch);
-      window.removeEventListener('cst_16_matches_updated', checkLiveMatch);
-      channel?.removeEventListener('message', handleBroadcast);
     };
-  }, [checkScrollState, checkLiveMatch, mobileMenuOpen]);
+  }, [checkScrollState, mobileMenuOpen]);
 
   const navLinks = [
     { name: 'Home', href: '/' },
@@ -179,21 +113,35 @@ export default function Navbar() {
     ...(NAV_VISIBILITY.scoreboard ? [{ name: 'Scoreboard', href: '/scoreboard' }] : []),
   ];
 
-  const handleNavClick = (href: string) => {
+  const handleNavClick = (href: string, e?: React.MouseEvent) => {
     if (href.includes('#')) {
       const hash = href.substring(href.indexOf('#'));
       setCurrentHash(hash);
+
       if (pathname === '/' && typeof window !== 'undefined') {
+        if (e) {
+          e.preventDefault();
+        }
         const id = hash.replace(/^#/, '');
         const elem = document.getElementById(id);
         if (elem) {
-          elem.scrollIntoView({ behavior: 'smooth' });
+          const yOffset = -80; // Navbar height offset
+          const y = elem.getBoundingClientRect().top + window.pageYOffset + yOffset;
+          window.scrollTo({ top: y, behavior: 'auto' });
+          window.history.pushState(null, '', href);
         }
+      } else if (typeof window !== 'undefined') {
+        // Navigating from another route (e.g. /about or /register) to /#prizepool
+        sessionStorage.setItem('cst_pending_scroll_hash', hash);
       }
     } else {
       setCurrentHash('');
       if (href === '/' && pathname === '/' && typeof window !== 'undefined') {
+        if (e) {
+          e.preventDefault();
+        }
         window.scrollTo({ top: 0, behavior: 'smooth' });
+        window.history.pushState(null, '', '/');
       }
     }
   };
@@ -258,7 +206,7 @@ export default function Navbar() {
                 <Link
                   key={link.name}
                   href={link.href}
-                  onClick={() => handleNavClick(link.href)}
+                  onClick={(e) => handleNavClick(link.href, e)}
                   className={`group relative px-2 xl:px-3 py-1.5 text-xs font-mono font-semibold uppercase tracking-wider transition-colors duration-200 flex items-center shrink-0 whitespace-nowrap ${
                     active ? 'text-sand' : 'text-mutedText hover:text-sand'
                   }`}
@@ -381,8 +329,8 @@ export default function Navbar() {
               <Link
                 key={link.name}
                 href={link.href}
-                onClick={() => {
-                  handleNavClick(link.href);
+                onClick={(e) => {
+                  handleNavClick(link.href, e);
                   setMobileMenuOpen(false);
                 }}
                 className={`flex items-center justify-between py-2.5 text-base font-display uppercase tracking-wider border-b border-gunmetal/60 ${

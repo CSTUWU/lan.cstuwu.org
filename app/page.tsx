@@ -1,5 +1,6 @@
-import React from 'react';
-import type { Metadata } from 'next';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import Hero from '@/components/home/Hero';
 import CinematicShowcase from '@/components/home/CinematicShowcase';
 import LiveMatchHomeBanner from '@/components/home/LiveMatchHomeBanner';
@@ -9,29 +10,33 @@ import TournamentFormat from '@/components/home/TournamentFormat';
 import MapPoolSection from '@/components/home/MapPoolSection';
 import TeamsPreview from '@/components/home/TeamsPreview';
 
-export const metadata: Metadata = {
-  title: 'Home',
-  description:
-    'CST LAN Challenge 2026 - Official Call of Duty 4 Modern Warfare (PromodLive 2.20 EU) university esports championship by Uva Wellassa University of Sri Lanka. View schedules, teams, scoreboard, and register your squad.',
-  openGraph: {
-    title: 'CST LAN Challenge 2026 - Home',
-    description:
-      'Official CoD4 MW PromodLive 2.20 EU tournament by CST Degree Programme, Uva Wellassa University of Sri Lanka.',
-    type: 'website',
-    images: [
-      {
-        url: '/images/cyber-strike-logo.png',
-        width: 1200,
-        height: 630,
-        alt: 'CST LAN Challenge 2026 Home',
-      },
-    ],
-  },
-};
-
 export default function HomePage() {
+  const [isReadyToDisplay, setIsReadyToDisplay] = useState(false);
+
+  useEffect(() => {
+    const hasHash = Boolean(
+      window.location.hash || sessionStorage.getItem('cst_pending_scroll_hash')
+    );
+
+    if (hasHash) {
+      // If navigating to a section (e.g. #prizepool), wait until scrolled into place before making page visible
+      const timer = setTimeout(() => {
+        setIsReadyToDisplay(true);
+      }, 180);
+      return () => clearTimeout(timer);
+    } else {
+      setIsReadyToDisplay(true);
+    }
+  }, []);
+
   return (
-    <div className="relative w-full">
+    <div
+      style={{
+        opacity: isReadyToDisplay ? 1 : 0,
+        transition: 'opacity 0.15s ease-out',
+      }}
+      className="relative w-full"
+    >
       <Hero />
 
       <CinematicShowcase />

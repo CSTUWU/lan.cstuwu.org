@@ -112,60 +112,86 @@ export interface ExtractedDegree {
 }
 
 /**
+ * Validates strictly that an enrollment number has 4 slash-separated parts:
+ * Part 1: Exactly 'UWU'
+ * Part 2: Recognized degree code (e.g. CST, IIT, SCT, etc.)
+ * Part 3: 2-digit academic batch year (e.g. 20, 21, 22, 23, 24, 25)
+ * Part 4: 3-digit or 4-digit student serial number (e.g. 001, 111)
+ * Example: UWU/CST/23/111
+ */
+export function validateStrictEnrollmentFormat(enrollment: string | undefined | null): {
+  isValid: boolean;
+  error?: string;
+  parts?: { uwu: string; degree: string; year: string; serial: string };
+} {
+  if (!enrollment || typeof enrollment !== 'string') {
+    return { isValid: false, error: 'Enrollment number is required' };
+  }
+
+  const trimmed = enrollment.trim().toUpperCase();
+  const parts = trimmed.split('/');
+
+  if (parts.length !== 4) {
+    return {
+      isValid: false,
+      error: 'Must contain exactly 4 parts separated by slashes (format: UWU/CST/23/111)',
+    };
+  }
+
+  const [part1, part2, part3, part4] = parts;
+
+  if (part1 !== 'UWU') {
+    return {
+      isValid: false,
+      error: "Part 1 must be exactly 'UWU' (e.g. UWU/CST/23/111)",
+    };
+  }
+
+  if (!part2 || !DEGREE_REGISTRY[part2]) {
+    return {
+      isValid: false,
+      error: `Part 2 degree '${part2}' is not a recognized UWU degree code (e.g. CST, IIT, SCT, etc.)`,
+    };
+  }
+
+  if (!/^\d{2}$/.test(part3)) {
+    return {
+      isValid: false,
+      error: `Part 3 year '${part3}' must be a 2-digit batch year (e.g. 22, 23, 24)`,
+    };
+  }
+
+  if (!part4 || !/^\d+$/.test(part4)) {
+    return {
+      isValid: false,
+      error: `Part 4 student number is required and must be digits (e.g. 1, 11, 111)`,
+    };
+  }
+
+  return {
+    isValid: true,
+    parts: { uwu: part1, degree: part2, year: part3, serial: part4 },
+  };
+}
+
+/**
  * Extracts degree information from an enrollment number string.
- * Supports formats like:
- * - UWU/CST/22/001
- * - UWU-CST-22-001
- * - UWU CST 22 001
- * - CST/22/001
- * - CST 22 001
+ * Strictly verifies the 4-part structure UWU/<DEGREE>/<YEAR>/<NO>.
  */
 export function extractDegreeFromEnrollment(enrollment: string | undefined | null): ExtractedDegree | null {
   if (!enrollment || typeof enrollment !== 'string') return null;
   const trimmed = enrollment.trim().toUpperCase();
   if (!trimmed) return null;
 
-  // 1. Primary Regex: UWU/CST/22/001 or CST/22/001 or UWU-CST-22-001 or UWU/CST/2022/045
-  const standardMatch = trimmed.match(/(?:UWU[/\s\-_]?)?([A-Z]{2,5})[/\s\-_]?(\d{2,4})[/\s\-_]?(\d{1,4})/);
-  if (standardMatch) {
-    const rawCode = standardMatch[1];
-    const year = standardMatch[2];
-    const num = standardMatch[3];
-    const info = DEGREE_REGISTRY[rawCode];
+  const strictCheck = validateStrictEnrollmentFormat(trimmed);
+  if (strictCheck.isValid && strictCheck.parts) {
+    const info = DEGREE_REGISTRY[strictCheck.parts.degree];
     if (info) {
       return {
         code: info.code,
         name: info.name,
         faculty: info.faculty,
-        normalizedEnrollment: `UWU/${info.code}/${year.slice(-2)}/${num.padStart(3, '0')}`,
-      };
-    }
-  }
-
-  // 2. Secondary check: search for known degree codes
-  for (const [codeKey, info] of Object.entries(DEGREE_REGISTRY)) {
-    const regex = new RegExp(`(^|[^A-Z])${codeKey}([^A-Z]|$)`);
-    if (regex.test(trimmed)) {
-      return {
-        code: info.code,
-        name: info.name,
-        faculty: info.faculty,
-        normalizedEnrollment: trimmed.replace(/\s+/g, '/'),
-      };
-    }
-  }
-
-  // 3. Fallback: split parts
-  const parts = trimmed.replace(/[^A-Z0-9]/g, ' ').split(/\s+/).filter(Boolean);
-  if (parts.length >= 2) {
-    const candidate = parts[0] === 'UWU' ? parts[1] : parts[0];
-    if (candidate && DEGREE_REGISTRY[candidate]) {
-      const info = DEGREE_REGISTRY[candidate];
-      return {
-        code: info.code,
-        name: info.name,
-        faculty: info.faculty,
-        normalizedEnrollment: trimmed,
+        normalizedEnrollment: `UWU/${info.code}/${strictCheck.parts.year}/${strictCheck.parts.serial}`,
       };
     }
   }
@@ -218,9 +244,16 @@ export function validateSquadEnrollmentDegrees(
       return;
     }
 
+    const strictCheck = validateStrictEnrollmentFormat(en);
+    if (!strictCheck.isValid) {
+      errors[idx] = `${memberLabel}: ${strictCheck.error || 'Invalid enrollment format. Required: UWU/<DEGREE>/<YEAR>/<NO> (e.g. UWU/CST/23/111)'}`;
+      memberDegrees.push(null);
+      return;
+    }
+
     const degreeInfo = extractDegreeFromEnrollment(en);
     if (!degreeInfo) {
-      errors[idx] = `${memberLabel} enrollment number format is invalid. Degree cannot be identified. Use format: UWU/<DEGREE>/<YEAR>/<NO> (e.g. UWU/CST/22/001)`;
+      errors[idx] = `${memberLabel} enrollment number format is invalid. Required format: UWU/<DEGREE>/<YEAR>/<NO> (e.g. UWU/CST/23/111)`;
       memberDegrees.push(null);
       return;
     }
