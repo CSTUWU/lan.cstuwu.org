@@ -29,7 +29,7 @@ export default function PageHeader({
           {badge}
         </Badge>
         {badgeLabel && (
-          <span className="text-[11px] font-mono text-mutedKhaki">// {badgeLabel}</span>
+          <span className="text-[11px] font-mono text-mutedKhaki">{'// '}{badgeLabel}</span>
         )}
       </div>
       <h1 className="font-display font-black text-3xl sm:text-4xl md:text-5xl uppercase text-tacticalWhite tracking-widest leading-none">
