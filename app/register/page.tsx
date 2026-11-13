@@ -209,6 +209,21 @@ export default function RegisterPage() {
         }
       });
 
+      // Strict duplicate enrollment number check across squad members
+      const seenEnrollments = new Map<string, number>();
+      members.forEach((m, idx) => {
+        const en = m.enrollmentNumber.trim().toUpperCase();
+        if (en) {
+          if (seenEnrollments.has(en)) {
+            const firstIdx = seenEnrollments.get(en)!;
+            const firstRole = firstIdx === 0 ? 'Member 1 (Leader)' : `Member ${firstIdx + 1}`;
+            newErrors[`m_${idx}_enrollmentNumber`] = `Duplicate enrollment number! Already assigned to ${firstRole}. Each operative must have a unique student number.`;
+          } else {
+            seenEnrollments.set(en, idx);
+          }
+        }
+      });
+
       // Strict same-degree validation: identify degree from enrollment numbers
       const enrollmentNumbers = members.map((m) => m.enrollmentNumber.trim());
       const degreeValidation = validateSquadEnrollmentDegrees(enrollmentNumbers, form.degreeProgram);

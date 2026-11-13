@@ -1,7 +1,7 @@
 import React from 'react';
 import { Upload, FileCode2, Trash2, CheckCircle2, XCircle, AlertCircle, GraduationCap } from 'lucide-react';
 import { ACADEMIC_YEARS } from '@/lib/types';
-import { getDegreeCodeFromName, extractDegreeFromEnrollment } from '@/lib/degreeUtils';
+import { getDegreeCodeFromName, extractDegreeFromEnrollment, validateStrictEnrollmentFormat } from '@/lib/degreeUtils';
 
 export interface MemberFormState {
   fullName: string;
@@ -182,13 +182,38 @@ export default function Step2MemberRoster({
                   {(() => {
                     const val = member.enrollmentNumber.trim();
                     if (!val) return null;
+                    const strictCheck = validateStrictEnrollmentFormat(val);
+                    if (!strictCheck.isValid) {
+                      return (
+                        <p className="text-[10px] font-mono text-amber-400 mt-1 flex items-center gap-1 font-semibold">
+                          <AlertCircle className="w-3 h-3 shrink-0" />
+                          <span>{strictCheck.error || 'Strict format required: UWU/<DEGREE>/<YEAR>/<NO> (e.g. UWU/CST/23/111)'}</span>
+                        </p>
+                      );
+                    }
+
+                    // Check for duplicate inside the squad
+                    const upperVal = val.toUpperCase();
+                    const duplicateIdx = members.findIndex(
+                      (m, i) => i !== idx && m.enrollmentNumber.trim().toUpperCase() === upperVal
+                    );
+                    if (duplicateIdx !== -1) {
+                      const dupRole = duplicateIdx === 0 ? 'Member 1 (Leader)' : `Member ${duplicateIdx + 1}`;
+                      return (
+                        <p className="text-[10px] font-mono text-rose-400 mt-1 flex items-center gap-1 font-bold">
+                          <XCircle className="w-3 h-3 shrink-0" />
+                          <span>DUPLICATE DETECTED: This number is already entered for {dupRole}!</span>
+                        </p>
+                      );
+                    }
+
                     const deg = extractDegreeFromEnrollment(val);
                     const expectedCode = getDegreeCodeFromName(degreeProgram);
                     if (!deg) {
                       return (
                         <p className="text-[10px] font-mono text-amber-400 mt-1 flex items-center gap-1">
                           <AlertCircle className="w-3 h-3 shrink-0" />
-                          <span>Unrecognized format. Enter official UWU enrollment number (e.g. UWU/CST/22/001)</span>
+                          <span>Unrecognized format. Enter official UWU enrollment number (e.g. UWU/CST/23/111)</span>
                         </p>
                       );
                     }
