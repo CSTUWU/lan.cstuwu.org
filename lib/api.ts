@@ -25,23 +25,6 @@ class ApiClient {
       headers['Content-Type'] = 'application/json';
     }
 
-    if (typeof window !== 'undefined') {
-      try {
-        const jwt = localStorage.getItem('cst_admin_jwt');
-        if (jwt && !headers['Authorization']) {
-          headers['Authorization'] = `Bearer ${jwt}`;
-        }
-        const isAuth =
-          localStorage.getItem('cst_lan_admin_auth') === 'authenticated' ||
-          localStorage.getItem('cst_admin_authenticated') === 'authenticated' ||
-          document.cookie.includes('cst_lan_admin_auth=authenticated');
-        if (isAuth && !headers['X-Admin-Auth']) {
-          headers['X-Admin-Auth'] = 'authenticated';
-        }
-      } catch (e) {
-      }
-    }
-
     const targetUrls: string[] = [];
     if (typeof window !== 'undefined') {
       const isLocalHost =
@@ -121,23 +104,15 @@ class ApiClient {
 
   public auth = {
     login: async (usernameOrEmail: string, password: string) => {
-      const res = await this.request<{ token: string; admin: any }>('/auth/login', {
+      return this.request<{ token?: string; admin: any }>('/auth/login', {
         method: 'POST',
         body: JSON.stringify({ usernameOrEmail, password }),
       });
-      if (res.success && res.data?.token && typeof window !== 'undefined') {
-        try {
-          localStorage.setItem('cst_admin_jwt', res.data.token);
-          localStorage.setItem('cst_lan_admin_auth', 'authenticated');
-        } catch (e) {}
-      }
-      return res;
     },
 
     logout: async () => {
       if (typeof window !== 'undefined') {
         try {
-          localStorage.removeItem('cst_admin_jwt');
           localStorage.removeItem('cst_lan_admin_auth');
         } catch (e) {}
       }
