@@ -19,7 +19,8 @@ import {
 import Button from '../ui/Button';
 import { useRegistrationStatus } from '@/hooks/useRegistrationStatus';
 
-const TOTAL_FRAMES = 199;
+const DESKTOP_TOTAL_FRAMES = 199;
+const MOBILE_TOTAL_FRAMES = 50;
 
 export default function CinematicShowcase() {
   const { isOpen } = useRegistrationStatus();
@@ -72,7 +73,26 @@ export default function CinematicShowcase() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const img = imagesRef.current[frameIndex];
+    let img = imagesRef.current[frameIndex];
+    if (!img || !img.complete || img.naturalWidth === 0) {
+      // Find nearest loaded frame searching backwards to 0, then forwards so canvas never freezes
+      for (let prevIdx = frameIndex - 1; prevIdx >= 0; prevIdx--) {
+        const candidate = imagesRef.current[prevIdx];
+        if (candidate && candidate.complete && candidate.naturalWidth > 0) {
+          img = candidate;
+          break;
+        }
+      }
+      if (!img || !img.complete || img.naturalWidth === 0) {
+        for (let nextIdx = frameIndex + 1; nextIdx < imagesRef.current.length; nextIdx++) {
+          const candidate = imagesRef.current[nextIdx];
+          if (candidate && candidate.complete && candidate.naturalWidth > 0) {
+            img = candidate;
+            break;
+          }
+        }
+      }
+    }
     if (!img || !img.complete || img.naturalWidth === 0) return;
 
     const canvasWidth = canvas.width;
@@ -115,11 +135,15 @@ export default function CinematicShowcase() {
     if (!shouldLoadMedia) return;
 
     let isCancelled = false;
-    const images: HTMLImageElement[] = new Array(TOTAL_FRAMES);
+    const isMobileDevice = typeof window !== 'undefined' && window.innerWidth < 768;
+    const totalFrames = isMobileDevice ? MOBILE_TOTAL_FRAMES : DESKTOP_TOTAL_FRAMES;
+    const frameFolder = isMobileDevice ? '/frames/home-mobile' : '/frames/home';
+    const cacheBuster = isMobileDevice ? 'v=1' : 'v=3';
+    const images: HTMLImageElement[] = new Array(totalFrames);
 
     // Instant load Frame 1
     const firstImg = new Image();
-    firstImg.src = '/frames/home/frame_0001.webp?v=3';
+    firstImg.src = `${frameFolder}/frame_0001.webp?${cacheBuster}`;
     firstImg.onload = () => {
       if (isCancelled) return;
       images[0] = firstImg;
@@ -132,21 +156,30 @@ export default function CinematicShowcase() {
       } catch (e) {}
     };
 
-    // On mobile devices (< 768px), we use the lightweight 1.5MB home-video.mp4 instead of downloading 200 image frames
-    const isMobileDevice = typeof window !== 'undefined' && window.innerWidth < 768;
-    if (!isMobileDevice) {
-      for (let i = 1; i < TOTAL_FRAMES; i++) {
-        const img = new Image();
-        const frameNum = String(i + 1).padStart(4, '0');
-        img.src = `/frames/home/frame_${frameNum}.webp?v=3`;
-        img.onload = () => {
-          if (isCancelled) return;
-          images[i] = img;
-        };
-        img.onerror = () => {
-          if (isCancelled) return;
-        };
-      }
+    // Staggered Pipeline Streaming in Batches of 10:
+    const CHUNK_SIZE = 10;
+    const requestFrame = (i: number) => {
+      const img = new Image();
+      const frameNum = String(i + 1).padStart(4, '0');
+      img.src = `${frameFolder}/frame_${frameNum}.webp?${cacheBuster}`;
+      img.onload = () => {
+        if (!isCancelled) images[i] = img;
+      };
+      img.onerror = () => {
+        if (!isCancelled) {}
+      };
+    };
+
+    for (let chunkStart = 1; chunkStart < totalFrames; chunkStart += CHUNK_SIZE) {
+      const chunkIndex = Math.floor(chunkStart / CHUNK_SIZE);
+      const delay = chunkIndex * 75;
+      setTimeout(() => {
+        if (isCancelled) return;
+        const chunkEnd = Math.min(chunkStart + CHUNK_SIZE, totalFrames);
+        for (let i = chunkStart; i < chunkEnd; i++) {
+          requestFrame(i);
+        }
+      }, delay);
     }
 
     imagesRef.current = images;
@@ -174,6 +207,7 @@ export default function CinematicShowcase() {
       },
       (context) => {
         const { isMobile } = context.conditions as { isDesktop: boolean; isMobile: boolean };
+        const totalFrames = isMobile ? MOBILE_TOTAL_FRAMES : DESKTOP_TOTAL_FRAMES;
         const frameObj = { frame: 0 };
 
         const scrubTimeline = gsap.timeline({
@@ -186,8 +220,8 @@ export default function CinematicShowcase() {
             anticipatePin: 1,
             onUpdate: (self) => {
               const currentFrame = Math.min(
-                TOTAL_FRAMES - 1,
-                Math.floor(self.progress * (TOTAL_FRAMES - 1))
+                totalFrames - 1,
+                Math.floor(self.progress * (totalFrames - 1))
               );
               drawFrame(currentFrame);
 
@@ -214,11 +248,11 @@ export default function CinematicShowcase() {
         gsap.set(slideRightRef.current, { autoAlpha: 0, pointerEvents: 'none' });
         gsap.set(slideCenterRef.current, { autoAlpha: 0, pointerEvents: 'none' });
 
-        // Scrub frames 0 -> 198 across virtual duration 10
+        // Scrub frames 0 -> totalFrames - 1 across virtual duration 10
         scrubTimeline.to(
           frameObj,
           {
-            frame: TOTAL_FRAMES - 1,
+            frame: totalFrames - 1,
             ease: 'none',
             duration: 10,
           },
@@ -326,25 +360,7 @@ export default function CinematicShowcase() {
       ref={containerRef}
       className="relative w-full h-screen bg-military-black overflow-hidden select-none border-b border-gunmetal"
     >
-      {/* Mobile Video Background Fallback (Fast 1.5MB stream, deferred until Hero finishes downloading) */}
-      {shouldLoadMedia ? (
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="md:hidden absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
-          style={{ filter: 'contrast(1.08) brightness(0.90)' }}
-        >
-          <source src="/home-video.mp4" type="video/mp4" />
-        </video>
-      ) : (
-        <div
-          className="md:hidden absolute inset-0 w-full h-full bg-military-black pointer-events-none z-0"
-        />
-      )}
-
-      {/* Desktop Frame sequence canvas */}
+      {/* Desktop Initial Paint Poster */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/frames/home/frame_0001.webp?v=3"
@@ -355,9 +371,23 @@ export default function CinematicShowcase() {
         className="hidden md:block absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
         style={{ filter: 'contrast(1.08) brightness(0.90)' }}
       />
+
+      {/* Mobile Initial Paint Poster (480x854 Vertical 9:16) */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/frames/home-mobile/frame_0001.webp?v=1"
+        alt="Tactical Engagement Mobile Preview"
+        loading="lazy"
+        width={480}
+        height={854}
+        className="md:hidden absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
+        style={{ filter: 'contrast(1.08) brightness(0.90)' }}
+      />
+
+      {/* Interactive Frame sequence canvas (Desktop 1080p + Mobile 480p Portrait) */}
       <canvas
         ref={canvasRef}
-        className="hidden md:block absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
+        className="absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
         style={{ filter: 'contrast(1.08) brightness(0.90)' }}
       />
 
