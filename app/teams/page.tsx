@@ -8,7 +8,7 @@ import { INITIAL_TEAMS } from '@/lib/mockData';
 import { api } from '@/lib/api';
 import { transformBackendTeam } from '@/lib/transformers';
 import { Team, Player } from '@/lib/types';
-import { Search, Filter, Users, CheckCircle2, Clock, XCircle, Shield, X, Mail, Phone, ExternalLink } from 'lucide-react';
+import { Search, Users, CheckCircle2, Clock, XCircle, Shield, X } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import Breadcrumb from '@/components/ui/Breadcrumb';
@@ -215,33 +215,13 @@ export default function TeamsPage() {
             </div>
 
             <div className="bg-surface/80 border border-gunmetal p-4 mb-6 text-xs font-mono space-y-2">
-              <div className="text-sand font-bold uppercase mb-2 flex items-center justify-between">
-                <span className="flex items-center gap-2">
-                  <Shield className="w-3.5 h-3.5 text-sand" /> SQUAD LEADER &amp; COHORT DATA
-                </span>
-                {selectedTeam.captain?.whatsappNumber && (
-                  <a
-                    href={`https://wa.me/${selectedTeam.captain.whatsappNumber.replace(/[^0-9]/g, '')}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-olive/30 text-sand border border-olive hover:bg-olive hover:text-black transition-colors"
-                  >
-                    <Phone className="w-3 h-3" />
-                    <span>CHAT ON WHATSAPP</span>
-                  </a>
-                )}
+              <div className="text-sand font-bold uppercase mb-2 flex items-center gap-2">
+                <Shield className="w-3.5 h-3.5 text-sand" /> SQUAD LEADER &amp; COHORT DATA
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-mutedText">
                 <div>DEGREE: <span className="text-tacticalWhite font-medium">{selectedTeam.degreeProgram || selectedTeam.faculty || 'Computer Science & Tech'}</span></div>
                 <div>INSTITUTION: <span className="text-sand font-bold">{selectedTeam.university || 'Uva Wellassa University'}</span></div>
                 <div>LEADER: <span className="text-tacticalWhite font-medium">{selectedTeam.captain?.name || '—'}</span></div>
-                <div>WHATSAPP: <span className="text-emerald-400 font-bold">{selectedTeam.captain?.whatsappNumber || selectedTeam.captain?.phone || '—'}</span></div>
-                {selectedTeam.enrollmentNumber && (
-                  <div>REG NO: <span className="text-sand font-bold">{selectedTeam.enrollmentNumber}</span></div>
-                )}
-                {selectedTeam.email && (
-                  <div>EMAIL: <span className="text-tacticalWhite font-medium">{selectedTeam.email}</span></div>
-                )}
               </div>
             </div>
 
@@ -280,11 +260,6 @@ export default function TeamsPage() {
                       </div>
 
                       <div className="flex items-center gap-4 text-mutedText text-[11px]">
-                        {player.enrollmentNumber ? (
-                          <span className="text-sand font-mono">{player.enrollmentNumber}</span>
-                        ) : player.steamId ? (
-                          <span>{player.steamId}</span>
-                        ) : null}
                         <span className="px-2 py-0.5 bg-card border border-gunmetal text-sand uppercase">
                           {isLeader ? 'Leader' : (player.role || 'Operative')}
                         </span>

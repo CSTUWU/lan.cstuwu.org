@@ -13,7 +13,7 @@ The frontend for the CST LAN Challenge 2026 tournament website. It is built with
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/ThinukaVinjaya/cst_lan_chalange_frontend.git
+   git clone https://github.com/CSTUWU/lan.cstuwu.org.git
    ```
 
 2. Open the project folder:
