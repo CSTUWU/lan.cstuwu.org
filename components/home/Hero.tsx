@@ -11,7 +11,7 @@ import { transformBackendSettings } from '@/lib/transformers';
 import { useRegistrationStatus } from '@/hooks/useRegistrationStatus';
 import { useLiveMatch } from '@/hooks/useLiveMatch';
 
-const DESKTOP_TOTAL_FRAMES = 199;
+const DESKTOP_TOTAL_FRAMES = 100;
 const MOBILE_TOTAL_FRAMES = 50;
 
 export default function Hero() {
@@ -162,7 +162,7 @@ export default function Hero() {
     const isMobileDevice = typeof window !== 'undefined' && window.innerWidth < 768;
     const totalFrames = isMobileDevice ? MOBILE_TOTAL_FRAMES : DESKTOP_TOTAL_FRAMES;
     const frameFolder = isMobileDevice ? '/frames/mobile' : '/frames/hero';
-    const cacheBuster = isMobileDevice ? 'v=2' : 'v=3';
+    const cacheBuster = isMobileDevice ? 'v=2' : 'v=4';
     const images: HTMLImageElement[] = new Array(totalFrames);
 
     // 1. Load Frame 1 immediately for instant paint
@@ -441,10 +441,10 @@ export default function Hero() {
       {/* Desktop Initial Paint Poster (Zero blank flash on SSR load) */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/frames/hero/frame_0001.webp?v=3"
+        src="/frames/hero/frame_0001.webp?v=4"
         alt="Battlefield Standoff Preview"
-        width={1920}
-        height={1080}
+        width={1280}
+        height={720}
         className="hidden md:block absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
         style={{ filter: 'contrast(1.08) brightness(0.90)' }}
       />

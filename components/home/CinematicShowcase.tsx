@@ -19,7 +19,7 @@ import {
 import Button from '../ui/Button';
 import { useRegistrationStatus } from '@/hooks/useRegistrationStatus';
 
-const DESKTOP_TOTAL_FRAMES = 199;
+const DESKTOP_TOTAL_FRAMES = 100;
 const MOBILE_TOTAL_FRAMES = 50;
 
 export default function CinematicShowcase() {
@@ -138,7 +138,7 @@ export default function CinematicShowcase() {
     const isMobileDevice = typeof window !== 'undefined' && window.innerWidth < 768;
     const totalFrames = isMobileDevice ? MOBILE_TOTAL_FRAMES : DESKTOP_TOTAL_FRAMES;
     const frameFolder = isMobileDevice ? '/frames/home-mobile' : '/frames/home';
-    const cacheBuster = isMobileDevice ? 'v=1' : 'v=3';
+    const cacheBuster = isMobileDevice ? 'v=1' : 'v=4';
     const images: HTMLImageElement[] = new Array(totalFrames);
 
     // Instant load Frame 1
@@ -382,11 +382,11 @@ export default function CinematicShowcase() {
       {/* Desktop Initial Paint Poster */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/frames/home/frame_0001.webp?v=3"
+        src="/frames/home/frame_0001.webp?v=4"
         alt="Tactical Engagement Preview"
         loading="lazy"
-        width={1920}
-        height={1080}
+        width={1280}
+        height={720}
         className="hidden md:block absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
         style={{ filter: 'contrast(1.08) brightness(0.90)' }}
       />
