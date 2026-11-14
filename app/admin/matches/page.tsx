@@ -30,7 +30,8 @@ export default function AdminMatchesPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
-  const [isTreePublished, setIsTreePublished] = useState<boolean>(() => isPlayoffTreePublished());
+  const [isTreePublished, setIsTreePublished] = useState<boolean>(false);
+  const [mounted, setMounted] = useState<boolean>(false);
 
   // Form State
   const [teamAId, setTeamAId] = useState('');
@@ -74,11 +75,14 @@ export default function AdminMatchesPage() {
   };
 
   useEffect(() => {
+    setMounted(true);
+    setIsTreePublished(isPlayoffTreePublished());
     loadData();
 
     const handleUpdate = () => {
       setTeams(getStoredTeams());
       setMatches(getStoredMatches());
+      setIsTreePublished(isPlayoffTreePublished());
     };
 
     window.addEventListener('cst_teams_updated', handleUpdate);
@@ -275,7 +279,7 @@ export default function AdminMatchesPage() {
       try {
         await api.admin.generatePlayoffs().catch(() => null);
         await api.admin.updateSettings({ playoffTreePublished: true }).catch(() => null);
-      } catch (e) {}
+      } catch (e) { }
       setNotice(
         `✓ Playoff Tree generated & published to live public site! 1st round fixtures linked. Match wins will automatically advance winners down the tree.`
       );
@@ -315,7 +319,7 @@ export default function AdminMatchesPage() {
       setPlayoffTreePublished(true);
       try {
         await api.admin.recreatePlayoffs().catch(() => null);
-      } catch (e) {}
+      } catch (e) { }
       setNotice('✓ Playoff Tree has been completely RECREATED from scratch and published to live public site!');
     } catch (e) {
       recreatePlayoffTree(candidateTeams);
@@ -335,7 +339,7 @@ export default function AdminMatchesPage() {
     setPlayoffTreePublished(nextState);
     try {
       await api.admin.updateSettings({ playoffTreePublished: nextState });
-    } catch (e) {}
+    } catch (e) { }
     setNotice(
       nextState
         ? '✓ Playoff Tree is now DISPLAYED and VISIBLE on public site!'
@@ -347,7 +351,7 @@ export default function AdminMatchesPage() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        
+
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-gunmetal">
           <div>
             <div className="inline-flex items-center gap-2 mb-1">
@@ -392,11 +396,17 @@ export default function AdminMatchesPage() {
             </Button>
             <Button
               onClick={handleTogglePublish}
-              variant={isTreePublished ? "outline" : "sand"}
+              variant={mounted && isTreePublished ? "outline" : "sand"}
               size="md"
-              icon={isTreePublished ? <Lock className="w-4 h-4 text-rose-400" /> : <Radio className="w-4 h-4 text-military-black animate-pulse" />}
+              icon={
+                mounted && isTreePublished ? (
+                  <Lock className="w-4 h-4 text-rose-400" />
+                ) : (
+                  <Radio className="w-4 h-4 text-military-black animate-pulse" />
+                )
+              }
             >
-              {isTreePublished ? "DISABLE PLAYOFF TREE" : "DISPLAY PLAYOFF TREE"}
+              {mounted && isTreePublished ? "DISABLE PLAYOFF TREE" : "DISPLAY PLAYOFF TREE"}
             </Button>
             <Button
               onClick={() => setShowCreateModal(true)}
@@ -453,13 +463,12 @@ export default function AdminMatchesPage() {
                 return (
                   <div
                     key={m.id}
-                    className={`bg-card/90 border p-4 sm:p-5 backdrop-blur-md transition-all ${
-                      isLive
+                    className={`bg-card/90 border p-4 sm:p-5 backdrop-blur-md transition-all ${isLive
                         ? 'border-rose-500/70 shadow-[0_0_15px_rgba(244,63,94,0.15)]'
                         : isCompleted
-                        ? 'border-gunmetal/80'
-                        : 'border-gunmetal hover:border-olive/60'
-                    }`}
+                          ? 'border-gunmetal/80'
+                          : 'border-gunmetal hover:border-olive/60'
+                      }`}
                   >
                     <div className="grid grid-cols-1 lg:grid-cols-12 items-center gap-4 lg:gap-6">
                       {/* 1. LEFT: Stage, Date & Map (3 cols on lg) */}
@@ -512,9 +521,8 @@ export default function AdminMatchesPage() {
                               [{m.teamATag}]
                             </span>
                             <span
-                              className={`font-display font-bold text-sm sm:text-base uppercase truncate block ${
-                                teamAWon ? 'text-sand font-black' : 'text-tacticalWhite'
-                              }`}
+                              className={`font-display font-bold text-sm sm:text-base uppercase truncate block ${teamAWon ? 'text-sand font-black' : 'text-tacticalWhite'
+                                }`}
                               title={m.teamAName}
                             >
                               {m.teamAName}
@@ -537,13 +545,12 @@ export default function AdminMatchesPage() {
                         {/* Score / VS Center Badge (1 col: strictly centered) */}
                         <div className="col-span-1 flex justify-center">
                           <div
-                            className={`w-16 sm:w-20 py-1.5 text-center font-display font-black text-sm sm:text-base border ${
-                              isLive
+                            className={`w-16 sm:w-20 py-1.5 text-center font-display font-black text-sm sm:text-base border ${isLive
                                 ? 'bg-rose-950/40 border-rose-500 text-rose-400 animate-pulse'
                                 : isCompleted
-                                ? 'bg-surface border-gunmetal text-tacticalWhite'
-                                : 'bg-surface/80 border-gunmetal text-mutedKhaki'
-                            }`}
+                                  ? 'bg-surface border-gunmetal text-tacticalWhite'
+                                  : 'bg-surface/80 border-gunmetal text-mutedKhaki'
+                              }`}
                           >
                             {isCompleted ? (
                               <div className="flex items-center justify-center gap-1 font-mono tracking-wider">
@@ -586,9 +593,8 @@ export default function AdminMatchesPage() {
                               [{m.teamBTag}]
                             </span>
                             <span
-                              className={`font-display font-bold text-sm sm:text-base uppercase truncate block ${
-                                teamBWon ? 'text-sand font-black' : 'text-tacticalWhite'
-                              }`}
+                              className={`font-display font-bold text-sm sm:text-base uppercase truncate block ${teamBWon ? 'text-sand font-black' : 'text-tacticalWhite'
+                                }`}
                               title={m.teamBName}
                             >
                               {m.teamBName}
@@ -600,13 +606,12 @@ export default function AdminMatchesPage() {
                       {/* 3. RIGHT: Status & Controls (3 cols on lg: right-aligned) */}
                       <div className="lg:col-span-3 flex items-center justify-start lg:justify-end gap-2.5 min-w-0">
                         <span
-                          className={`text-[10px] font-mono uppercase font-bold px-2.5 py-1 border shrink-0 ${
-                            isCompleted
+                          className={`text-[10px] font-mono uppercase font-bold px-2.5 py-1 border shrink-0 ${isCompleted
                               ? 'bg-olive/20 text-sand border-olive'
                               : isLive
-                              ? 'bg-rose-500/20 text-rose-400 border-rose-500/50 animate-pulse'
-                              : 'bg-surface text-mutedKhaki border-gunmetal'
-                          }`}
+                                ? 'bg-rose-500/20 text-rose-400 border-rose-500/50 animate-pulse'
+                                : 'bg-surface text-mutedKhaki border-gunmetal'
+                            }`}
                         >
                           {m.status}
                         </span>
