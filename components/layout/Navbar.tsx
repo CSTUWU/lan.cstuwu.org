@@ -69,9 +69,10 @@ export default function Navbar() {
   const checkScrollState = useCallback(() => {
     if (typeof window === 'undefined') return;
     const scrollY = window.scrollY || document.documentElement.scrollTop || 0;
+    const isMobile = window.innerWidth < 768;
     setScrolled(scrollY > 20);
 
-    if (!isHome) {
+    if (!isHome || isMobile) {
       setShowNavbar(true);
     } else {
       setShowNavbar(scrollY > 60);

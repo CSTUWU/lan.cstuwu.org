@@ -36,6 +36,35 @@ export default function CinematicShowcase() {
   const imagesRef = useRef<HTMLImageElement[]>([]);
   const currentFrameRef = useRef<number>(0);
   const [isReady, setIsReady] = useState(false);
+  const [shouldLoadMedia, setShouldLoadMedia] = useState(false);
+
+  // Defer video and heavy frame loading until Hero finishes downloading or user scrolls
+  useEffect(() => {
+    if (shouldLoadMedia) return;
+
+    const handleReady = () => {
+      setShouldLoadMedia(true);
+    };
+
+    const handleScroll = () => {
+      if (window.scrollY > 80) {
+        setShouldLoadMedia(true);
+      }
+    };
+
+    window.addEventListener('cst_hero_ready_for_next_media', handleReady, { once: true });
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    const fallbackTimer = setTimeout(() => {
+      setShouldLoadMedia(true);
+    }, 3500);
+
+    return () => {
+      window.removeEventListener('cst_hero_ready_for_next_media', handleReady);
+      window.removeEventListener('scroll', handleScroll);
+      clearTimeout(fallbackTimer);
+    };
+  }, [shouldLoadMedia]);
 
   const drawFrame = useCallback((frameIndex: number) => {
     const canvas = canvasRef.current;
@@ -83,6 +112,8 @@ export default function CinematicShowcase() {
   }, [drawFrame]);
 
   useEffect(() => {
+    if (!shouldLoadMedia) return;
+
     let isCancelled = false;
     const images: HTMLImageElement[] = new Array(TOTAL_FRAMES);
 
@@ -125,7 +156,7 @@ export default function CinematicShowcase() {
       isCancelled = true;
       window.removeEventListener('resize', handleResize);
     };
-  }, [handleResize, drawFrame]);
+  }, [shouldLoadMedia, handleResize, drawFrame]);
 
   // 4. GSAP ScrollTrigger Sequence: Left -> Right -> Center with Mobile Responsiveness
   useEffect(() => {
@@ -295,24 +326,30 @@ export default function CinematicShowcase() {
       ref={containerRef}
       className="relative w-full h-screen bg-military-black overflow-hidden select-none border-b border-gunmetal"
     >
-      {/* Mobile Video Background Fallback (Fast 1.5MB stream, eliminates 200 frame downloads) */}
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        preload="metadata"
-        className="md:hidden absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
-        style={{ filter: 'contrast(1.08) brightness(0.90)' }}
-      >
-        <source src="/home-video.mp4" type="video/mp4" />
-      </video>
+      {/* Mobile Video Background Fallback (Fast 1.5MB stream, deferred until Hero finishes downloading) */}
+      {shouldLoadMedia ? (
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="md:hidden absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
+          style={{ filter: 'contrast(1.08) brightness(0.90)' }}
+        >
+          <source src="/home-video.mp4" type="video/mp4" />
+        </video>
+      ) : (
+        <div
+          className="md:hidden absolute inset-0 w-full h-full bg-military-black pointer-events-none z-0"
+        />
+      )}
 
       {/* Desktop Frame sequence canvas */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/frames/home/frame_0001.webp?v=3"
         alt="Tactical Engagement Preview"
+        loading="lazy"
         width={1920}
         height={1080}
         className="hidden md:block absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
