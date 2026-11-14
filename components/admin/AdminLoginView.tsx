@@ -48,6 +48,7 @@ export default function AdminLoginView() {
         return;
       }
     } catch (err: any) {
+      console.warn('Backend login notice:', err);
       setErrorMessage(err.message || 'Invalid username or passphrase.');
       setIsSubmitting(false);
     }

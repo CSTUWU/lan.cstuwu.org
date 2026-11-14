@@ -25,6 +25,16 @@ class ApiClient {
       headers['Content-Type'] = 'application/json';
     }
 
+    if (typeof window !== 'undefined') {
+      try {
+        const jwt = localStorage.getItem('cst_admin_jwt');
+        if (jwt && !headers['Authorization']) {
+          headers['Authorization'] = `Bearer ${jwt}`;
+        }
+      } catch (e) {
+      }
+    }
+
     const targetUrls: string[] = [];
     if (typeof window !== 'undefined') {
       const isLocalHost =
@@ -227,6 +237,16 @@ class ApiClient {
       }),
 
     getPlayerConfigDownloadUrl: (registrationId: string, playerIndex: number) => {
+      let token = '';
+      if (typeof window !== 'undefined') {
+        try {
+          token = localStorage.getItem('cst_admin_jwt') || '';
+        } catch (e) {}
+      }
+      const params = new URLSearchParams();
+      if (token) params.set('token', token);
+      const qs = params.toString() ? `?${params.toString()}` : '';
+
       let base = API_BASE_URL;
       if (typeof window !== 'undefined') {
         const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -234,10 +254,20 @@ class ApiClient {
           base = 'http://localhost:5000/api';
         }
       }
-      return `${base}/admin/registrations/${registrationId}/players/${playerIndex}/config`;
+      return `${base}/admin/registrations/${registrationId}/players/${playerIndex}/config${qs}`;
     },
 
     getTeamPlayerConfigDownloadUrl: (teamId: string, playerIndex: number) => {
+      let token = '';
+      if (typeof window !== 'undefined') {
+        try {
+          token = localStorage.getItem('cst_admin_jwt') || '';
+        } catch (e) {}
+      }
+      const params = new URLSearchParams();
+      if (token) params.set('token', token);
+      const qs = params.toString() ? `?${params.toString()}` : '';
+
       let base = API_BASE_URL;
       if (typeof window !== 'undefined') {
         const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -245,7 +275,7 @@ class ApiClient {
           base = 'http://localhost:5000/api';
         }
       }
-      return `${base}/admin/teams/${teamId}/players/${playerIndex}/config`;
+      return `${base}/admin/teams/${teamId}/players/${playerIndex}/config${qs}`;
     },
 
     getTeams: (params?: { search?: string; active?: string }) => {
