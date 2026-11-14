@@ -126,19 +126,19 @@ export default function GlobalParticleBackground() {
     let particles: Particle[] = [];
 
     const getParticleCount = (w: number) => {
-      if (w < 640) return 16;       // Mobile: sleek, battery/CPU-friendly
-      if (w < 1024) return 36;      // Tablet
-      return 85;                    // Desktop: full immersive embers
+      if (w < 640) return 10;       // Mobile: subtle atmospheric accents
+      if (w < 1024) return 20;      // Tablet
+      return 42;                    // Desktop: balanced, non-distracting embers
     };
 
     const createParticle = (spawnRandomY = true): Particle => {
       const isLargeEmber = Math.random() < 0.18; // ~18% larger floating embers
       const spriteIndex = Math.floor(Math.random() * (sprites.length - 1));
 
-      // Sizing: small sparks 0.6–1.7px; larger embers 2.0–3.8px
+      // Sizing: small sparks 0.5–1.3px; larger embers 1.4–2.6px
       const baseRadius = isLargeEmber
-        ? 2.0 + Math.random() * 1.8
-        : 0.6 + Math.random() * 1.1;
+        ? 1.4 + Math.random() * 1.2
+        : 0.5 + Math.random() * 0.8;
 
       // Negative vy = floating upward simulating heat convection
       const baseVy = isLargeEmber
@@ -146,8 +146,8 @@ export default function GlobalParticleBackground() {
         : -(0.65 + Math.random() * 0.95); // -0.65 to -1.60 px/frame baseline
 
       const targetAlpha = isLargeEmber
-        ? 0.55 + Math.random() * 0.35
-        : 0.35 + Math.random() * 0.45;
+        ? 0.28 + Math.random() * 0.20
+        : 0.18 + Math.random() * 0.20;
 
       return {
         x: Math.random() * (width || window.innerWidth),
@@ -182,14 +182,14 @@ export default function GlobalParticleBackground() {
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
         const sprite = sprites[p.spriteIndex];
-        const glowRadius = p.isLargeEmber ? p.baseRadius * 4.2 : p.baseRadius * 3.2;
+        const glowRadius = p.isLargeEmber ? p.baseRadius * 3.0 : p.baseRadius * 2.2;
         const drawSize = glowRadius * 2;
 
-        ctx.globalAlpha = p.targetAlpha * 0.75;
+        ctx.globalAlpha = p.targetAlpha * 0.6;
         ctx.drawImage(sprite, p.x - glowRadius, p.y - glowRadius, drawSize, drawSize);
 
         // Core white-hot spark center
-        const coreSize = Math.max(1.2, p.baseRadius * 1.3);
+        const coreSize = Math.max(0.8, p.baseRadius * 1.1);
         ctx.drawImage(whiteHotSprite, p.x - coreSize / 2, p.y - coreSize / 2, coreSize, coreSize);
       }
 
@@ -325,7 +325,7 @@ export default function GlobalParticleBackground() {
           ? p.baseRadius * (1 + flicker * 0.14)
           : p.baseRadius * (1 + flicker * 0.08);
 
-        const glowRadius = p.isLargeEmber ? currentRadius * 4.2 : currentRadius * 3.2;
+        const glowRadius = p.isLargeEmber ? currentRadius * 3.0 : currentRadius * 2.2;
         const drawSize = glowRadius * 2;
         const sprite = sprites[p.spriteIndex];
 
@@ -333,9 +333,9 @@ export default function GlobalParticleBackground() {
         ctx.globalAlpha = currentAlpha;
         ctx.drawImage(sprite, p.x - glowRadius, p.y - glowRadius, drawSize, drawSize);
 
-        // Draw inner white-hot core for intense brilliance
-        const coreSize = Math.max(1.2, currentRadius * 1.4);
-        ctx.globalAlpha = Math.min(1, currentAlpha * 1.3);
+        // Draw inner white-hot core for balanced illumination
+        const coreSize = Math.max(0.8, currentRadius * 1.1);
+        ctx.globalAlpha = Math.min(1, currentAlpha * 0.75);
         ctx.drawImage(whiteHotSprite, p.x - coreSize / 2, p.y - coreSize / 2, coreSize, coreSize);
       }
 
