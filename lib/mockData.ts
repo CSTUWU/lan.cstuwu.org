@@ -3,7 +3,7 @@ import seedData from './seedData.json';
 
 export const INITIAL_COUNTDOWN: CountdownSettings = {
   tournamentDate: '2026-11-20T09:00:00',
-  registrationDeadline: '2026-11-12T23:59:59',
+  registrationDeadline: '2026-12-01T23:59:59',
   eventStatus: 'REGISTRATIONS OPEN',
   isRegistrationOpen: true,
   announcementText: 'CST LAN Challenge 2026 live at Uva Wellassa University Main Auditorium. Inter-Faculty 5v5 MR12 Call of Duty 4 Modern Warfare (PromodLive 2.20 EU) championship.'

@@ -39,6 +39,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const [isPlayoffTreePub, setIsPlayoffTreePub] = useState<boolean>(false);
   const [treeToggling, setTreeToggling] = useState(false);
   const [treeRecreating, setTreeRecreating] = useState(false);
+  const [authChecking, setAuthChecking] = useState(true);
 
   useEffect(() => {
     setMounted(true);
@@ -140,10 +141,24 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   useEffect(() => {
     // Check auth on mount: redirect to /admin if not authenticated
-    if (!checkAdminAuth() && pathname !== '/admin' && pathname !== '/admin/login') {
-      window.location.href = '/admin';
-    }
+    if (pathname === '/admin' || pathname === '/admin/login' || checkAdminAuth()) return;
+    let active = true;
+    api.auth.me().then((res) => {
+      if (!active) return;
+      setAuthChecking(false);
+      if (!res.success) window.location.href = '/admin';
+    }).catch(() => {
+      if (active) {
+        setAuthChecking(false);
+        window.location.href = '/admin';
+      }
+    });
+    return () => { active = false; };
   }, [pathname]);
+
+  if (authChecking && pathname !== '/admin' && pathname !== '/admin/login' && !checkAdminAuth()) {
+    return <div className="min-h-screen bg-military-black" />;
+  }
 
   const navItems = [
     { name: 'Overview', href: '/admin/dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
@@ -156,7 +171,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { name: 'Settings', href: '/admin/settings', icon: <Settings className="w-4 h-4" /> },
   ];
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await api.auth.logout().catch(() => undefined);
     setAdminAuth(false);
     window.location.href = '/admin';
   };

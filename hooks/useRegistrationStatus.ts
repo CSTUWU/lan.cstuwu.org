@@ -6,8 +6,8 @@ import { api } from '@/lib/api';
 
 
 export function useRegistrationStatus() {
-  const [isOpen, setIsOpen] = useState<boolean>(true);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     // 1. Initial state from local storage / cache
@@ -27,7 +27,11 @@ export function useRegistrationStatus() {
           });
         }
       }
-    }).catch(() => {});
+      setLoading(false);
+    }).catch(() => {
+      setIsOpen(false);
+      setLoading(false);
+    });
 
     const handleUpdate = () => {
       setIsOpen(isRegistrationOpen());

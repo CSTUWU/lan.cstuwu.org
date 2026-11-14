@@ -14,10 +14,10 @@ const TEAMS_KEY = 'cst_lan_teams_2026';
 const MATCHES_KEY = 'cst_lan_matches_2026';
 const MATCHES_16_KEY = 'cst_lan_matches_16_2026';
 const COUNTDOWN_KEY = 'cst_lan_countdown_2026';
-const AUTH_KEY = 'cst_lan_admin_auth';
 const LIVE_CHANNEL_NAME = 'cst_cs2_live_channel';
 const ACTIVE_BRACKET_MODE_KEY = 'cst_lan_active_bracket_mode';
 const PLAYOFF_PUBLISHED_KEY = 'cst_lan_playoff_published_2026';
+let adminAuthenticated = false;
 
 export const isPlayoffTreePublished = (): boolean => {
   if (typeof window === 'undefined') return false;
@@ -1143,28 +1143,15 @@ export const setRegistrationOpen = (isOpen: boolean): CountdownSettings => {
 };
 
 export const checkAdminAuth = (): boolean => {
-  if (typeof window === 'undefined') return false;
-  try {
-    const hasToken = Boolean(localStorage.getItem('cst_admin_jwt'));
-    const inLocalStorage = localStorage.getItem(AUTH_KEY) === 'authenticated';
-    const inCookie = document.cookie.includes('cst_lan_admin_auth=authenticated');
-    return hasToken && (inLocalStorage || inCookie);
-  } catch (e) {
-    return false;
-  }
+  // Authentication is maintained by the backend's HttpOnly cookie.
+  // Use api.auth.me() to validate the session; JS cannot read this cookie.
+  return adminAuthenticated;
 };
 
 export const setAdminAuth = (auth: boolean) => {
+  adminAuthenticated = auth;
   if (typeof window !== 'undefined') {
     try {
-      if (auth) {
-        localStorage.setItem(AUTH_KEY, 'authenticated');
-        document.cookie = 'cst_lan_admin_auth=authenticated; path=/; max-age=86400';
-      } else {
-        localStorage.removeItem(AUTH_KEY);
-        localStorage.removeItem('cst_admin_jwt');
-        document.cookie = 'cst_lan_admin_auth=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-      }
       window.dispatchEvent(new Event('cst_admin_auth_changed'));
     } catch (e) {
       console.error('Error saving admin auth', e);
