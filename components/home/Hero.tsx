@@ -159,21 +159,17 @@ export default function Hero() {
     // On mobile devices (< 768px), we use the lightweight 1.2MB hero-video.mp4 instead of downloading 200 image frames
     const isMobileDevice = typeof window !== 'undefined' && window.innerWidth < 768;
     if (!isMobileDevice) {
-      // Defer non-critical frames so the initial page load only fetches frame 1.
-      const loadRemainingFrames = () => {
-        for (let i = 1; i < TOTAL_FRAMES; i++) {
-          const img = new Image();
-          img.loading = 'lazy';
-          img.fetchPriority = 'low';
-          const frameNum = String(i + 1).padStart(4, '0');
-          img.src = `/frames/hero/frame_${frameNum}.webp?v=3`;
-          img.onload = () => { if (!isCancelled) images[i] = img; };
-        }
-      };
-      if ('requestIdleCallback' in window) {
-        (window as any).requestIdleCallback(loadRemainingFrames, { timeout: 2500 });
-      } else {
-        setTimeout(loadRemainingFrames, 1000);
+      // Load remaining frames progressively for Desktop interactive scrub
+      for (let i = 1; i < TOTAL_FRAMES; i++) {
+        const img = new Image();
+        const frameNum = String(i + 1).padStart(4, '0');
+        img.src = `/frames/hero/frame_${frameNum}.webp?v=3`;
+        img.onload = () => {
+          if (!isCancelled) images[i] = img;
+        };
+        img.onerror = () => {
+          if (isCancelled) return;
+        };
       }
     }
 
