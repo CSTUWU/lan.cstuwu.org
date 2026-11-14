@@ -49,17 +49,6 @@ export default function AdminLoginView() {
       }
     } catch (err: any) {
       console.warn('Backend login notice:', err);
-      if (
-        (user.toLowerCase() === 'cst26lan' && pass === 'cstlan@2026') ||
-        (user.toLowerCase() === 'cst26lan@cst.uwu.ac.lk' && pass === 'cstlan@2026')
-      ) {
-        setAdminAuth(true);
-        setIsSuccess(true);
-        setTimeout(() => {
-          window.location.href = '/admin/dashboard';
-        }, 300);
-        return;
-      }
       setErrorMessage(err.message || 'Invalid username or passphrase.');
       setIsSubmitting(false);
     }

@@ -1145,9 +1145,10 @@ export const setRegistrationOpen = (isOpen: boolean): CountdownSettings => {
 export const checkAdminAuth = (): boolean => {
   if (typeof window === 'undefined') return false;
   try {
+    const hasToken = Boolean(localStorage.getItem('cst_admin_jwt'));
     const inLocalStorage = localStorage.getItem(AUTH_KEY) === 'authenticated';
     const inCookie = document.cookie.includes('cst_lan_admin_auth=authenticated');
-    return inLocalStorage || inCookie;
+    return hasToken && (inLocalStorage || inCookie);
   } catch (e) {
     return false;
   }
@@ -1161,6 +1162,7 @@ export const setAdminAuth = (auth: boolean) => {
         document.cookie = 'cst_lan_admin_auth=authenticated; path=/; max-age=86400';
       } else {
         localStorage.removeItem(AUTH_KEY);
+        localStorage.removeItem('cst_admin_jwt');
         document.cookie = 'cst_lan_admin_auth=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT';
       }
       window.dispatchEvent(new Event('cst_admin_auth_changed'));

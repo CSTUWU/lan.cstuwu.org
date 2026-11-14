@@ -30,7 +30,8 @@ export default function AdminMatchesPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
-  const [isTreePublished, setIsTreePublished] = useState<boolean>(() => isPlayoffTreePublished());
+  const [isTreePublished, setIsTreePublished] = useState<boolean>(false);
+  const [mounted, setMounted] = useState<boolean>(false);
 
   // Form State
   const [teamAId, setTeamAId] = useState('');
@@ -74,11 +75,14 @@ export default function AdminMatchesPage() {
   };
 
   useEffect(() => {
+    setMounted(true);
+    setIsTreePublished(isPlayoffTreePublished());
     loadData();
 
     const handleUpdate = () => {
       setTeams(getStoredTeams());
       setMatches(getStoredMatches());
+      setIsTreePublished(isPlayoffTreePublished());
     };
 
     window.addEventListener('cst_teams_updated', handleUpdate);
@@ -275,7 +279,7 @@ export default function AdminMatchesPage() {
       try {
         await api.admin.generatePlayoffs().catch(() => null);
         await api.admin.updateSettings({ playoffTreePublished: true }).catch(() => null);
-      } catch (e) {}
+      } catch (e) { }
       setNotice(
         `✓ Playoff Tree generated & published to live public site! 1st round fixtures linked. Match wins will automatically advance winners down the tree.`
       );
@@ -315,7 +319,7 @@ export default function AdminMatchesPage() {
       setPlayoffTreePublished(true);
       try {
         await api.admin.recreatePlayoffs().catch(() => null);
-      } catch (e) {}
+      } catch (e) { }
       setNotice('✓ Playoff Tree has been completely RECREATED from scratch and published to live public site!');
     } catch (e) {
       recreatePlayoffTree(candidateTeams);
@@ -335,7 +339,7 @@ export default function AdminMatchesPage() {
     setPlayoffTreePublished(nextState);
     try {
       await api.admin.updateSettings({ playoffTreePublished: nextState });
-    } catch (e) {}
+    } catch (e) { }
     setNotice(
       nextState
         ? '✓ Playoff Tree is now DISPLAYED and VISIBLE on public site!'
@@ -347,7 +351,7 @@ export default function AdminMatchesPage() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        
+
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-gunmetal">
           <div>
             <div className="inline-flex items-center gap-2 mb-1">
@@ -392,11 +396,17 @@ export default function AdminMatchesPage() {
             </Button>
             <Button
               onClick={handleTogglePublish}
-              variant={isTreePublished ? "outline" : "sand"}
+              variant={mounted && isTreePublished ? "outline" : "sand"}
               size="md"
-              icon={isTreePublished ? <Lock className="w-4 h-4 text-rose-400" /> : <Radio className="w-4 h-4 text-military-black animate-pulse" />}
+              icon={
+                mounted && isTreePublished ? (
+                  <Lock className="w-4 h-4 text-rose-400" />
+                ) : (
+                  <Radio className="w-4 h-4 text-military-black animate-pulse" />
+                )
+              }
             >
-              {isTreePublished ? "DISABLE PLAYOFF TREE" : "DISPLAY PLAYOFF TREE"}
+              {mounted && isTreePublished ? "DISABLE PLAYOFF TREE" : "DISPLAY PLAYOFF TREE"}
             </Button>
             <Button
               onClick={() => setShowCreateModal(true)}
@@ -436,79 +446,193 @@ export default function AdminMatchesPage() {
               </Button>
             </div>
           ) : (
-            matches.map((m) => (
-            <div
-              key={m.id}
-              className="bg-card/90 border border-gunmetal p-5 backdrop-blur-md flex flex-col md:flex-row items-center justify-between gap-6"
-            >
-              <div>
-                <span className="text-[10px] font-mono uppercase tracking-widest text-sand px-2 py-0.5 bg-surface border border-gunmetal inline-block mb-1">
-                  {m.stage}
-                </span>
-                <div className="text-xs font-mono text-tacticalWhite font-bold flex items-center gap-2">
-                  <Calendar className="w-3.5 h-3.5 text-sand" />
-                  {new Date(m.dateTime).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                </div>
-                <div className="flex items-center gap-2 text-[11px] font-mono text-mutedKhaki mt-1">
-                  <div className="relative w-6 h-4 overflow-hidden border border-gunmetal shrink-0 clip-tactical">
-                    <Image src={getMapImage(m.map)} alt={m.map} fill className="object-cover" sizes="24px" />
+            [...matches]
+              .sort((a, b) => {
+                if (a.matchNumber && b.matchNumber) return a.matchNumber - b.matchNumber;
+                if (a.matchNumber) return -1;
+                if (b.matchNumber) return 1;
+                return new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime();
+              })
+              .map((m) => {
+                const matchDate = new Date(m.dateTime);
+                const isCompleted = m.status === 'completed';
+                const isLive = m.status === 'live';
+                const teamAWon = isCompleted && m.scoreA > m.scoreB;
+                const teamBWon = isCompleted && m.scoreB > m.scoreA;
+
+                return (
+                  <div
+                    key={m.id}
+                    className={`bg-card/90 border p-4 sm:p-5 backdrop-blur-md transition-all ${isLive
+                        ? 'border-rose-500/70 shadow-[0_0_15px_rgba(244,63,94,0.15)]'
+                        : isCompleted
+                          ? 'border-gunmetal/80'
+                          : 'border-gunmetal hover:border-olive/60'
+                      }`}
+                  >
+                    <div className="grid grid-cols-1 lg:grid-cols-12 items-center gap-4 lg:gap-6">
+                      {/* 1. LEFT: Stage, Date & Map (3 cols on lg) */}
+                      <div className="lg:col-span-3 flex flex-col justify-center min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
+                          {m.matchNumber && (
+                            <span className="text-[10px] font-mono font-bold text-sand px-1.5 py-0.5 bg-surface border border-gunmetal shrink-0">
+                              #{m.matchNumber}
+                            </span>
+                          )}
+                          <span className="text-[10px] font-mono uppercase tracking-wider text-sand px-2 py-0.5 bg-surface border border-gunmetal truncate max-w-[200px]">
+                            {m.stage}
+                          </span>
+                        </div>
+
+                        <div className="text-xs font-mono text-tacticalWhite font-medium flex items-center gap-2">
+                          <Calendar className="w-3.5 h-3.5 text-sand shrink-0" />
+                          <span className="truncate">
+                            {matchDate.toLocaleString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2 text-[11px] font-mono text-mutedKhaki mt-1">
+                          <div className="relative w-6 h-4 overflow-hidden border border-gunmetal shrink-0 clip-tactical">
+                            <Image
+                              src={getMapImage(m.map)}
+                              alt={m.map}
+                              fill
+                              className="object-cover"
+                              sizes="24px"
+                            />
+                          </div>
+                          <span className="truncate">
+                            THEATER: <strong className="text-tacticalWhite">{m.map}</strong>
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* 2. CENTER: Team A vs Team B (6 cols on lg) */}
+                      <div className="lg:col-span-6 grid grid-cols-7 items-center gap-2 py-3 lg:py-0 border-y lg:border-y-0 lg:border-x border-gunmetal lg:px-4">
+                        {/* Team A (3 cols: aligned to right) */}
+                        <div className="col-span-3 flex items-center justify-end gap-2.5 sm:gap-3 text-right min-w-0">
+                          <div className="min-w-0 flex-1">
+                            <span className="text-[10px] font-mono text-sand block truncate">
+                              [{m.teamATag}]
+                            </span>
+                            <span
+                              className={`font-display font-bold text-sm sm:text-base uppercase truncate block ${teamAWon ? 'text-sand font-black' : 'text-tacticalWhite'
+                                }`}
+                              title={m.teamAName}
+                            >
+                              {m.teamAName}
+                            </span>
+                          </div>
+                          <div className="relative w-9 h-9 sm:w-10 sm:h-10 bg-surface border border-gunmetal shrink-0 overflow-hidden clip-tactical">
+                            <Image
+                              src={
+                                m.teamALogo ||
+                                'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200&auto=format&fit=crop&q=80'
+                              }
+                              alt={m.teamAName}
+                              fill
+                              className="object-cover"
+                              sizes="40px"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Score / VS Center Badge (1 col: strictly centered) */}
+                        <div className="col-span-1 flex justify-center">
+                          <div
+                            className={`w-16 sm:w-20 py-1.5 text-center font-display font-black text-sm sm:text-base border ${isLive
+                                ? 'bg-rose-950/40 border-rose-500 text-rose-400 animate-pulse'
+                                : isCompleted
+                                  ? 'bg-surface border-gunmetal text-tacticalWhite'
+                                  : 'bg-surface/80 border-gunmetal text-mutedKhaki'
+                              }`}
+                          >
+                            {isCompleted ? (
+                              <div className="flex items-center justify-center gap-1 font-mono tracking-wider">
+                                <span className={teamAWon ? 'text-sand font-bold' : 'text-mutedKhaki'}>
+                                  {m.scoreA}
+                                </span>
+                                <span className="text-mutedKhaki/60">:</span>
+                                <span className={teamBWon ? 'text-sand font-bold' : 'text-mutedKhaki'}>
+                                  {m.scoreB}
+                                </span>
+                              </div>
+                            ) : isLive ? (
+                              <div className="flex items-center justify-center gap-1 font-mono tracking-wider text-rose-400">
+                                <span>{m.scoreA}</span>
+                                <span className="text-rose-400/60">:</span>
+                                <span>{m.scoreB}</span>
+                              </div>
+                            ) : (
+                              <span className="text-mutedKhaki tracking-widest text-xs">VS</span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Team B (3 cols: aligned to left) */}
+                        <div className="col-span-3 flex items-center justify-start gap-2.5 sm:gap-3 text-left min-w-0">
+                          <div className="relative w-9 h-9 sm:w-10 sm:h-10 bg-surface border border-gunmetal shrink-0 overflow-hidden clip-tactical">
+                            <Image
+                              src={
+                                m.teamBLogo ||
+                                'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200&auto=format&fit=crop&q=80'
+                              }
+                              alt={m.teamBName}
+                              fill
+                              className="object-cover"
+                              sizes="40px"
+                            />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <span className="text-[10px] font-mono text-khaki block truncate">
+                              [{m.teamBTag}]
+                            </span>
+                            <span
+                              className={`font-display font-bold text-sm sm:text-base uppercase truncate block ${teamBWon ? 'text-sand font-black' : 'text-tacticalWhite'
+                                }`}
+                              title={m.teamBName}
+                            >
+                              {m.teamBName}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 3. RIGHT: Status & Controls (3 cols on lg: right-aligned) */}
+                      <div className="lg:col-span-3 flex items-center justify-start lg:justify-end gap-2.5 min-w-0">
+                        <span
+                          className={`text-[10px] font-mono uppercase font-bold px-2.5 py-1 border shrink-0 ${isCompleted
+                              ? 'bg-olive/20 text-sand border-olive'
+                              : isLive
+                                ? 'bg-rose-500/20 text-rose-400 border-rose-500/50 animate-pulse'
+                                : 'bg-surface text-mutedKhaki border-gunmetal'
+                            }`}
+                        >
+                          {m.status}
+                        </span>
+
+                        <Button href="/admin/scoreboard" variant="outline" size="sm" className="shrink-0">
+                          SCORE
+                        </Button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteMatch(m)}
+                          className="p-2 bg-surface hover:bg-rose-950/60 border border-gunmetal hover:border-rose-600/60 text-mutedKhaki hover:text-rose-400 transition-colors shrink-0"
+                          title="Delete match fixture"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                  <span>THEATER: <strong className="text-tacticalWhite">{m.map}</strong></span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-6">
-                <div className="flex items-center gap-2.5 text-right">
-                  <div>
-                    <span className="text-[10px] font-mono text-sand block">[{m.teamATag}]</span>
-                    <span className="font-display font-bold text-base text-tacticalWhite uppercase">{m.teamAName}</span>
-                  </div>
-                  <div className="relative w-10 h-10 bg-surface border border-gunmetal shrink-0 overflow-hidden">
-                    <Image src={m.teamALogo} alt={m.teamAName} fill className="object-cover" sizes="40px" />
-                  </div>
-                </div>
-
-                <div className="px-3 py-1.5 bg-surface border border-gunmetal font-display font-black text-lg text-tacticalWhite">
-                  {m.status === 'completed' ? `${m.scoreA} : ${m.scoreB}` : 'VS'}
-                </div>
-
-                <div className="flex items-center gap-2.5 text-left">
-                  <div className="relative w-10 h-10 bg-surface border border-gunmetal shrink-0 overflow-hidden">
-                    <Image src={m.teamBLogo} alt={m.teamBName} fill className="object-cover" sizes="40px" />
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-mono text-khaki block">[{m.teamBTag}]</span>
-                    <span className="font-display font-bold text-base text-tacticalWhite uppercase">{m.teamBName}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="text-right flex items-center gap-3">
-                <span className={`text-[10px] font-mono uppercase font-bold px-2.5 py-1 border ${
-                  m.status === 'completed'
-                    ? 'bg-olive/20 text-sand border-olive'
-                    : m.status === 'live'
-                    ? 'bg-rose-500/10 text-rose-400 border-rose-500/30 animate-pulse'
-                    : 'bg-card text-mutedKhaki border-gunmetal'
-                }`}>
-                  {m.status}
-                </span>
-
-                <Button href="/admin/scoreboard" variant="outline" size="sm">
-                  SCORE
-                </Button>
-
-                <button
-                  type="button"
-                  onClick={() => handleDeleteMatch(m)}
-                  className="p-2 bg-surface hover:bg-rose-950/60 border border-gunmetal hover:border-rose-600/60 text-mutedKhaki hover:text-rose-400 transition-colors"
-                  title="Delete match fixture"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-            ))
+                );
+              })
           )}
         </div>
 

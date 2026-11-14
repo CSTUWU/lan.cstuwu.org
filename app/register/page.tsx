@@ -506,6 +506,13 @@ export default function RegisterPage() {
         res = await api.registrations.submit(backendPayload);
       }
 
+      if (!res || res.success === false) {
+        throw {
+          message: res?.message || 'Registration failed. Please try again.',
+          errors: res?.errors || [],
+        };
+      }
+
       const confirmationId =
         res?.data?.registrationNumber ||
         res?.data?.confirmationCode ||

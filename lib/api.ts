@@ -31,13 +31,6 @@ class ApiClient {
         if (jwt && !headers['Authorization']) {
           headers['Authorization'] = `Bearer ${jwt}`;
         }
-        const isAuth =
-          localStorage.getItem('cst_lan_admin_auth') === 'authenticated' ||
-          localStorage.getItem('cst_admin_authenticated') === 'authenticated' ||
-          document.cookie.includes('cst_lan_admin_auth=authenticated');
-        if (isAuth && !headers['X-Admin-Auth']) {
-          headers['X-Admin-Auth'] = 'authenticated';
-        }
       } catch (e) {
       }
     }
@@ -253,19 +246,13 @@ class ApiClient {
 
     getPlayerConfigDownloadUrl: (registrationId: string, playerIndex: number) => {
       let token = '';
-      let isAuth = false;
       if (typeof window !== 'undefined') {
         try {
           token = localStorage.getItem('cst_admin_jwt') || '';
-          isAuth =
-            localStorage.getItem('cst_lan_admin_auth') === 'authenticated' ||
-            localStorage.getItem('cst_admin_authenticated') === 'authenticated' ||
-            document.cookie.includes('cst_lan_admin_auth=authenticated');
         } catch (e) {}
       }
       const params = new URLSearchParams();
       if (token) params.set('token', token);
-      if (isAuth || !token) params.set('auth', 'authenticated');
       const qs = params.toString() ? `?${params.toString()}` : '';
 
       let base = API_BASE_URL;
@@ -280,19 +267,13 @@ class ApiClient {
 
     getTeamPlayerConfigDownloadUrl: (teamId: string, playerIndex: number) => {
       let token = '';
-      let isAuth = false;
       if (typeof window !== 'undefined') {
         try {
           token = localStorage.getItem('cst_admin_jwt') || '';
-          isAuth =
-            localStorage.getItem('cst_lan_admin_auth') === 'authenticated' ||
-            localStorage.getItem('cst_admin_authenticated') === 'authenticated' ||
-            document.cookie.includes('cst_lan_admin_auth=authenticated');
         } catch (e) {}
       }
       const params = new URLSearchParams();
       if (token) params.set('token', token);
-      if (isAuth || !token) params.set('auth', 'authenticated');
       const qs = params.toString() ? `?${params.toString()}` : '';
 
       let base = API_BASE_URL;
