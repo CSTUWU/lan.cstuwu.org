@@ -87,14 +87,18 @@ class ApiClient {
 
   public auth = {
     login: async (usernameOrEmail: string, password: string) => {
-      const res = await this.request<{ token: string; admin: any }>('/auth/login', {
+      return this.request<{ token?: string; admin: any }>('/auth/login', {
         method: 'POST',
         body: JSON.stringify({ usernameOrEmail, password }),
       });
-      return res;
     },
 
     logout: async () => {
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.removeItem('cst_lan_admin_auth');
+        } catch (e) {}
+      }
       return this.request('/auth/logout', {
         method: 'POST',
       });
