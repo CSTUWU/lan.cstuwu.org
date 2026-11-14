@@ -191,6 +191,7 @@ export default function Navbar() {
                   alt="Cyber Strike of Titans 2026"
                   width={130}
                   height={58}
+                  sizes="(max-width: 640px) 72px, (max-width: 1024px) 90px, 112px"
                   priority
                   className="h-8 sm:h-9 md:h-10 lg:h-11 w-auto object-contain filter drop-shadow-[0_2px_10px_rgba(255,208,0,0.25)]"
                 />

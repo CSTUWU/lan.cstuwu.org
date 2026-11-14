@@ -197,6 +197,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 alt="Cyber Strike of Titans 2026"
                 width={100}
                 height={45}
+                sizes="100px"
                 priority
                 className="h-8 sm:h-9 w-auto object-contain filter drop-shadow-[0_1px_6px_rgba(255,208,0,0.25)]"
               />

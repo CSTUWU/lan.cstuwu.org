@@ -31,6 +31,7 @@ export default function Footer() {
                   alt="Cyber Strike of Titans 2026"
                   width={130}
                   height={58}
+                  sizes="130px"
                   className="h-12 w-auto object-contain filter drop-shadow-[0_2px_10px_rgba(255,208,0,0.2)]"
                 />
               </div>
