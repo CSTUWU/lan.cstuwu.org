@@ -11,8 +11,7 @@ import { transformBackendSettings } from '@/lib/transformers';
 import { useRegistrationStatus } from '@/hooks/useRegistrationStatus';
 import { useLiveMatch } from '@/hooks/useLiveMatch';
 
-const DESKTOP_TOTAL_FRAMES = 100;
-const MOBILE_TOTAL_FRAMES = 50;
+const TOTAL_FRAMES = 199;
 
 export default function Hero() {
   const { isOpen } = useRegistrationStatus();
@@ -42,11 +41,11 @@ export default function Hero() {
 
   const liveInfo = liveMatch
     ? {
-      scoreA: liveMatch.scoreA ?? 0,
-      scoreB: liveMatch.scoreB ?? 0,
-      teamATag: liveMatch.teamATag || 'TMA',
-      teamBTag: liveMatch.teamBTag || 'TMB',
-    }
+        scoreA: liveMatch.scoreA ?? 0,
+        scoreB: liveMatch.scoreB ?? 0,
+        teamATag: liveMatch.teamATag || 'TMA',
+        teamBTag: liveMatch.teamBTag || 'TMB',
+      }
     : null;
 
   useEffect(() => {
@@ -78,7 +77,7 @@ export default function Hero() {
         saveCountdown(transformed);
         updateCountdown();
       }
-    }).catch(() => { });
+    }).catch(() => {});
 
     const handleUpdate = () => {
       updateCountdown();
@@ -98,26 +97,7 @@ export default function Hero() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    let img = imagesRef.current[frameIndex];
-    if (!img || !img.complete || img.naturalWidth === 0) {
-      // Find nearest loaded frame searching backwards to 0, then forwards so canvas never freezes
-      for (let prevIdx = frameIndex - 1; prevIdx >= 0; prevIdx--) {
-        const candidate = imagesRef.current[prevIdx];
-        if (candidate && candidate.complete && candidate.naturalWidth > 0) {
-          img = candidate;
-          break;
-        }
-      }
-      if (!img || !img.complete || img.naturalWidth === 0) {
-        for (let nextIdx = frameIndex + 1; nextIdx < imagesRef.current.length; nextIdx++) {
-          const candidate = imagesRef.current[nextIdx];
-          if (candidate && candidate.complete && candidate.naturalWidth > 0) {
-            img = candidate;
-            break;
-          }
-        }
-      }
-    }
+    const img = imagesRef.current[frameIndex];
     if (!img || !img.complete || img.naturalWidth === 0) return;
 
     const canvasWidth = canvas.width;
@@ -156,18 +136,14 @@ export default function Hero() {
     drawFrame(currentFrameRef.current);
   }, [drawFrame]);
 
-  // 4. Preload frame sequence with Prioritized Keyframe Chunking
+  // 4. Preload frame sequence
   useEffect(() => {
     let isCancelled = false;
-    const isMobileDevice = typeof window !== 'undefined' && window.innerWidth < 768;
-    const totalFrames = isMobileDevice ? MOBILE_TOTAL_FRAMES : DESKTOP_TOTAL_FRAMES;
-    const frameFolder = isMobileDevice ? '/frames/mobile' : '/frames/hero';
-    const cacheBuster = isMobileDevice ? 'v=2' : 'v=4';
-    const images: HTMLImageElement[] = new Array(totalFrames);
+    const images: HTMLImageElement[] = new Array(TOTAL_FRAMES);
 
-    // 1. Load Frame 1 immediately for instant paint
+    // Load Frame 1 immediately for instant paint
     const firstImg = new Image();
-    firstImg.src = `${frameFolder}/frame_0001.webp?${cacheBuster}`;
+    firstImg.src = '/frames/hero/frame_0001.webp?v=3';
     firstImg.onload = () => {
       if (isCancelled) return;
       images[0] = firstImg;
@@ -177,47 +153,25 @@ export default function Hero() {
       setIsReady(true);
       try {
         ScrollTrigger.refresh();
-      } catch (e) { }
+      } catch (e) {}
     };
 
-    // 2. Staggered Pipeline Streaming in Batches of 10:
-    // Batch 1 (Frames 1-10) is requested immediately at 0ms.
-    // Subsequent batches (11-20, 21-30, etc.) are staggered by 75ms.
-    // Clean batches of 10 prevent network pipe congestion and eliminate page-load delay!
-    const CHUNK_SIZE = 10;
-    let totalLoadedCount = 0;
-
-    const requestFrame = (i: number) => {
-      const img = new Image();
-      const frameNum = String(i + 1).padStart(4, '0');
-      img.src = `${frameFolder}/frame_${frameNum}.webp?${cacheBuster}`;
-      img.onload = () => {
-        if (!isCancelled) {
+    // On mobile devices (< 768px), we use the lightweight 1.2MB hero-video.mp4 instead of downloading 200 image frames
+    const isMobileDevice = typeof window !== 'undefined' && window.innerWidth < 768;
+    if (!isMobileDevice) {
+      // Load remaining frames progressively for Desktop interactive scrub
+      for (let i = 1; i < TOTAL_FRAMES; i++) {
+        const img = new Image();
+        const frameNum = String(i + 1).padStart(4, '0');
+        img.src = `/frames/hero/frame_${frameNum}.webp?v=3`;
+        img.onload = () => {
+          if (isCancelled) return;
           images[i] = img;
-          totalLoadedCount++;
-          if (totalLoadedCount >= totalFrames - 1) {
-            window.dispatchEvent(new CustomEvent('cst_hero_ready_for_next_media'));
-          }
-        }
-      };
-      img.onerror = () => {
-        totalLoadedCount++;
-        if (totalLoadedCount >= totalFrames - 1) {
-          window.dispatchEvent(new CustomEvent('cst_hero_ready_for_next_media'));
-        }
-      };
-    };
-
-    for (let chunkStart = 1; chunkStart < totalFrames; chunkStart += CHUNK_SIZE) {
-      const chunkIndex = Math.floor(chunkStart / CHUNK_SIZE);
-      const delay = chunkIndex * 75;
-      setTimeout(() => {
-        if (isCancelled) return;
-        const chunkEnd = Math.min(chunkStart + CHUNK_SIZE, totalFrames);
-        for (let i = chunkStart; i < chunkEnd; i++) {
-          requestFrame(i);
-        }
-      }, delay);
+        };
+        img.onerror = () => {
+          if (isCancelled) return;
+        };
+      }
     }
 
     imagesRef.current = images;
@@ -251,7 +205,6 @@ export default function Hero() {
       },
       (context) => {
         const { isMobile } = context.conditions as { isDesktop: boolean; isMobile: boolean };
-        const totalFrames = isMobile ? MOBILE_TOTAL_FRAMES : DESKTOP_TOTAL_FRAMES;
         const frameObj = { frame: 0 };
         let enterTl: gsap.core.Timeline | null = null;
 
@@ -265,8 +218,8 @@ export default function Hero() {
             anticipatePin: 1,
             onUpdate: (self) => {
               const currentFrame = Math.min(
-                totalFrames - 1,
-                Math.floor(self.progress * (totalFrames - 1))
+                TOTAL_FRAMES - 1,
+                Math.floor(self.progress * (TOTAL_FRAMES - 1))
               );
               drawFrame(currentFrame);
 
@@ -299,7 +252,7 @@ export default function Hero() {
         scrubTimeline.to(
           frameObj,
           {
-            frame: totalFrames - 1,
+            frame: TOTAL_FRAMES - 1,
             ease: 'none',
             duration: 10,
           },
@@ -421,31 +374,32 @@ export default function Hero() {
       ref={containerRef}
       className="relative w-full h-screen bg-military-black overflow-hidden select-none"
     >
-      {/* Native Responsive Picture Tag: Browser preload scanner ONLY downloads active device's frame */}
-      <picture className="absolute inset-0 w-full h-full pointer-events-none z-0">
-        <source
-          media="(max-width: 767px)"
-          srcSet="/frames/mobile/frame_0001.webp?v=2"
-          width={480}
-          height={854}
-        />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/frames/hero/frame_0001.webp?v=4"
-          alt="Battlefield Standoff Preview"
-          // @ts-ignore
-          fetchPriority="high"
-          width={1280}
-          height={720}
-          className="w-full h-full object-cover"
-          style={{ filter: 'contrast(1.08) brightness(0.90)' }}
-        />
-      </picture>
+      {/* Mobile Video Background Fallback (Fast 1.2MB stream, eliminates 200 frame downloads) */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="metadata"
+        className="md:hidden absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
+        style={{ filter: 'contrast(1.08) brightness(0.90)' }}
+      >
+        <source src="/hero-video.mp4" type="video/mp4" />
+      </video>
 
-      {/* Interactive Frame sequence canvas (Desktop 1080p + Mobile 480p Portrait) */}
+      {/* Desktop Frame sequence canvas */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/frames/hero/frame_0001.webp?v=3"
+        alt="Battlefield Standoff Preview"
+        width={1920}
+        height={1080}
+        className="hidden md:block absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
+        style={{ filter: 'contrast(1.08) brightness(0.90)' }}
+      />
       <canvas
         ref={canvasRef}
-        className="absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
+        className="hidden md:block absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
         style={{ filter: 'contrast(1.08) brightness(0.90)' }}
       />
 
