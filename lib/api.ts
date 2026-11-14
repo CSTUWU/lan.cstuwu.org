@@ -25,23 +25,6 @@ class ApiClient {
       headers['Content-Type'] = 'application/json';
     }
 
-    if (typeof window !== 'undefined') {
-      try {
-        const jwt = localStorage.getItem('cst_admin_jwt');
-        if (jwt && !headers['Authorization']) {
-          headers['Authorization'] = `Bearer ${jwt}`;
-        }
-        const isAuth =
-          localStorage.getItem('cst_lan_admin_auth') === 'authenticated' ||
-          localStorage.getItem('cst_admin_authenticated') === 'authenticated' ||
-          document.cookie.includes('cst_lan_admin_auth=authenticated');
-        if (isAuth && !headers['X-Admin-Auth']) {
-          headers['X-Admin-Auth'] = 'authenticated';
-        }
-      } catch (e) {
-      }
-    }
-
     const targetUrls: string[] = [];
     if (typeof window !== 'undefined') {
       const isLocalHost =
@@ -121,23 +104,15 @@ class ApiClient {
 
   public auth = {
     login: async (usernameOrEmail: string, password: string) => {
-      const res = await this.request<{ token: string; admin: any }>('/auth/login', {
+      return this.request<{ token?: string; admin: any }>('/auth/login', {
         method: 'POST',
         body: JSON.stringify({ usernameOrEmail, password }),
       });
-      if (res.success && res.data?.token && typeof window !== 'undefined') {
-        try {
-          localStorage.setItem('cst_admin_jwt', res.data.token);
-          localStorage.setItem('cst_lan_admin_auth', 'authenticated');
-        } catch (e) {}
-      }
-      return res;
     },
 
     logout: async () => {
       if (typeof window !== 'undefined') {
         try {
-          localStorage.removeItem('cst_admin_jwt');
           localStorage.removeItem('cst_lan_admin_auth');
         } catch (e) {}
       }
@@ -252,22 +227,6 @@ class ApiClient {
       }),
 
     getPlayerConfigDownloadUrl: (registrationId: string, playerIndex: number) => {
-      let token = '';
-      let isAuth = false;
-      if (typeof window !== 'undefined') {
-        try {
-          token = localStorage.getItem('cst_admin_jwt') || '';
-          isAuth =
-            localStorage.getItem('cst_lan_admin_auth') === 'authenticated' ||
-            localStorage.getItem('cst_admin_authenticated') === 'authenticated' ||
-            document.cookie.includes('cst_lan_admin_auth=authenticated');
-        } catch (e) {}
-      }
-      const params = new URLSearchParams();
-      if (token) params.set('token', token);
-      if (isAuth || !token) params.set('auth', 'authenticated');
-      const qs = params.toString() ? `?${params.toString()}` : '';
-
       let base = API_BASE_URL;
       if (typeof window !== 'undefined') {
         const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -275,26 +234,10 @@ class ApiClient {
           base = 'http://localhost:5000/api';
         }
       }
-      return `${base}/admin/registrations/${registrationId}/players/${playerIndex}/config${qs}`;
+      return `${base}/admin/registrations/${registrationId}/players/${playerIndex}/config`;
     },
 
     getTeamPlayerConfigDownloadUrl: (teamId: string, playerIndex: number) => {
-      let token = '';
-      let isAuth = false;
-      if (typeof window !== 'undefined') {
-        try {
-          token = localStorage.getItem('cst_admin_jwt') || '';
-          isAuth =
-            localStorage.getItem('cst_lan_admin_auth') === 'authenticated' ||
-            localStorage.getItem('cst_admin_authenticated') === 'authenticated' ||
-            document.cookie.includes('cst_lan_admin_auth=authenticated');
-        } catch (e) {}
-      }
-      const params = new URLSearchParams();
-      if (token) params.set('token', token);
-      if (isAuth || !token) params.set('auth', 'authenticated');
-      const qs = params.toString() ? `?${params.toString()}` : '';
-
       let base = API_BASE_URL;
       if (typeof window !== 'undefined') {
         const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -302,7 +245,7 @@ class ApiClient {
           base = 'http://localhost:5000/api';
         }
       }
-      return `${base}/admin/teams/${teamId}/players/${playerIndex}/config${qs}`;
+      return `${base}/admin/teams/${teamId}/players/${playerIndex}/config`;
     },
 
     getTeams: (params?: { search?: string; active?: string }) => {
