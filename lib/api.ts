@@ -227,22 +227,6 @@ class ApiClient {
       }),
 
     getPlayerConfigDownloadUrl: (registrationId: string, playerIndex: number) => {
-      let token = '';
-      let isAuth = false;
-      if (typeof window !== 'undefined') {
-        try {
-          token = localStorage.getItem('cst_admin_jwt') || '';
-          isAuth =
-            localStorage.getItem('cst_lan_admin_auth') === 'authenticated' ||
-            localStorage.getItem('cst_admin_authenticated') === 'authenticated' ||
-            document.cookie.includes('cst_lan_admin_auth=authenticated');
-        } catch (e) {}
-      }
-      const params = new URLSearchParams();
-      if (token) params.set('token', token);
-      if (isAuth || !token) params.set('auth', 'authenticated');
-      const qs = params.toString() ? `?${params.toString()}` : '';
-
       let base = API_BASE_URL;
       if (typeof window !== 'undefined') {
         const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -250,26 +234,10 @@ class ApiClient {
           base = 'http://localhost:5000/api';
         }
       }
-      return `${base}/admin/registrations/${registrationId}/players/${playerIndex}/config${qs}`;
+      return `${base}/admin/registrations/${registrationId}/players/${playerIndex}/config`;
     },
 
     getTeamPlayerConfigDownloadUrl: (teamId: string, playerIndex: number) => {
-      let token = '';
-      let isAuth = false;
-      if (typeof window !== 'undefined') {
-        try {
-          token = localStorage.getItem('cst_admin_jwt') || '';
-          isAuth =
-            localStorage.getItem('cst_lan_admin_auth') === 'authenticated' ||
-            localStorage.getItem('cst_admin_authenticated') === 'authenticated' ||
-            document.cookie.includes('cst_lan_admin_auth=authenticated');
-        } catch (e) {}
-      }
-      const params = new URLSearchParams();
-      if (token) params.set('token', token);
-      if (isAuth || !token) params.set('auth', 'authenticated');
-      const qs = params.toString() ? `?${params.toString()}` : '';
-
       let base = API_BASE_URL;
       if (typeof window !== 'undefined') {
         const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -277,7 +245,7 @@ class ApiClient {
           base = 'http://localhost:5000/api';
         }
       }
-      return `${base}/admin/teams/${teamId}/players/${playerIndex}/config${qs}`;
+      return `${base}/admin/teams/${teamId}/players/${playerIndex}/config`;
     },
 
     getTeams: (params?: { search?: string; active?: string }) => {
