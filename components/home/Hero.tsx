@@ -180,13 +180,23 @@ export default function Hero() {
       } catch (e) { }
     };
 
-    // 2. Staggered Pipeline Streaming in Batches of 10:
-    // Batch 1 (Frames 1-10) is requested immediately at 0ms.
-    // Subsequent batches are staggered by 75ms so the browser prioritizes early frames,
-    // and no chunk ever blocks the rest!
-    const CHUNK_SIZE = 10;
-    let totalLoadedCount = 0;
+    // 2. Keyframe Prioritized Streaming:
+    // Split remaining frames into Keyframes (spaced evenly across 0-100% timeline) and Infill frames.
+    // Keyframes are requested immediately (0ms) so the user can scrub across the entire timeline
+    // with zero freeze from the very first second!
+    const KEYFRAME_STEP = isMobileDevice ? 5 : 10;
+    const keyframeIndices: number[] = [];
+    const infillIndices: number[] = [];
 
+    for (let i = 1; i < totalFrames; i++) {
+      if (i % KEYFRAME_STEP === 0 || i === totalFrames - 1) {
+        keyframeIndices.push(i);
+      } else {
+        infillIndices.push(i);
+      }
+    }
+
+    let totalLoadedCount = 0;
     const requestFrame = (i: number) => {
       const img = new Image();
       const frameNum = String(i + 1).padStart(4, '0');
@@ -208,14 +218,21 @@ export default function Hero() {
       };
     };
 
-    for (let chunkStart = 1; chunkStart < totalFrames; chunkStart += CHUNK_SIZE) {
-      const chunkIndex = Math.floor(chunkStart / CHUNK_SIZE);
-      const delay = chunkIndex * 75;
+    // Phase 1: Request Keyframes immediately (0ms)
+    for (const keyIdx of keyframeIndices) {
+      requestFrame(keyIdx);
+    }
+
+    // Phase 2: Infill frames in staggered batches (giving keyframes priority)
+    const INFILL_BATCH_SIZE = isMobileDevice ? 8 : 12;
+    for (let b = 0; b < infillIndices.length; b += INFILL_BATCH_SIZE) {
+      const batchIndex = Math.floor(b / INFILL_BATCH_SIZE);
+      const delay = 120 + batchIndex * 60;
       setTimeout(() => {
         if (isCancelled) return;
-        const chunkEnd = Math.min(chunkStart + CHUNK_SIZE, totalFrames);
-        for (let i = chunkStart; i < chunkEnd; i++) {
-          requestFrame(i);
+        const batchEnd = Math.min(b + INFILL_BATCH_SIZE, infillIndices.length);
+        for (let i = b; i < batchEnd; i++) {
+          requestFrame(infillIndices[i]);
         }
       }, delay);
     }

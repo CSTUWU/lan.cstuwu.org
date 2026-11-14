@@ -156,8 +156,20 @@ export default function CinematicShowcase() {
       } catch (e) {}
     };
 
-    // Staggered Pipeline Streaming in Batches of 10:
-    const CHUNK_SIZE = 10;
+    // Keyframe Prioritized Streaming:
+    // Fetch keyframes spaced across the timeline immediately (0ms), then infill remaining frames.
+    const KEYFRAME_STEP = isMobileDevice ? 5 : 10;
+    const keyframeIndices: number[] = [];
+    const infillIndices: number[] = [];
+
+    for (let i = 1; i < totalFrames; i++) {
+      if (i % KEYFRAME_STEP === 0 || i === totalFrames - 1) {
+        keyframeIndices.push(i);
+      } else {
+        infillIndices.push(i);
+      }
+    }
+
     const requestFrame = (i: number) => {
       const img = new Image();
       const frameNum = String(i + 1).padStart(4, '0');
@@ -170,14 +182,21 @@ export default function CinematicShowcase() {
       };
     };
 
-    for (let chunkStart = 1; chunkStart < totalFrames; chunkStart += CHUNK_SIZE) {
-      const chunkIndex = Math.floor(chunkStart / CHUNK_SIZE);
-      const delay = chunkIndex * 75;
+    // Phase 1: Request Keyframes immediately (0ms)
+    for (const keyIdx of keyframeIndices) {
+      requestFrame(keyIdx);
+    }
+
+    // Phase 2: Infill frames in staggered batches (giving keyframes priority)
+    const INFILL_BATCH_SIZE = isMobileDevice ? 8 : 12;
+    for (let b = 0; b < infillIndices.length; b += INFILL_BATCH_SIZE) {
+      const batchIndex = Math.floor(b / INFILL_BATCH_SIZE);
+      const delay = 120 + batchIndex * 60;
       setTimeout(() => {
         if (isCancelled) return;
-        const chunkEnd = Math.min(chunkStart + CHUNK_SIZE, totalFrames);
-        for (let i = chunkStart; i < chunkEnd; i++) {
-          requestFrame(i);
+        const batchEnd = Math.min(b + INFILL_BATCH_SIZE, infillIndices.length);
+        for (let i = b; i < batchEnd; i++) {
+          requestFrame(infillIndices[i]);
         }
       }, delay);
     }
