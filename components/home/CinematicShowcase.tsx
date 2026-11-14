@@ -39,7 +39,7 @@ export default function CinematicShowcase() {
   const [isReady, setIsReady] = useState(false);
   const [shouldLoadMedia, setShouldLoadMedia] = useState(false);
 
-  // Defer video and heavy frame loading until Hero finishes downloading or user scrolls
+  // Defer heavy frame loading strictly until Hero finishes downloading or user scrolls near Showcase
   useEffect(() => {
     if (shouldLoadMedia) return;
 
@@ -48,7 +48,8 @@ export default function CinematicShowcase() {
     };
 
     const handleScroll = () => {
-      if (window.scrollY > 80) {
+      // Only trigger if user has scrolled well past Hero (at least 75% of viewport height)
+      if (typeof window !== 'undefined' && window.scrollY > window.innerHeight * 0.75) {
         setShouldLoadMedia(true);
       }
     };
@@ -56,9 +57,10 @@ export default function CinematicShowcase() {
     window.addEventListener('cst_hero_ready_for_next_media', handleReady, { once: true });
     window.addEventListener('scroll', handleScroll, { passive: true });
 
+    // Safety fallback: only fire after 8 seconds if Hero network stalled
     const fallbackTimer = setTimeout(() => {
       setShouldLoadMedia(true);
-    }, 3500);
+    }, 8000);
 
     return () => {
       window.removeEventListener('cst_hero_ready_for_next_media', handleReady);
@@ -156,20 +158,8 @@ export default function CinematicShowcase() {
       } catch (e) {}
     };
 
-    // Keyframe Prioritized Streaming:
-    // Fetch keyframes spaced across the timeline immediately (0ms), then infill remaining frames.
-    const KEYFRAME_STEP = isMobileDevice ? 5 : 10;
-    const keyframeIndices: number[] = [];
-    const infillIndices: number[] = [];
-
-    for (let i = 1; i < totalFrames; i++) {
-      if (i % KEYFRAME_STEP === 0 || i === totalFrames - 1) {
-        keyframeIndices.push(i);
-      } else {
-        infillIndices.push(i);
-      }
-    }
-
+    // Staggered Pipeline Streaming in Batches of 10:
+    const CHUNK_SIZE = 10;
     const requestFrame = (i: number) => {
       const img = new Image();
       const frameNum = String(i + 1).padStart(4, '0');
@@ -182,21 +172,14 @@ export default function CinematicShowcase() {
       };
     };
 
-    // Phase 1: Request Keyframes immediately (0ms)
-    for (const keyIdx of keyframeIndices) {
-      requestFrame(keyIdx);
-    }
-
-    // Phase 2: Infill frames in staggered batches (giving keyframes priority)
-    const INFILL_BATCH_SIZE = isMobileDevice ? 8 : 12;
-    for (let b = 0; b < infillIndices.length; b += INFILL_BATCH_SIZE) {
-      const batchIndex = Math.floor(b / INFILL_BATCH_SIZE);
-      const delay = 120 + batchIndex * 60;
+    for (let chunkStart = 1; chunkStart < totalFrames; chunkStart += CHUNK_SIZE) {
+      const chunkIndex = Math.floor(chunkStart / CHUNK_SIZE);
+      const delay = chunkIndex * 75;
       setTimeout(() => {
         if (isCancelled) return;
-        const batchEnd = Math.min(b + INFILL_BATCH_SIZE, infillIndices.length);
-        for (let i = b; i < batchEnd; i++) {
-          requestFrame(infillIndices[i]);
+        const chunkEnd = Math.min(chunkStart + CHUNK_SIZE, totalFrames);
+        for (let i = chunkStart; i < chunkEnd; i++) {
+          requestFrame(i);
         }
       }, delay);
     }
@@ -379,29 +362,25 @@ export default function CinematicShowcase() {
       ref={containerRef}
       className="relative w-full h-screen bg-military-black overflow-hidden select-none border-b border-gunmetal"
     >
-      {/* Desktop Initial Paint Poster */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/frames/home/frame_0001.webp?v=4"
-        alt="Tactical Engagement Preview"
-        loading="lazy"
-        width={1280}
-        height={720}
-        className="hidden md:block absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
-        style={{ filter: 'contrast(1.08) brightness(0.90)' }}
-      />
-
-      {/* Mobile Initial Paint Poster (480x854 Vertical 9:16) */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/frames/home-mobile/frame_0001.webp?v=1"
-        alt="Tactical Engagement Mobile Preview"
-        loading="lazy"
-        width={480}
-        height={854}
-        className="md:hidden absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
-        style={{ filter: 'contrast(1.08) brightness(0.90)' }}
-      />
+      {/* Native Responsive Picture Tag: Browser preload scanner ONLY downloads active device's frame */}
+      <picture className="absolute inset-0 w-full h-full pointer-events-none z-0">
+        <source
+          media="(max-width: 767px)"
+          srcSet="/frames/home-mobile/frame_0001.webp?v=1"
+          width={480}
+          height={854}
+        />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/frames/home/frame_0001.webp?v=4"
+          alt="Tactical Engagement Preview"
+          loading="lazy"
+          width={1280}
+          height={720}
+          className="w-full h-full object-cover"
+          style={{ filter: 'contrast(1.08) brightness(0.90)' }}
+        />
+      </picture>
 
       {/* Interactive Frame sequence canvas (Desktop 1080p + Mobile 480p Portrait) */}
       <canvas

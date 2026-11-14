@@ -180,23 +180,13 @@ export default function Hero() {
       } catch (e) { }
     };
 
-    // 2. Keyframe Prioritized Streaming:
-    // Split remaining frames into Keyframes (spaced evenly across 0-100% timeline) and Infill frames.
-    // Keyframes are requested immediately (0ms) so the user can scrub across the entire timeline
-    // with zero freeze from the very first second!
-    const KEYFRAME_STEP = isMobileDevice ? 5 : 10;
-    const keyframeIndices: number[] = [];
-    const infillIndices: number[] = [];
-
-    for (let i = 1; i < totalFrames; i++) {
-      if (i % KEYFRAME_STEP === 0 || i === totalFrames - 1) {
-        keyframeIndices.push(i);
-      } else {
-        infillIndices.push(i);
-      }
-    }
-
+    // 2. Staggered Pipeline Streaming in Batches of 10:
+    // Batch 1 (Frames 1-10) is requested immediately at 0ms.
+    // Subsequent batches (11-20, 21-30, etc.) are staggered by 75ms.
+    // Clean batches of 10 prevent network pipe congestion and eliminate page-load delay!
+    const CHUNK_SIZE = 10;
     let totalLoadedCount = 0;
+
     const requestFrame = (i: number) => {
       const img = new Image();
       const frameNum = String(i + 1).padStart(4, '0');
@@ -218,21 +208,14 @@ export default function Hero() {
       };
     };
 
-    // Phase 1: Request Keyframes immediately (0ms)
-    for (const keyIdx of keyframeIndices) {
-      requestFrame(keyIdx);
-    }
-
-    // Phase 2: Infill frames in staggered batches (giving keyframes priority)
-    const INFILL_BATCH_SIZE = isMobileDevice ? 8 : 12;
-    for (let b = 0; b < infillIndices.length; b += INFILL_BATCH_SIZE) {
-      const batchIndex = Math.floor(b / INFILL_BATCH_SIZE);
-      const delay = 120 + batchIndex * 60;
+    for (let chunkStart = 1; chunkStart < totalFrames; chunkStart += CHUNK_SIZE) {
+      const chunkIndex = Math.floor(chunkStart / CHUNK_SIZE);
+      const delay = chunkIndex * 75;
       setTimeout(() => {
         if (isCancelled) return;
-        const batchEnd = Math.min(b + INFILL_BATCH_SIZE, infillIndices.length);
-        for (let i = b; i < batchEnd; i++) {
-          requestFrame(infillIndices[i]);
+        const chunkEnd = Math.min(chunkStart + CHUNK_SIZE, totalFrames);
+        for (let i = chunkStart; i < chunkEnd; i++) {
+          requestFrame(i);
         }
       }, delay);
     }
@@ -438,27 +421,26 @@ export default function Hero() {
       ref={containerRef}
       className="relative w-full h-screen bg-military-black overflow-hidden select-none"
     >
-      {/* Desktop Initial Paint Poster (Zero blank flash on SSR load) */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/frames/hero/frame_0001.webp?v=4"
-        alt="Battlefield Standoff Preview"
-        width={1280}
-        height={720}
-        className="hidden md:block absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
-        style={{ filter: 'contrast(1.08) brightness(0.90)' }}
-      />
-
-      {/* Mobile Initial Paint Poster (480x854 Vertical 9:16 - Zero blank flash) */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/frames/mobile/frame_0001.webp?v=2"
-        alt="Battlefield Standoff Mobile Preview"
-        width={480}
-        height={854}
-        className="md:hidden absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
-        style={{ filter: 'contrast(1.08) brightness(0.90)' }}
-      />
+      {/* Native Responsive Picture Tag: Browser preload scanner ONLY downloads active device's frame */}
+      <picture className="absolute inset-0 w-full h-full pointer-events-none z-0">
+        <source
+          media="(max-width: 767px)"
+          srcSet="/frames/mobile/frame_0001.webp?v=2"
+          width={480}
+          height={854}
+        />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/frames/hero/frame_0001.webp?v=4"
+          alt="Battlefield Standoff Preview"
+          // @ts-ignore
+          fetchPriority="high"
+          width={1280}
+          height={720}
+          className="w-full h-full object-cover"
+          style={{ filter: 'contrast(1.08) brightness(0.90)' }}
+        />
+      </picture>
 
       {/* Interactive Frame sequence canvas (Desktop 1080p + Mobile 480p Portrait) */}
       <canvas
