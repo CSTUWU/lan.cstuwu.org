@@ -104,44 +104,44 @@ export default function PrizePoolSection() {
           </p>
         </div>
 
-        {/* Overhead Tactical Telemetry Bar */}
-        <div className="max-w-4xl mx-auto mb-10 sm:mb-12 bg-card/80 border border-gunmetal p-3 sm:p-4 clip-tactical shadow-lg backdrop-blur-md">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center font-mono">
-            <div className="bg-surface/90 border border-gunmetal p-2.5 sm:p-3">
-              <span className="text-[9px] sm:text-[10px] text-mutedText uppercase tracking-widest block font-bold">
-                COMBINED PRIZE VALUE
+        {/* Overhead Tactical Telemetry Bar - Single Row on all screen sizes */}
+        <div className="max-w-4xl mx-auto mb-8 sm:mb-12 bg-card/80 border border-gunmetal p-1.5 sm:p-4 clip-tactical shadow-lg backdrop-blur-md">
+          <div className="grid grid-cols-3 gap-1 sm:gap-3 text-center font-mono">
+            <div className="bg-surface/90 border border-gunmetal p-2 sm:p-3 flex flex-col justify-center">
+              <span className="text-[10px] sm:text-xs text-mutedText uppercase tracking-wider block font-bold truncate">
+                TOTAL POOL
               </span>
-              <div className="font-display font-black text-lg sm:text-2xl text-tacticalWhite mt-0.5">
+              <div className="font-display font-black text-[15px] xs:text-base sm:text-2xl text-tacticalWhite mt-0.5 tracking-tight whitespace-nowrap">
                 LKR 55,000
               </div>
-              <span className="text-[8px] sm:text-[9px] text-olive-light uppercase tracking-wider block mt-0.5">
-                TOTAL TOURNAMENT POOL
+              <span className="text-[8.5px] sm:text-[10px] text-olive-light uppercase tracking-wider block mt-0.5 truncate">
+                COMBINED VALUE
               </span>
             </div>
 
-            <div className="bg-surface/90 border border-sand/40 p-2.5 sm:p-3">
-              <span className="text-[9px] sm:text-[10px] text-sand uppercase tracking-widest block font-bold flex items-center justify-center gap-1.5">
-                <Banknote className="w-3.5 h-3.5 text-sand" />
-                1ST PLACE CASH
+            <div className="bg-surface/90 border border-sand/40 p-2 sm:p-3 flex flex-col justify-center">
+              <span className="text-[10px] sm:text-xs text-sand uppercase tracking-wider block font-bold flex items-center justify-center gap-1 truncate">
+                <Banknote className="w-3.5 h-3.5 text-sand shrink-0" />
+                1ST PLACE
               </span>
-              <div className="font-display font-black text-lg sm:text-2xl text-sand mt-0.5">
+              <div className="font-display font-black text-[15px] xs:text-base sm:text-2xl text-sand mt-0.5 tracking-tight whitespace-nowrap">
                 LKR 30,000
               </div>
-              <span className="text-[8px] sm:text-[9px] text-mutedText uppercase tracking-wider block mt-0.5">
-                DIRECT CASH TRANSFER
+              <span className="text-[8.5px] sm:text-[10px] text-mutedText uppercase tracking-wider block mt-0.5 truncate">
+                CASH PRIZE
               </span>
             </div>
 
-            <div className="bg-surface/90 border border-gunmetal p-2.5 sm:p-3">
-              <span className="text-[9px] sm:text-[10px] text-slate-300 uppercase tracking-widest block font-bold flex items-center justify-center gap-1.5">
-                <Gift className="w-3.5 h-3.5 text-slate-300" />
-                2ND PLACE VOUCHERS
+            <div className="bg-surface/90 border border-gunmetal p-2 sm:p-3 flex flex-col justify-center">
+              <span className="text-[10px] sm:text-xs text-slate-300 uppercase tracking-wider block font-bold flex items-center justify-center gap-1 truncate">
+                <Gift className="w-3.5 h-3.5 text-slate-300 shrink-0" />
+                2ND PLACE
               </span>
-              <div className="font-display font-black text-lg sm:text-2xl text-slate-200 mt-0.5">
+              <div className="font-display font-black text-[15px] xs:text-base sm:text-2xl text-slate-200 mt-0.5 tracking-tight whitespace-nowrap">
                 LKR 25,000
               </div>
-              <span className="text-[8px] sm:text-[9px] text-mutedText uppercase tracking-wider block mt-0.5">
-                PARTNER GIFT VOUCHERS
+              <span className="text-[8.5px] sm:text-[10px] text-mutedText uppercase tracking-wider block mt-0.5 truncate">
+                GIFT VOUCHERS
               </span>
             </div>
           </div>
@@ -229,11 +229,10 @@ export default function PrizePoolSection() {
                     href="/register"
                     variant={tier.isChampion ? 'cyan' : 'outline'}
                     size="md"
-                    className={`w-full font-black uppercase text-xs tracking-wider transition-all duration-300 ${
-                      tier.isChampion
+                    className={`w-full font-black uppercase text-xs tracking-wider transition-all duration-300 ${tier.isChampion
                         ? '!text-black font-black shadow-[0_2px_14px_rgba(255,208,0,0.35)] hover:scale-[1.01]'
                         : 'bg-surface/60 border-gunmetal text-slate-300 hover:bg-surface hover:border-slate-300 hover:text-tacticalWhite'
-                    }`}
+                      }`}
                   >
                     ENLIST TO COMPETE FOR {tier.position}
                   </Button>
