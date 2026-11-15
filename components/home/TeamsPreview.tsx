@@ -38,7 +38,7 @@ export default function TeamsPreview() {
   const displayTeams = teams.slice(0, 4);
 
   return (
-    <section className="relative py-24 bg-military-black border-t border-gunmetal overflow-hidden">
+    <section className="relative py-16 sm:py-20 bg-military-black border-t border-gunmetal overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 pb-6 border-b border-gunmetal">
@@ -61,9 +61,9 @@ export default function TeamsPreview() {
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12 animate-pulse">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-8 sm:mb-12 animate-pulse">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-36 bg-card/60 border border-gunmetal p-5 rounded" />
+              <div key={i} className="h-28 sm:h-36 bg-card/60 border border-gunmetal p-3 sm:p-5 rounded" />
             ))}
           </div>
         ) : displayTeams.length === 0 ? (
@@ -84,7 +84,7 @@ export default function TeamsPreview() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-8 sm:mb-12">
             {displayTeams.map((team) => {
               const hasLogo = Boolean(
                 team.logo &&
@@ -97,59 +97,64 @@ export default function TeamsPreview() {
               return (
                 <div
                   key={team.id}
-                  className="relative bg-card/80 border border-gunmetal p-5 backdrop-blur-sm transition-all duration-300 hover:border-olive hover:-translate-y-1 group"
+                  className="relative bg-card/80 border border-gunmetal p-3 sm:p-5 backdrop-blur-sm transition-all duration-300 hover:border-olive hover:-translate-y-1 group flex flex-col justify-between h-full"
                 >
-                  {/* Corner accent */}
-                  <span className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-sand opacity-40 group-hover:opacity-100" />
+                  <div>
+                    {/* Corner accent */}
+                    <span className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-sand opacity-40 group-hover:opacity-100" />
 
-                  <div className="flex items-center gap-3.5 mb-4">
-                    <div className="relative w-12 h-12 bg-surface border border-gunmetal overflow-hidden shrink-0 flex items-center justify-center">
-                      {hasLogo ? (
-                        <Image
-                          src={team.logo}
-                          alt={team.name}
-                          fill
-                          className="object-cover group-hover:scale-110 transition-transform"
-                          sizes="48px"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center font-mono text-xs text-sand font-bold bg-darkGreen/40 border border-olive/30">
-                          {team.tag?.slice(0, 3) || 'SQUAD'}
-                        </div>
-                      )}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[10px] font-mono text-sand tracking-wider truncate font-bold">
-                        [{team.tag || 'SQUAD'}]
+                    <div className="flex items-center gap-2.5 sm:gap-3.5 mb-2.5 sm:mb-3">
+                      <div className="relative w-9 h-9 sm:w-12 sm:h-12 bg-surface border border-gunmetal overflow-hidden shrink-0 flex items-center justify-center">
+                        {hasLogo ? (
+                          <Image
+                            src={team.logo}
+                            alt={team.name}
+                            fill
+                            className="object-cover group-hover:scale-110 transition-transform"
+                            sizes="48px"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center font-mono text-[10px] sm:text-xs text-sand font-bold bg-darkGreen/40 border border-olive/30">
+                            {team.tag?.slice(0, 3) || 'SQUAD'}
+                          </div>
+                        )}
                       </div>
-                      <h3
-                        className="font-display font-bold text-base text-tacticalWhite tracking-wide truncate group-hover:text-sand transition-colors"
-                        title={team.name}
-                      >
-                        {team.name}
-                      </h3>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[9px] sm:text-[10px] font-mono text-sand tracking-wider truncate font-bold">
+                          [{team.tag || 'SQUAD'}]
+                        </div>
+                        <h3
+                          className="font-display font-bold text-xs sm:text-base text-tacticalWhite tracking-wide truncate group-hover:text-sand transition-colors"
+                          title={team.name}
+                        >
+                          {team.name}
+                        </h3>
+                      </div>
+                    </div>
+
+                    <div
+                      className="text-[10px] sm:text-xs font-mono text-mutedText line-clamp-2 h-7 sm:h-8 leading-snug mb-2.5 sm:mb-3"
+                      title={team.degreeProgram || team.faculty || team.university || 'Uva Wellassa University of Sri Lanka'}
+                    >
+                      {team.degreeProgram || team.faculty || team.university || 'Uva Wellassa University of Sri Lanka'}
                     </div>
                   </div>
 
-                  <div className="text-xs font-mono text-mutedText truncate mb-4">
-                    {team.degreeProgram || team.faculty || team.university || 'Uva Wellassa University of Sri Lanka'}
-                  </div>
-
-                  <div className="pt-3 border-t border-gunmetal flex items-center justify-between text-xs font-mono">
+                  <div className="pt-2 sm:pt-2.5 border-t border-gunmetal flex items-center justify-between text-[10px] sm:text-xs font-mono mt-auto">
                     <span className="text-mutedText">STATUS:</span>
                     {statusLower === 'approved' && (
-                      <span className="flex items-center gap-1 text-emerald-400 font-semibold">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> APPROVED
+                      <span className="flex items-center gap-1 text-emerald-400 font-semibold text-[9px] sm:text-xs">
+                        <CheckCircle2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> APPROVED
                       </span>
                     )}
                     {statusLower === 'pending' && (
-                      <span className="flex items-center gap-1 text-sand font-semibold">
-                        <Clock className="w-3.5 h-3.5" /> PENDING
+                      <span className="flex items-center gap-1 text-sand font-semibold text-[9px] sm:text-xs">
+                        <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> PENDING
                       </span>
                     )}
                     {statusLower === 'rejected' && (
-                      <span className="flex items-center gap-1 text-rose-500 font-semibold">
-                        <XCircle className="w-3.5 h-3.5" /> REJECTED
+                      <span className="flex items-center gap-1 text-rose-500 font-semibold text-[9px] sm:text-xs">
+                        <XCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> REJECTED
                       </span>
                     )}
                   </div>

@@ -11,7 +11,7 @@ import MapPoolSection from '@/components/home/MapPoolSection';
 import TeamsPreview from '@/components/home/TeamsPreview';
 
 export default function HomePage() {
-  const [isReadyToDisplay, setIsReadyToDisplay] = useState(false);
+  const [isReadyToDisplay, setIsReadyToDisplay] = useState(true);
 
   useEffect(() => {
     const hasHash = Boolean(
@@ -19,13 +19,12 @@ export default function HomePage() {
     );
 
     if (hasHash) {
-      // If navigating to a section (e.g. #prizepool), wait until scrolled into place before making page visible
+      // If navigating with a hash (e.g. #prizepool), briefly hide until scrolled into place to prevent jumping
+      setIsReadyToDisplay(false);
       const timer = setTimeout(() => {
         setIsReadyToDisplay(true);
       }, 180);
       return () => clearTimeout(timer);
-    } else {
-      setIsReadyToDisplay(true);
     }
   }, []);
 
