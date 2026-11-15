@@ -392,7 +392,7 @@ export default function CinematicShowcase() {
                   COMMITTED CHAMPION POOL
                 </span>
                 <span className="font-display font-black text-xl sm:text-2xl text-sand">
-                  LKR 25,000 + GRAND TROPHY
+                  LKR 30,000 CASH + GRAND TROPHY
                 </span>
               </div>
               <div className="p-2.5 bg-olive/20 border border-olive/40 text-sand shrink-0">
@@ -521,12 +521,12 @@ export default function CinematicShowcase() {
               Active Duty Battlegrounds. Zero-Latency Military LAN Command. Ready your squad to enter the collegiate tactical championship arena.
             </p>
 
-            <div className="p-3 bg-surface/80 border border-gunmetal rounded mb-6 flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-[10px] sm:text-xs font-mono text-tacticalWhite">
-              <span className="px-2 py-0.5 bg-olive/20 border border-olive/50 text-sand font-bold">CRASH</span>
-              <span className="px-2 py-0.5 bg-surface border border-gunmetal text-tacticalWhite font-bold">CROSSFIRE</span>
-              <span className="px-2 py-0.5 bg-olive/20 border border-olive/50 text-sand font-bold">BACKLOT</span>
-              <span className="px-2 py-0.5 bg-surface border border-gunmetal text-tacticalWhite font-bold">STRIKE</span>
-              <span className="px-2 py-0.5 bg-olive/20 border border-olive/50 text-sand font-bold">CITYSTREET</span>
+            <div className="p-2 sm:p-3 bg-surface/80 border border-gunmetal rounded mb-6 flex flex-nowrap items-center justify-between sm:justify-center gap-1 sm:gap-2.5 text-[8.5px] sm:text-xs font-mono text-tacticalWhite whitespace-nowrap overflow-x-auto scrollbar-none">
+              <span className="px-1.5 sm:px-2 py-0.5 bg-olive/20 border border-olive/50 text-sand font-bold shrink-0">CRASH</span>
+              <span className="px-1.5 sm:px-2 py-0.5 bg-surface border border-gunmetal text-tacticalWhite font-bold shrink-0">CROSSFIRE</span>
+              <span className="px-1.5 sm:px-2 py-0.5 bg-olive/20 border border-olive/50 text-sand font-bold shrink-0">BACKLOT</span>
+              <span className="px-1.5 sm:px-2 py-0.5 bg-surface border border-gunmetal text-tacticalWhite font-bold shrink-0">STRIKE</span>
+              <span className="px-1.5 sm:px-2 py-0.5 bg-olive/20 border border-olive/50 text-sand font-bold shrink-0">CITYSTREET</span>
             </div>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">

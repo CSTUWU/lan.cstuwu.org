@@ -132,53 +132,62 @@ export default function TeamsPage() {
             ) : null}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
             {filteredTeams.map((team) => (
               <div
                 key={team.id}
                 onClick={() => setSelectedTeam(team)}
-                className="relative bg-card/80 border border-gunmetal p-6 backdrop-blur-md transition-all duration-300 hover:border-sand hover:-translate-y-1 cursor-pointer group"
+                className="relative bg-card/80 border border-gunmetal p-3 sm:p-6 backdrop-blur-md transition-all duration-300 hover:border-sand hover:-translate-y-1 cursor-pointer group flex flex-col justify-between h-full"
               >
                 <span className="absolute top-0 right-0 w-2.5 h-2.5 border-t-2 border-r-2 border-sand opacity-40 group-hover:opacity-100" />
 
-                <div className="flex items-center gap-4 mb-4">
-                  <TeamLogoAvatar src={team.logo} name={team.name} size="lg" />
-                  <div className="min-w-0 flex-1">
-                    <span className="text-[11px] font-mono text-sand tracking-wider font-bold">
-                      [{team.tag}]
-                    </span>
-                    <h3 className="font-display font-black text-lg text-tacticalWhite uppercase tracking-wider truncate group-hover:text-sand transition-colors">
-                      {team.name}
-                    </h3>
+                <div>
+                  <div className="flex items-center gap-2.5 sm:gap-4 mb-2.5 sm:mb-4">
+                    <div className="sm:hidden shrink-0">
+                      <TeamLogoAvatar src={team.logo} name={team.name} size="md" />
+                    </div>
+                    <div className="hidden sm:block shrink-0">
+                      <TeamLogoAvatar src={team.logo} name={team.name} size="lg" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <span className="text-[10px] sm:text-[11px] font-mono text-sand tracking-wider font-bold block truncate">
+                        [{team.tag}]
+                      </span>
+                      <h3 className="font-display font-black text-sm sm:text-lg text-tacticalWhite uppercase tracking-wider truncate group-hover:text-sand transition-colors">
+                        {team.name}
+                      </h3>
+                    </div>
                   </div>
+
+                  <p className="text-[11px] sm:text-xs font-mono text-mutedText line-clamp-2 h-7 sm:h-8 leading-snug mb-3">
+                    {team.degreeProgram || team.faculty || team.university || 'Uva Wellassa University'}
+                  </p>
                 </div>
 
-                <p className="text-xs font-mono text-mutedText line-clamp-1 mb-4">
-                  {team.degreeProgram || team.faculty || team.university || 'Uva Wellassa University'}
-                </p>
-
-                <div className="grid grid-cols-3 gap-2 py-3 border-y border-gunmetal text-center font-mono text-xs mb-4">
-                  <div>
-                    <span className="text-[10px] text-mutedText block">MATCHES</span>
-                    <span className="font-bold text-tacticalWhite">{team.matchesPlayed || 0}</span>
+                <div>
+                  <div className="grid grid-cols-3 gap-1 sm:gap-2 py-2 sm:py-3 border-y border-gunmetal text-center font-mono text-xs mb-3 sm:mb-4">
+                    <div>
+                      <span className="text-[8.5px] sm:text-[10px] text-mutedText block tracking-tighter sm:tracking-normal">MATCHES</span>
+                      <span className="font-bold text-tacticalWhite text-xs sm:text-sm">{team.matchesPlayed || 0}</span>
+                    </div>
+                    <div>
+                      <span className="text-[8.5px] sm:text-[10px] text-mutedText block tracking-tighter sm:tracking-normal">W / L</span>
+                      <span className="font-bold text-sand text-xs sm:text-sm">{team.wins || 0} - {team.losses || 0}</span>
+                    </div>
+                    <div>
+                      <span className="text-[8.5px] sm:text-[10px] text-mutedText block tracking-tighter sm:tracking-normal">PTS</span>
+                      <span className="font-bold text-olive-light text-xs sm:text-sm">{team.points || 0}</span>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-[10px] text-mutedText block">W / L</span>
-                    <span className="font-bold text-sand">{team.wins || 0} - {team.losses || 0}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-mutedText block">PTS</span>
-                    <span className="font-bold text-olive-light">{team.points || 0}</span>
-                  </div>
-                </div>
 
-                <div className="flex items-center justify-between text-xs font-mono">
-                  <span className="text-mutedText text-[11px]">APPROVAL:</span>
-                  <StatusBadge status={team.status} />
-                </div>
+                  <div className="flex items-center justify-between text-xs font-mono">
+                    <span className="text-mutedText text-[9px] sm:text-[11px]">APPROVAL:</span>
+                    <StatusBadge status={team.status} className="text-[9px] sm:text-[10px] px-1.5 sm:px-2" />
+                  </div>
 
-                <div className="mt-3 text-[10px] font-mono text-center text-sand/70 group-hover:text-sand transition-colors">
-                  [ CLICK TO VIEW 5-MAN ROSTER ]
+                  <div className="mt-2.5 sm:mt-3 text-[9px] sm:text-[10px] font-mono text-center text-sand/70 group-hover:text-sand transition-colors">
+                    [ <span className="hidden sm:inline">CLICK TO </span>VIEW ROSTER ]
+                  </div>
                 </div>
               </div>
             ))}

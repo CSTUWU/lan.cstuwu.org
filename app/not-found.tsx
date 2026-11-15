@@ -26,7 +26,7 @@ export default function NotFound() {
           The requested tactical sector or dossier URL does not exist or has been relocated by tournament command.
         </p>
 
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+        <div className="flex items-center justify-center">
           <Link href="/" className="w-full sm:w-auto">
             <Button
               variant="olive"
@@ -34,16 +34,6 @@ export default function NotFound() {
             >
               <Home className="w-4 h-4" />
               <span>RETURN TO BASE</span>
-            </Button>
-          </Link>
-
-          <Link href="/scoreboard" className="w-full sm:w-auto">
-            <Button
-              variant="outline"
-              className="w-full flex items-center justify-center gap-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>LIVE SCOREBOARD</span>
             </Button>
           </Link>
         </div>
