@@ -21,6 +21,7 @@ export default function TeamLogoAvatar({ src, name, size = 'md', className = '' 
       <Image
         src={src || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200&auto=format&fit=crop&q=80'}
         fill
+        sizes={size === 'xs' ? '24px' : size === 'sm' ? '32px' : size === 'md' ? '40px' : size === 'lg' ? '56px' : '80px'}
         className="object-cover"
         alt={name}
       />

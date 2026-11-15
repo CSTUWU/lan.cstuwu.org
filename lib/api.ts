@@ -1,7 +1,8 @@
-const rawApiUrl =
-  process.env.NEXT_PUBLIC_API_URL || 'https://lan-chalange-backend.vercel.app/api';
+const rawApiUrl = process.env.NEXT_PUBLIC_API_URL?.trim() || '';
 const cleanUrl = rawApiUrl.replace(/\/+$/, '');
-export const API_BASE_URL = cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;
+export const API_BASE_URL = cleanUrl
+  ? (cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`)
+  : (typeof window !== 'undefined' ? '/api' : 'https://lan-chalange-backend.vercel.app/api');
 
 export interface ApiResponseWrapper<T = any> {
   success: boolean;
@@ -31,29 +32,19 @@ class ApiClient {
         if (jwt && !headers['Authorization']) {
           headers['Authorization'] = `Bearer ${jwt}`;
         }
-      } catch (e) {
-      }
+      } catch (e) {}
     }
 
     const targetUrls: string[] = [];
     if (typeof window !== 'undefined') {
-      const isLocalHost =
-        window.location.hostname === 'localhost' ||
-        window.location.hostname === '127.0.0.1';
-      if (isLocalHost) {
-        // Prioritize local backend on port 5000 when developing locally
+      const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      if (isLocalHost && !API_BASE_URL.includes('localhost:5000')) {
         targetUrls.push(`http://localhost:5000/api${endpoint}`);
-        if (!url.includes('localhost:5000')) {
-          targetUrls.push(url);
-        }
-      } else {
-        targetUrls.push(url);
-        if (!url.includes('lan-chalange-backend.vercel.app')) {
-          targetUrls.push(`https://lan-chalange-backend.vercel.app/api${endpoint}`);
-        }
       }
-    } else {
-      targetUrls.push(url);
+    }
+    targetUrls.push(url);
+    if (!url.includes('lan-chalange-backend.vercel.app') && !url.startsWith('/api')) {
+      targetUrls.push(`https://lan-chalange-backend.vercel.app/api${endpoint}`);
     }
 
     let lastError: any = null;
@@ -114,16 +105,23 @@ class ApiClient {
 
   public auth = {
     login: async (usernameOrEmail: string, password: string) => {
-      return this.request<{ token?: string; admin: any }>('/auth/login', {
+      const res = await this.request<{ token?: string; admin: any }>('/auth/login', {
         method: 'POST',
         body: JSON.stringify({ usernameOrEmail, password }),
       });
+      if (res.success && res.data?.token && typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('cst_admin_jwt', res.data.token);
+        } catch (e) {}
+      }
+      return res;
     },
 
     logout: async () => {
       if (typeof window !== 'undefined') {
         try {
           localStorage.removeItem('cst_lan_admin_auth');
+          localStorage.removeItem('cst_admin_jwt');
         } catch (e) {}
       }
       return this.request('/auth/logout', {
@@ -237,45 +235,11 @@ class ApiClient {
       }),
 
     getPlayerConfigDownloadUrl: (registrationId: string, playerIndex: number) => {
-      let token = '';
-      if (typeof window !== 'undefined') {
-        try {
-          token = localStorage.getItem('cst_admin_jwt') || '';
-        } catch (e) {}
-      }
-      const params = new URLSearchParams();
-      if (token) params.set('token', token);
-      const qs = params.toString() ? `?${params.toString()}` : '';
-
-      let base = API_BASE_URL;
-      if (typeof window !== 'undefined') {
-        const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-        if (isLocalHost && !API_BASE_URL.includes('localhost:5000')) {
-          base = 'http://localhost:5000/api';
-        }
-      }
-      return `${base}/admin/registrations/${registrationId}/players/${playerIndex}/config${qs}`;
+      return `${API_BASE_URL}/admin/registrations/${registrationId}/players/${playerIndex}/config`;
     },
 
     getTeamPlayerConfigDownloadUrl: (teamId: string, playerIndex: number) => {
-      let token = '';
-      if (typeof window !== 'undefined') {
-        try {
-          token = localStorage.getItem('cst_admin_jwt') || '';
-        } catch (e) {}
-      }
-      const params = new URLSearchParams();
-      if (token) params.set('token', token);
-      const qs = params.toString() ? `?${params.toString()}` : '';
-
-      let base = API_BASE_URL;
-      if (typeof window !== 'undefined') {
-        const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-        if (isLocalHost && !API_BASE_URL.includes('localhost:5000')) {
-          base = 'http://localhost:5000/api';
-        }
-      }
-      return `${base}/admin/teams/${teamId}/players/${playerIndex}/config${qs}`;
+      return `${API_BASE_URL}/admin/teams/${teamId}/players/${playerIndex}/config`;
     },
 
     getTeams: (params?: { search?: string; active?: string }) => {

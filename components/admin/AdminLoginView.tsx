@@ -20,6 +20,10 @@ export default function AdminLoginView() {
     // If already logged in, redirect directly to dashboard
     if (checkAdminAuth()) {
       window.location.href = '/admin/dashboard';
+    } else {
+      api.auth.me().then((res) => {
+        if (res.success) window.location.href = '/admin/dashboard';
+      }).catch(() => {});
     }
   }, []);
 
@@ -40,6 +44,11 @@ export default function AdminLoginView() {
     try {
       const res = await api.auth.login(user, pass);
       if (res.success) {
+        // Confirm the HttpOnly session cookie before navigating to the protected area.
+        const session = await api.auth.me();
+        if (!session.success) {
+          throw new Error('Login succeeded, but the session cookie was not accepted. Check API CORS/cookie configuration.');
+        }
         setAdminAuth(true);
         setIsSuccess(true);
         setTimeout(() => {
