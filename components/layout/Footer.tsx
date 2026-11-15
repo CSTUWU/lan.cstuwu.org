@@ -65,13 +65,10 @@ export default function Footer() {
                 <Link href="/about" className="hover:text-sand transition-colors">{"02 // Tactical Briefing"}</Link>
               </li>
               <li>
-                <Link href="/#commanders" className="hover:text-sand transition-colors">{"03 // Task Force Operators"}</Link>
+                <Link href="/#format" className="hover:text-sand transition-colors">{"03 // Mission Format"}</Link>
               </li>
               <li>
-                <Link href="/#format" className="hover:text-sand transition-colors">{"04 // Mission Format"}</Link>
-              </li>
-              <li>
-                <Link href="/#maps" className="hover:text-sand transition-colors">{"05 // Theater of Operations"}</Link>
+                <Link href="/#maps" className="hover:text-sand transition-colors">{"04 // Theater of Operations"}</Link>
               </li>
             </ul>
           </div>
@@ -90,12 +87,6 @@ export default function Footer() {
               )}
               <li>
                 <Link href="/teams" className="hover:text-tacticalWhite transition-colors">{"// Deployed Squads"}</Link>
-              </li>
-              <li>
-                <Link href="/schedule" className="hover:text-tacticalWhite transition-colors">{"// Mission Schedule"}</Link>
-              </li>
-              <li>
-                <Link href="/scoreboard" className="hover:text-tacticalWhite transition-colors">{"// Telemetry Scoreboard"}</Link>
               </li>
             </ul>
           </div>
