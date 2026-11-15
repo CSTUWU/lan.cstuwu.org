@@ -392,7 +392,7 @@ export default function CinematicShowcase() {
                   COMMITTED CHAMPION POOL
                 </span>
                 <span className="font-display font-black text-xl sm:text-2xl text-sand">
-                  LKR 25,000 + GRAND TROPHY
+                  LKR 30,000 CASH + GRAND TROPHY
                 </span>
               </div>
               <div className="p-2.5 bg-olive/20 border border-olive/40 text-sand shrink-0">
