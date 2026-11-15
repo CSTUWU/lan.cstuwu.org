@@ -38,7 +38,7 @@ export default function TeamsPreview() {
   const displayTeams = teams.slice(0, 4);
 
   return (
-    <section className="relative py-24 bg-military-black border-t border-gunmetal overflow-hidden">
+    <section className="relative py-16 sm:py-20 bg-military-black border-t border-gunmetal overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 pb-6 border-b border-gunmetal">

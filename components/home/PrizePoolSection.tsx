@@ -78,7 +78,7 @@ export default function PrizePoolSection() {
   return (
     <section
       id="prizepool"
-      className="relative py-24 sm:py-32 bg-military-black border-t border-b border-gunmetal overflow-hidden scroll-mt-20 select-none"
+      className="relative py-16 sm:py-20 bg-military-black border-t border-b border-gunmetal overflow-hidden scroll-mt-20 select-none"
     >
       <div className="absolute inset-0 tactical-grid-bg opacity-20 pointer-events-none" />
       <div className="absolute top-1/3 -left-36 w-[550px] h-[550px] bg-olive/5 rounded-full blur-[160px] pointer-events-none" />
@@ -148,7 +148,7 @@ export default function PrizePoolSection() {
         </div>
 
         {/* 2-Tier Prize Cards (Balanced & Centered Grid) */}
-        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 lg:gap-10 items-stretch mb-16">
+        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 lg:gap-10 items-stretch">
           {prizeTiers.map((tier, idx) => (
             <div
               key={idx}
