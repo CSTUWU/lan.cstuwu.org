@@ -2,7 +2,7 @@ const rawApiUrl = process.env.NEXT_PUBLIC_API_URL?.trim() || '';
 const cleanUrl = rawApiUrl.replace(/\/+$/, '');
 export const API_BASE_URL = cleanUrl
   ? (cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`)
-  : (typeof window !== 'undefined' ? '/api' : 'https://lan-chalange-backend.vercel.app/api');
+  : '/api';
 
 export interface ApiResponseWrapper<T = any> {
   success: boolean;
@@ -35,72 +35,43 @@ class ApiClient {
       } catch (e) {}
     }
 
-    const targetUrls: string[] = [];
-    if (typeof window !== 'undefined') {
-      const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      if (isLocalHost && !API_BASE_URL.includes('localhost:5000')) {
-        targetUrls.push(`http://localhost:5000/api${endpoint}`);
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers,
+        credentials: 'include', // Include HTTP-only cookies
+      });
+
+      const json = await response.json().catch(() => ({
+        success: false,
+        message: response.statusText || 'Network request failed',
+      }));
+
+      if (!response.ok) {
+        const rawMessage = json.message || 'API request failed';
+        const detailedMessage =
+          json.errors && json.errors.length > 0 && !rawMessage.includes(':')
+            ? `${rawMessage}: ${json.errors.map((e: any) => e.message || `${e.field || 'field'} is invalid`).join('; ')}`
+            : rawMessage;
+
+        throw {
+          status: response.status,
+          message: detailedMessage,
+          errors: json.errors || [],
+        };
       }
-    }
-    targetUrls.push(url);
-    if (!url.includes('lan-chalange-backend.vercel.app') && !url.startsWith('/api')) {
-      targetUrls.push(`https://lan-chalange-backend.vercel.app/api${endpoint}`);
-    }
 
-    let lastError: any = null;
-
-    for (const targetUrl of targetUrls) {
-      try {
-        const response = await fetch(targetUrl, {
-          ...options,
-          headers,
-          credentials: 'include', // Include HTTP-only cookies
-        });
-
-        const json = await response.json().catch(() => ({
-          success: false,
-          message: response.statusText || 'Network request failed',
-        }));
-
-        if (!response.ok) {
-          const rawMessage = json.message || 'API request failed';
-          const detailedMessage =
-            json.errors && json.errors.length > 0 && !rawMessage.includes(':')
-              ? `${rawMessage}: ${json.errors.map((e: any) => e.message || `${e.field || 'field'} is invalid`).join('; ')}`
-              : rawMessage;
-
-          // If 5xx server error and there is another fallback URL, try it
-          if (response.status >= 500 && targetUrl !== targetUrls[targetUrls.length - 1]) {
-            lastError = {
-              status: response.status,
-              message: detailedMessage,
-              errors: json.errors || [],
-            };
-            continue;
-          }
-          throw {
-            status: response.status,
-            message: detailedMessage,
-            errors: json.errors || [],
-          };
-        }
-
-        return json;
-      } catch (error: any) {
-        lastError = error;
-        // If there's another target URL, continue loop
-        if (targetUrl !== targetUrls[targetUrls.length - 1]) {
-          continue;
-        }
+      return json;
+    } catch (error: any) {
+      if (error && typeof error.status === 'number') {
+        throw error;
       }
+      throw {
+        status: 0,
+        message: error?.message || 'Cannot connect to backend server. Ensure backend is running.',
+        errors: [],
+      };
     }
-
-    if (lastError?.status) throw lastError;
-    throw {
-      status: 0,
-      message: lastError?.message || 'Cannot connect to backend server. Ensure backend is running.',
-      errors: [],
-    };
   }
 
   public auth = {
