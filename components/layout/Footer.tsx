@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { Shield, Radio, Terminal, Cpu, Trophy, MessageSquare, Twitter, Youtube, Twitch } from 'lucide-react';
+import { Shield, Radio, Terminal, Cpu, Trophy, Youtube, Facebook, Mail } from 'lucide-react';
 import { useRegistrationStatus } from '@/hooks/useRegistrationStatus';
 
 export default function Footer() {
@@ -110,20 +110,20 @@ export default function Footer() {
               Sri Lanka
             </p>
             <p className="text-xs font-mono text-sand mb-4">
-              cstlan@uwu.ac.lk
+              <a href="mailto:cstlanchallenge@gmail.com" className="hover:underline flex items-center gap-1.5 transition-colors">
+                <Mail className="w-3.5 h-3.5 text-sand shrink-0" />
+                cstlanchallenge@gmail.com
+              </a>
             </p>
             <div className="flex items-center gap-2">
-              <a href="https://discord.com" target="_blank" rel="noreferrer" className="w-8 h-8 rounded-none border border-gunmetal bg-surface flex items-center justify-center text-mutedText hover:text-sand hover:border-sand transition-colors" aria-label="Discord">
-                <MessageSquare className="w-4 h-4" />
+              <a href="https://web.facebook.com/cyberstrikeoftitans" target="_blank" rel="noreferrer" className="w-8 h-8 rounded-none border border-gunmetal bg-surface flex items-center justify-center text-mutedText hover:text-sand hover:border-sand transition-colors" aria-label="Facebook">
+                <Facebook className="w-4 h-4" />
               </a>
-              <a href="https://twitch.tv" target="_blank" rel="noreferrer" className="w-8 h-8 rounded-none border border-gunmetal bg-surface flex items-center justify-center text-mutedText hover:text-sand hover:border-sand transition-colors" aria-label="Twitch">
-                <Twitch className="w-4 h-4" />
-              </a>
-              <a href="https://youtube.com" target="_blank" rel="noreferrer" className="w-8 h-8 rounded-none border border-gunmetal bg-surface flex items-center justify-center text-mutedText hover:text-sand hover:border-sand transition-colors" aria-label="YouTube">
+              <a href="https://www.youtube.com/@cstlanchallenge" target="_blank" rel="noreferrer" className="w-8 h-8 rounded-none border border-gunmetal bg-surface flex items-center justify-center text-mutedText hover:text-sand hover:border-sand transition-colors" aria-label="YouTube">
                 <Youtube className="w-4 h-4" />
               </a>
-              <a href="https://twitter.com" target="_blank" rel="noreferrer" className="w-8 h-8 rounded-none border border-gunmetal bg-surface flex items-center justify-center text-mutedText hover:text-sand hover:border-sand transition-colors" aria-label="Twitter">
-                <Twitter className="w-4 h-4" />
+              <a href="mailto:cstlanchallenge@gmail.com" className="w-8 h-8 rounded-none border border-gunmetal bg-surface flex items-center justify-center text-mutedText hover:text-sand hover:border-sand transition-colors" aria-label="Email">
+                <Mail className="w-4 h-4" />
               </a>
             </div>
           </div>
