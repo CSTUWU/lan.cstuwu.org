@@ -42,7 +42,6 @@ export default function PrizePoolSection() {
       subPrize: 'DIRECT CASH PRIZE',
       perks: [
         'LKR 30,000 Direct Cash Prize to Championship Team',
-        'Official CST Gold Medals for all 5 Active Operatives',
         'Uva Wellassa University COD4 Champion Title & Recognition',
         'Permanent Enlistment into the Official CST Hall of Fame',
       ],
@@ -66,7 +65,6 @@ export default function PrizePoolSection() {
       subPrize: 'PARTNER GIFT VOUCHERS',
       perks: [
         'LKR 25,000 Worth Official Partner Gift Vouchers',
-        'Official CST Silver Medals for all 5 Active Operatives',
         'Runner-Up Tournament Honors & University Commendation',
         'Permanent Enlistment in CST Tournament Records',
       ],
@@ -230,8 +228,8 @@ export default function PrizePoolSection() {
                     variant={tier.isChampion ? 'cyan' : 'outline'}
                     size="md"
                     className={`w-full font-black uppercase text-xs tracking-wider transition-all duration-300 ${tier.isChampion
-                        ? '!text-black font-black shadow-[0_2px_14px_rgba(255,208,0,0.35)] hover:scale-[1.01]'
-                        : 'bg-surface/60 border-gunmetal text-slate-300 hover:bg-surface hover:border-slate-300 hover:text-tacticalWhite'
+                      ? '!text-black font-black shadow-[0_2px_14px_rgba(255,208,0,0.35)] hover:scale-[1.01]'
+                      : 'bg-surface/60 border-gunmetal text-slate-300 hover:bg-surface hover:border-slate-300 hover:text-tacticalWhite'
                       }`}
                   >
                     ENLIST TO COMPETE FOR {tier.position}
