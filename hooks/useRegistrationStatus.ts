@@ -29,7 +29,7 @@ export function useRegistrationStatus() {
       }
       setLoading(false);
     }).catch(() => {
-      setIsOpen(false);
+      setIsOpen(isRegistrationOpen());
       setLoading(false);
     });
 

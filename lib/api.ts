@@ -235,11 +235,31 @@ class ApiClient {
       }),
 
     getPlayerConfigDownloadUrl: (registrationId: string, playerIndex: number) => {
-      return `${API_BASE_URL}/admin/registrations/${registrationId}/players/${playerIndex}/config`;
+      let token = '';
+      if (typeof window !== 'undefined') {
+        try {
+          token = localStorage.getItem('cst_admin_jwt') || '';
+        } catch (e) {}
+      }
+      const params = new URLSearchParams();
+      if (token) params.set('token', token);
+      const qs = params.toString() ? `?${params.toString()}` : '';
+
+      return `${API_BASE_URL}/admin/registrations/${registrationId}/players/${playerIndex}/config${qs}`;
     },
 
     getTeamPlayerConfigDownloadUrl: (teamId: string, playerIndex: number) => {
-      return `${API_BASE_URL}/admin/teams/${teamId}/players/${playerIndex}/config`;
+      let token = '';
+      if (typeof window !== 'undefined') {
+        try {
+          token = localStorage.getItem('cst_admin_jwt') || '';
+        } catch (e) {}
+      }
+      const params = new URLSearchParams();
+      if (token) params.set('token', token);
+      const qs = params.toString() ? `?${params.toString()}` : '';
+
+      return `${API_BASE_URL}/admin/teams/${teamId}/players/${playerIndex}/config${qs}`;
     },
 
     getTeams: (params?: { search?: string; active?: string }) => {

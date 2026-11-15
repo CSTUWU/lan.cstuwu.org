@@ -140,20 +140,31 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   };
 
   useEffect(() => {
-    // Check auth on mount: redirect to /admin if not authenticated
-    if (pathname === '/admin' || pathname === '/admin/login' || checkAdminAuth()) return;
+    // Check auth on mount: verify session with backend; redirect to /admin if not authenticated
     let active = true;
-    api.auth.me().then((res) => {
-      if (!active) return;
-      setAuthChecking(false);
-      if (!res.success) window.location.href = '/admin';
-    }).catch(() => {
-      if (active) {
+    api.auth
+      .me()
+      .then((res) => {
+        if (!active) return;
         setAuthChecking(false);
-        window.location.href = '/admin';
-      }
-    });
-    return () => { active = false; };
+        if (res.success) {
+          setAdminAuth(true);
+        } else if (pathname !== '/admin' && pathname !== '/admin/login') {
+          setAdminAuth(false);
+          window.location.href = '/admin';
+        }
+      })
+      .catch(() => {
+        if (!active) return;
+        setAuthChecking(false);
+        if (pathname !== '/admin' && pathname !== '/admin/login') {
+          setAdminAuth(false);
+          window.location.href = '/admin';
+        }
+      });
+    return () => {
+      active = false;
+    };
   }, [pathname]);
 
   if (authChecking && pathname !== '/admin' && pathname !== '/admin/login' && !checkAdminAuth()) {
