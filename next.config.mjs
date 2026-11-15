@@ -1,12 +1,13 @@
-const backendUrl = process.env.BACKEND_URL?.trim();
-if (!backendUrl) {
-  throw new Error('BACKEND_URL is required to configure the API proxy.');
-}
+const backendUrl =
+  process.env.BACKEND_URL?.trim() ||
+  process.env.NEXT_PUBLIC_API_URL?.trim()?.replace(/\/api\/?$/, '') ||
+  'https://lan-chalange-backend.vercel.app';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
   async rewrites() {
+    if (!backendUrl) return [];
     return [
       {
         source: '/api/:path*',
