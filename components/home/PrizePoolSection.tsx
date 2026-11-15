@@ -227,11 +227,11 @@ export default function PrizePoolSection() {
                 <div className="pt-2">
                   <Button
                     href="/register"
-                    variant="outline"
+                    variant={tier.isChampion ? 'cyan' : 'outline'}
                     size="md"
-                    className={`w-full font-bold uppercase text-xs tracking-wider transition-all duration-300 ${
+                    className={`w-full font-black uppercase text-xs tracking-wider transition-all duration-300 ${
                       tier.isChampion
-                        ? 'bg-surface/90 border-sand/70 text-sand hover:bg-sand/15 hover:border-sand hover:text-tacticalWhite shadow-[0_2px_14px_rgba(0,0,0,0.8)]'
+                        ? '!text-black font-black shadow-[0_2px_14px_rgba(255,208,0,0.35)] hover:scale-[1.01]'
                         : 'bg-surface/60 border-gunmetal text-slate-300 hover:bg-surface hover:border-slate-300 hover:text-tacticalWhite'
                     }`}
                   >
