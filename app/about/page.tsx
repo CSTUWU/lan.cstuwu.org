@@ -104,18 +104,18 @@ export default function AboutPage() {
               Operating under strict standardized <strong className="text-sand">Promodlive2.20 EU</strong> rules, the tournament guarantees pure mechanical skill, fair competition, and peerless esports integrity.
             </p>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2 text-xs">
-              <div className="p-3 bg-surface border border-gunmetal">
-                <span className="text-sand block font-bold text-lg font-display">100% LAN</span>
-                <span className="text-[11px] text-mutedKhaki">Zero-latency Auditorium Command</span>
+            <div className="grid grid-cols-3 gap-2 sm:gap-3 pt-2 text-xs">
+              <div className="p-2 sm:p-3.5 bg-surface border border-gunmetal flex flex-col justify-start">
+                <span className="text-sand block font-black text-lg sm:text-2xl font-display tracking-tight leading-tight whitespace-nowrap">100% LAN</span>
+                <span className="text-[11px] sm:text-xs text-mutedKhaki leading-snug mt-1">Zero-latency Auditorium Command</span>
               </div>
-              <div className="p-3 bg-surface border border-gunmetal">
-                <span className="text-olive block font-bold text-lg font-display">S&amp;D</span>
-                <span className="text-[11px] text-mutedKhaki">Search and Destroy PML220</span>
+              <div className="p-2 sm:p-3.5 bg-surface border border-gunmetal flex flex-col justify-start">
+                <span className="text-olive block font-black text-lg sm:text-2xl font-display tracking-tight leading-tight whitespace-nowrap">S&amp;D</span>
+                <span className="text-[11px] sm:text-xs text-mutedKhaki leading-snug mt-1">Search and Destroy PML220</span>
               </div>
-              <div className="p-3 bg-surface border border-gunmetal">
-                <span className="text-sand block font-bold text-lg font-display">VERIFIED</span>
-                <span className="text-[11px] text-mutedKhaki">Strict Undergraduate Roster Check</span>
+              <div className="p-2 sm:p-3.5 bg-surface border border-gunmetal flex flex-col justify-start">
+                <span className="text-sand block font-black text-lg sm:text-2xl font-display tracking-tight leading-tight whitespace-nowrap">VERIFIED</span>
+                <span className="text-[11px] sm:text-xs text-mutedKhaki leading-snug mt-1">Strict Undergraduate Roster Check</span>
               </div>
             </div>
           </div>
