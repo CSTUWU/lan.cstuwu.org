@@ -71,6 +71,11 @@ export default function RegisterPage() {
   const [createdTeam, setCreatedTeam] = useState<Team | null>(null);
   const [submissionTimestamp, setSubmissionTimestamp] = useState<string>('');
 
+  // Payment slip upload state
+  const [paymentSlipFile, setPaymentSlipFile] = useState<File | null>(null);
+  const [paymentSlipPreview, setPaymentSlipPreview] = useState<string>('');
+  const [paymentSlipName, setPaymentSlipName] = useState<string>('');
+
   // Step 1: Team & Academic Cohort Information
   const [form, setForm] = useState<RegistrationFormState>({
     teamName: '',
@@ -111,6 +116,44 @@ export default function RegisterPage() {
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  // Payment slip upload handling
+  const handlePaymentSlipSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        setErrors((prev) => ({ ...prev, paymentSlip: 'Payment slip file exceeds 10MB limit.' }));
+        return;
+      }
+      setPaymentSlipFile(file);
+      setPaymentSlipName(file.name);
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next.paymentSlip;
+        return next;
+      });
+
+      if (file.type === 'application/pdf') {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setPaymentSlipPreview(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setPaymentSlipPreview(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+  };
+
+  const handleRemovePaymentSlip = () => {
+    setPaymentSlipFile(null);
+    setPaymentSlipPreview('');
+    setPaymentSlipName('');
   };
 
   // Step 1: Realtime validation and error clearing
@@ -471,6 +514,7 @@ export default function RegisterPage() {
       column1: members[0].enrollmentNumber.trim().toUpperCase(),
       email: form.email.trim().toLowerCase(),
       teamLogo: form.logo,
+      paymentSlip: paymentSlipPreview || undefined,
       captain: captainInfo,
       players: rosterPlayers.map((p, idx) => ({
         fullName: p.name,
@@ -489,12 +533,16 @@ export default function RegisterPage() {
 
     try {
       const hasConfigFiles = members.some((m) => !!m.configFile);
+      const hasSlip = Boolean(paymentSlipFile);
       let res;
-      if (form.logoFile || hasConfigFiles) {
+      if (form.logoFile || hasConfigFiles || hasSlip) {
         const formData = new FormData();
         formData.append('data', JSON.stringify(backendPayload));
         if (form.logoFile) {
           formData.append('logo', form.logoFile);
+        }
+        if (paymentSlipFile) {
+          formData.append('paymentSlip', paymentSlipFile);
         }
         members.forEach((m, idx) => {
           if (m.configFile) {
@@ -557,6 +605,7 @@ export default function RegisterPage() {
         year: res?.data?.year ? String(res.data.year) : members[0].year,
         enrollmentNumber: res?.data?.enrollmentNumber || members[0].enrollmentNumber.trim().toUpperCase(),
         column1: res?.data?.enrollmentNumber || members[0].enrollmentNumber.trim().toUpperCase(),
+        paymentSlip: res?.data?.paymentSlip || paymentSlipPreview,
         email: res?.data?.email || form.email.trim(),
       };
 
@@ -673,6 +722,9 @@ export default function RegisterPage() {
                 email: '',
                 whatsappNumber: '',
               });
+              setPaymentSlipFile(null);
+              setPaymentSlipPreview('');
+              setPaymentSlipName('');
               setMembers([
                 { fullName: '', gamingName: '', year: '1', enrollmentNumber: '', configFile: null, configFileName: '' },
                 { fullName: '', gamingName: '', year: '1', enrollmentNumber: '', configFile: null, configFileName: '' },
@@ -724,7 +776,16 @@ export default function RegisterPage() {
 
             {/* STEP 3: REVIEW & CONFIRM TRANSMISSION */}
             {currentStep === 3 && (
-              <Step3ReviewConfirm form={form} members={members} />
+              <Step3ReviewConfirm
+                form={form}
+                members={members}
+                paymentSlipFile={paymentSlipFile}
+                paymentSlipPreview={paymentSlipPreview}
+                paymentSlipName={paymentSlipName}
+                onPaymentSlipSelect={handlePaymentSlipSelect}
+                onRemovePaymentSlip={handleRemovePaymentSlip}
+                paymentSlipError={errors.paymentSlip}
+              />
             )}
             {/* Navigation buttons */}
             <div className="mt-8 pt-6 border-t border-gunmetal flex items-center justify-between">

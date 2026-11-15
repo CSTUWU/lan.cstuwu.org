@@ -8,7 +8,7 @@ import { api } from '@/lib/api';
 import { transformBackendRegistration } from '@/lib/transformers';
 import { Team, ApprovalStatus } from '@/lib/types';
 import { extractDegreeFromEnrollment, validateSquadEnrollmentDegrees } from '@/lib/degreeUtils';
-import { Search, CheckCircle2, XCircle, Clock, Eye, X, Mail, Phone, Shield, RefreshCw, GraduationCap, Calendar, Hash, UserCheck, FileSpreadsheet, Download, AlertCircle } from 'lucide-react';
+import { Search, CheckCircle2, XCircle, Clock, Eye, X, Mail, Phone, Shield, RefreshCw, GraduationCap, Calendar, Hash, UserCheck, FileSpreadsheet, Download, AlertCircle, Receipt, FileText } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import TeamLogoAvatar from '@/components/ui/TeamLogoAvatar';
@@ -16,12 +16,14 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import NoticeAlert from '@/components/ui/NoticeAlert';
 import SearchFilterBar from '@/components/ui/SearchFilterBar';
 import { downloadTeamWiseExcel, downloadAllMembersExcel } from '@/lib/exportExcel';
+import PaymentSlipModal from '@/components/admin/PaymentSlipModal';
 
 export default function AdminRegistrationsPage() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
+  const [slipViewingTeam, setSlipViewingTeam] = useState<Team | null>(null);
   const [loading, setLoading] = useState(false);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
 
@@ -162,6 +164,7 @@ export default function AdminRegistrationsPage() {
                   <th className="py-3 px-4">DEGREE PROGRAMME</th>
                   <th className="py-3 px-4">LEADER CONTACT</th>
                   <th className="py-3 px-4">ENROLLMENT NO</th>
+                  <th className="py-3 px-4 text-center">PAYMENT SLIP</th>
                   <th className="py-3 px-4">SUBMITTED</th>
                   <th className="py-3 px-4 text-center">STATUS</th>
                   <th className="py-3 px-4 text-right">ACTIONS</th>
@@ -213,6 +216,24 @@ export default function AdminRegistrationsPage() {
 
                     <td className="py-3.5 px-4 text-sand font-bold">
                       {team.enrollmentNumber || team.column1 || '—'}
+                    </td>
+
+                    <td className="py-3.5 px-4 text-center">
+                      {team.paymentSlip ? (
+                        <button
+                          type="button"
+                          onClick={() => setSlipViewingTeam(team)}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[10px] font-mono font-bold transition-colors cursor-pointer"
+                          title="Click to view and audit payment slip"
+                        >
+                          <Receipt className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>VIEW SLIP</span>
+                        </button>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[9px] font-mono px-2 py-0.5 bg-surface text-mutedKhaki/60 border border-gunmetal">
+                          NO SLIP
+                        </span>
+                      )}
                     </td>
 
                     <td className="py-3.5 px-4 text-mutedKhaki text-[11px]">
@@ -392,6 +413,76 @@ export default function AdminRegistrationsPage() {
               );
             })()}
 
+            {/* Payment Slip Audit Record */}
+            <div className="bg-surface/80 border border-gunmetal p-4 mb-6 text-xs font-mono">
+              <div className="text-sand font-bold uppercase flex items-center justify-between border-b border-gunmetal/60 pb-2 mb-3">
+                <span className="flex items-center gap-2">
+                  <Receipt className="w-4 h-4 text-sand" /> TOURNAMENT PAYMENT SLIP TELEMETRY
+                </span>
+                {selectedTeam.paymentSlip ? (
+                  <span className="text-[10px] font-mono px-2 py-0.5 bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 font-bold uppercase">
+                    ✓ RECEIPT ATTACHED
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-mono px-2 py-0.5 bg-amber-500/10 border border-amber-500/30 text-amber-400 font-bold uppercase">
+                    NO RECEIPT ATTACHED
+                  </span>
+                )}
+              </div>
+
+              {selectedTeam.paymentSlip ? (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-3 bg-card border border-gunmetal">
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-14 h-14 bg-surface border border-gunmetal overflow-hidden shrink-0 flex items-center justify-center">
+                      {selectedTeam.paymentSlip.toLowerCase().endsWith('.pdf') ? (
+                        <FileText className="w-6 h-6 text-sand" />
+                      ) : (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={selectedTeam.paymentSlip}
+                          alt="Receipt"
+                          className="w-full h-full object-cover"
+                        />
+                      )}
+                    </div>
+                    <div>
+                      <span className="text-tacticalWhite font-bold block text-xs">
+                        Official Bank Transfer / Deposit Receipt
+                      </span>
+                      <span className="text-[11px] text-mutedKhaki block">
+                        Verify bank stamp, amount, and reference team tag prior to approving.
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setSlipViewingTeam(selectedTeam)}
+                    className="px-3.5 py-2 bg-olive hover:bg-olive-light text-black font-display font-black text-xs uppercase tracking-wider transition-colors flex items-center gap-1.5 shrink-0"
+                  >
+                    <Receipt className="w-3.5 h-3.5" />
+                    <span>INSPECT PAYMENT SLIP</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="p-3 bg-surface border border-gunmetal/60 text-mutedKhaki text-[11px] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <span>No payment slip was uploaded during registration.</span>
+                  {selectedTeam.captain?.whatsappNumber && (
+                    <a
+                      href={`https://wa.me/${selectedTeam.captain.whatsappNumber.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
+                        `Hello ${selectedTeam.captain.name}, committee regarding CST LAN Challenge 2026. Please share your squad [${selectedTeam.tag}] payment receipt for approval.`
+                      )}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-sand underline hover:text-tacticalWhite"
+                    >
+                      Request via WhatsApp
+                    </a>
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* Starting 5 Operatives Lineup */}
             <div className="mb-6">
               <h3 className="font-display font-bold text-sm text-tacticalWhite uppercase tracking-wider mb-3 flex items-center justify-between">
@@ -485,6 +576,26 @@ export default function AdminRegistrationsPage() {
           </div>
         </div>
       )}
+
+      {/* Payment Slip Modal Viewer & Verifier */}
+      <PaymentSlipModal
+        team={slipViewingTeam}
+        isOpen={Boolean(slipViewingTeam)}
+        onClose={() => setSlipViewingTeam(null)}
+        onApprove={async (teamId) => {
+          await handleStatusChange(teamId, 'approved');
+          // If the team was also open in the inspect modal, update it
+          if (selectedTeam && selectedTeam.id === teamId) {
+            setSelectedTeam((prev) => (prev ? { ...prev, status: 'approved' } : null));
+          }
+        }}
+        onReject={async (teamId) => {
+          await handleStatusChange(teamId, 'rejected');
+          if (selectedTeam && selectedTeam.id === teamId) {
+            setSelectedTeam((prev) => (prev ? { ...prev, status: 'rejected' } : null));
+          }
+        }}
+      />
 
     </AdminLayout>
   );

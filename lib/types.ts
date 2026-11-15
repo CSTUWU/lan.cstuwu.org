@@ -87,6 +87,7 @@ export interface Team {
   enrollmentNumber?: string;
   email?: string;
   column1?: string;
+  paymentSlip?: string;
   matchesPlayed?: number;
   wins?: number;
   losses?: number;
