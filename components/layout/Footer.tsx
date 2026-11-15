@@ -110,7 +110,7 @@ export default function Footer() {
               Sri Lanka
             </p>
             <p className="text-xs font-mono text-sand mb-4">
-              cstlan@uwu.ac.lk
+              lan@cstuwu.org
             </p>
             <div className="flex items-center gap-2">
               <a href="https://discord.com" target="_blank" rel="noreferrer" className="w-8 h-8 rounded-none border border-gunmetal bg-surface flex items-center justify-center text-mutedText hover:text-sand hover:border-sand transition-colors" aria-label="Discord">
