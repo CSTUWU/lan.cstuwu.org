@@ -19,7 +19,8 @@ import {
 import Button from '../ui/Button';
 import { useRegistrationStatus } from '@/hooks/useRegistrationStatus';
 
-const TOTAL_FRAMES = 199;
+const DESKTOP_TOTAL_FRAMES = 199;
+const MOBILE_TOTAL_FRAMES = 50;
 
 export default function CinematicShowcase() {
   const { isOpen } = useRegistrationStatus();
@@ -84,11 +85,15 @@ export default function CinematicShowcase() {
 
   useEffect(() => {
     let isCancelled = false;
-    const images: HTMLImageElement[] = new Array(TOTAL_FRAMES);
+    const isMobileDevice = typeof window !== 'undefined' && window.innerWidth < 768;
+    const totalFrames = isMobileDevice ? MOBILE_TOTAL_FRAMES : DESKTOP_TOTAL_FRAMES;
+    const frameFolder = isMobileDevice ? '/frames/home-mobile' : '/frames/home';
+    const cacheBuster = isMobileDevice ? 'v=1' : 'v=3';
+    const images: HTMLImageElement[] = new Array(totalFrames);
 
     // Instant load Frame 1
     const firstImg = new Image();
-    firstImg.src = '/frames/home/frame_0001.webp?v=3';
+    firstImg.src = `${frameFolder}/frame_0001.webp?${cacheBuster}`;
     firstImg.onload = () => {
       if (isCancelled) return;
       images[0] = firstImg;
@@ -101,21 +106,18 @@ export default function CinematicShowcase() {
       } catch (e) {}
     };
 
-    // On mobile devices (< 768px), we use the lightweight 1.5MB home-video.mp4 instead of downloading 200 image frames
-    const isMobileDevice = typeof window !== 'undefined' && window.innerWidth < 768;
-    if (!isMobileDevice) {
-      for (let i = 1; i < TOTAL_FRAMES; i++) {
-        const img = new Image();
-        const frameNum = String(i + 1).padStart(4, '0');
-        img.src = `/frames/home/frame_${frameNum}.webp?v=3`;
-        img.onload = () => {
-          if (isCancelled) return;
-          images[i] = img;
-        };
-        img.onerror = () => {
-          if (isCancelled) return;
-        };
-      }
+    // Load remaining frames progressively in background (Fast non-blocking loop like main)
+    for (let i = 1; i < totalFrames; i++) {
+      const img = new Image();
+      const frameNum = String(i + 1).padStart(4, '0');
+      img.src = `${frameFolder}/frame_${frameNum}.webp?${cacheBuster}`;
+      img.onload = () => {
+        if (isCancelled) return;
+        images[i] = img;
+      };
+      img.onerror = () => {
+        if (isCancelled) return;
+      };
     }
 
     imagesRef.current = images;
@@ -143,6 +145,7 @@ export default function CinematicShowcase() {
       },
       (context) => {
         const { isMobile } = context.conditions as { isDesktop: boolean; isMobile: boolean };
+        const totalFrames = isMobile ? MOBILE_TOTAL_FRAMES : DESKTOP_TOTAL_FRAMES;
         const frameObj = { frame: 0 };
 
         const scrubTimeline = gsap.timeline({
@@ -155,8 +158,8 @@ export default function CinematicShowcase() {
             anticipatePin: 1,
             onUpdate: (self) => {
               const currentFrame = Math.min(
-                TOTAL_FRAMES - 1,
-                Math.floor(self.progress * (TOTAL_FRAMES - 1))
+                totalFrames - 1,
+                Math.floor(self.progress * (totalFrames - 1))
               );
               drawFrame(currentFrame);
 
@@ -183,11 +186,11 @@ export default function CinematicShowcase() {
         gsap.set(slideRightRef.current, { autoAlpha: 0, pointerEvents: 'none' });
         gsap.set(slideCenterRef.current, { autoAlpha: 0, pointerEvents: 'none' });
 
-        // Scrub frames 0 -> 198 across virtual duration 10
+        // Scrub frames 0 -> totalFrames - 1 across virtual duration 10
         scrubTimeline.to(
           frameObj,
           {
-            frame: TOTAL_FRAMES - 1,
+            frame: totalFrames - 1,
             ease: 'none',
             duration: 10,
           },
@@ -295,32 +298,30 @@ export default function CinematicShowcase() {
       ref={containerRef}
       className="relative w-full h-screen bg-military-black overflow-hidden select-none border-b border-gunmetal"
     >
-      {/* Mobile Video Background Fallback (Fast 1.5MB stream, eliminates 200 frame downloads) */}
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        preload="metadata"
-        className="md:hidden absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
-        style={{ filter: 'contrast(1.08) brightness(0.90)' }}
-      >
-        <source src="/home-video.mp4" type="video/mp4" />
-      </video>
+      {/* Native Responsive Picture Tag: Browser preload scanner ONLY downloads active device's frame */}
+      <picture className="absolute inset-0 w-full h-full pointer-events-none z-0">
+        <source
+          media="(max-width: 767px)"
+          srcSet="/frames/home-mobile/frame_0001.webp?v=1"
+          width={480}
+          height={854}
+        />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/frames/home/frame_0001.webp?v=3"
+          alt="Tactical Engagement Preview"
+          loading="lazy"
+          width={1920}
+          height={1080}
+          className="w-full h-full object-cover"
+          style={{ filter: 'contrast(1.08) brightness(0.90)' }}
+        />
+      </picture>
 
-      {/* Desktop Frame sequence canvas */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/frames/home/frame_0001.webp?v=3"
-        alt="Tactical Engagement Preview"
-        width={1920}
-        height={1080}
-        className="hidden md:block absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
-        style={{ filter: 'contrast(1.08) brightness(0.90)' }}
-      />
+      {/* Interactive Frame sequence canvas (Desktop 1080p 199 frames + Mobile 480p Portrait 50 frames) */}
       <canvas
         ref={canvasRef}
-        className="hidden md:block absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
+        className="absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
         style={{ filter: 'contrast(1.08) brightness(0.90)' }}
       />
 
@@ -391,7 +392,7 @@ export default function CinematicShowcase() {
                   COMMITTED CHAMPION POOL
                 </span>
                 <span className="font-display font-black text-xl sm:text-2xl text-sand">
-                  LKR 25,000 + GRAND TROPHY
+                  LKR 30,000 CASH + GRAND TROPHY
                 </span>
               </div>
               <div className="p-2.5 bg-olive/20 border border-olive/40 text-sand shrink-0">
@@ -520,12 +521,12 @@ export default function CinematicShowcase() {
               Active Duty Battlegrounds. Zero-Latency Military LAN Command. Ready your squad to enter the collegiate tactical championship arena.
             </p>
 
-            <div className="p-3 bg-surface/80 border border-gunmetal rounded mb-6 flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-[10px] sm:text-xs font-mono text-tacticalWhite">
-              <span className="px-2 py-0.5 bg-olive/20 border border-olive/50 text-sand font-bold">CRASH</span>
-              <span className="px-2 py-0.5 bg-surface border border-gunmetal text-tacticalWhite font-bold">CROSSFIRE</span>
-              <span className="px-2 py-0.5 bg-olive/20 border border-olive/50 text-sand font-bold">BACKLOT</span>
-              <span className="px-2 py-0.5 bg-surface border border-gunmetal text-tacticalWhite font-bold">STRIKE</span>
-              <span className="px-2 py-0.5 bg-olive/20 border border-olive/50 text-sand font-bold">CITYSTREET</span>
+            <div className="p-2 sm:p-3 bg-surface/80 border border-gunmetal rounded mb-6 flex flex-nowrap items-center justify-between sm:justify-center gap-1 sm:gap-2.5 text-[8.5px] sm:text-xs font-mono text-tacticalWhite whitespace-nowrap overflow-x-auto scrollbar-none">
+              <span className="px-1.5 sm:px-2 py-0.5 bg-olive/20 border border-olive/50 text-sand font-bold shrink-0">CRASH</span>
+              <span className="px-1.5 sm:px-2 py-0.5 bg-surface border border-gunmetal text-tacticalWhite font-bold shrink-0">CROSSFIRE</span>
+              <span className="px-1.5 sm:px-2 py-0.5 bg-olive/20 border border-olive/50 text-sand font-bold shrink-0">BACKLOT</span>
+              <span className="px-1.5 sm:px-2 py-0.5 bg-surface border border-gunmetal text-tacticalWhite font-bold shrink-0">STRIKE</span>
+              <span className="px-1.5 sm:px-2 py-0.5 bg-olive/20 border border-olive/50 text-sand font-bold shrink-0">CITYSTREET</span>
             </div>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">

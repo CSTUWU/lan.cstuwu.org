@@ -6,7 +6,7 @@ import Footer from '@/components/layout/Footer';
 import GlobalParticleBackground from '@/components/ui/GlobalParticleBackground';
 
 const SITE_NAME = 'CST LAN Challenge 2026';
-const SITE_URL = 'https://lan.cstuwu.org';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://lan.cstuwu.org';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -85,6 +85,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      </head>
       <body className="bg-background text-primaryText font-sans min-h-screen flex flex-col antialiased selection:bg-cyan selection:text-background">
         <GlobalParticleBackground />
         <SmoothScroll>

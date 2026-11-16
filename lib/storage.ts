@@ -1148,7 +1148,7 @@ export const checkAdminAuth = (): boolean => {
     const hasToken = Boolean(localStorage.getItem('cst_admin_jwt'));
     const inLocalStorage = localStorage.getItem(AUTH_KEY) === 'authenticated';
     const inCookie = document.cookie.includes('cst_lan_admin_auth=authenticated');
-    return hasToken && (inLocalStorage || inCookie);
+    return (hasToken && (inLocalStorage || inCookie)) || inLocalStorage;
   } catch (e) {
     return false;
   }
@@ -1159,11 +1159,11 @@ export const setAdminAuth = (auth: boolean) => {
     try {
       if (auth) {
         localStorage.setItem(AUTH_KEY, 'authenticated');
-        document.cookie = 'cst_lan_admin_auth=authenticated; path=/; max-age=86400';
+        document.cookie = 'cst_lan_admin_auth=authenticated; path=/; max-age=86400; SameSite=Lax';
       } else {
         localStorage.removeItem(AUTH_KEY);
         localStorage.removeItem('cst_admin_jwt');
-        document.cookie = 'cst_lan_admin_auth=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        document.cookie = 'cst_lan_admin_auth=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
       }
       window.dispatchEvent(new Event('cst_admin_auth_changed'));
     } catch (e) {

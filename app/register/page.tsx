@@ -554,7 +554,7 @@ export default function RegisterPage() {
         res = await api.registrations.submit(backendPayload);
       }
 
-      if (!res || res.success === false) {
+      if (!res || res.success !== true) {
         throw {
           message: res?.message || 'Registration failed. Please try again.',
           errors: res?.errors || [],

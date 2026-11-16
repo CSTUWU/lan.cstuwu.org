@@ -1,7 +1,8 @@
-const rawApiUrl =
-  process.env.NEXT_PUBLIC_API_URL || 'https://lan-chalange-backend.vercel.app/api';
+const rawApiUrl = process.env.NEXT_PUBLIC_API_URL?.trim() || '';
 const cleanUrl = rawApiUrl.replace(/\/+$/, '');
-export const API_BASE_URL = cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;
+export const API_BASE_URL = cleanUrl
+  ? (cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`)
+  : '/api';
 
 export interface ApiResponseWrapper<T = any> {
   success: boolean;
@@ -31,99 +32,67 @@ class ApiClient {
         if (jwt && !headers['Authorization']) {
           headers['Authorization'] = `Bearer ${jwt}`;
         }
-      } catch (e) {
-      }
+      } catch (e) {}
     }
 
-    const targetUrls: string[] = [];
-    if (typeof window !== 'undefined') {
-      const isLocalHost =
-        window.location.hostname === 'localhost' ||
-        window.location.hostname === '127.0.0.1';
-      if (isLocalHost) {
-        // Prioritize local backend on port 5000 when developing locally
-        targetUrls.push(`http://localhost:5000/api${endpoint}`);
-        if (!url.includes('localhost:5000')) {
-          targetUrls.push(url);
-        }
-      } else {
-        targetUrls.push(url);
-        if (!url.includes('lan-chalange-backend.vercel.app')) {
-          targetUrls.push(`https://lan-chalange-backend.vercel.app/api${endpoint}`);
-        }
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers,
+        credentials: 'include', // Include HTTP-only cookies
+      });
+
+      const json = await response.json().catch(() => ({
+        success: false,
+        message: response.statusText || 'Network request failed',
+      }));
+
+      if (!response.ok) {
+        const rawMessage = json.message || 'API request failed';
+        const detailedMessage =
+          json.errors && json.errors.length > 0 && !rawMessage.includes(':')
+            ? `${rawMessage}: ${json.errors.map((e: any) => e.message || `${e.field || 'field'} is invalid`).join('; ')}`
+            : rawMessage;
+
+        throw {
+          status: response.status,
+          message: detailedMessage,
+          errors: json.errors || [],
+        };
       }
-    } else {
-      targetUrls.push(url);
-    }
 
-    let lastError: any = null;
-
-    for (const targetUrl of targetUrls) {
-      try {
-        const response = await fetch(targetUrl, {
-          ...options,
-          headers,
-          credentials: 'include', // Include HTTP-only cookies
-        });
-
-        const json = await response.json().catch(() => ({
-          success: false,
-          message: response.statusText || 'Network request failed',
-        }));
-
-        if (!response.ok) {
-          const rawMessage = json.message || 'API request failed';
-          const detailedMessage =
-            json.errors && json.errors.length > 0 && !rawMessage.includes(':')
-              ? `${rawMessage}: ${json.errors.map((e: any) => e.message || `${e.field || 'field'} is invalid`).join('; ')}`
-              : rawMessage;
-
-          // If 5xx server error and there is another fallback URL, try it
-          if (response.status >= 500 && targetUrl !== targetUrls[targetUrls.length - 1]) {
-            lastError = {
-              status: response.status,
-              message: detailedMessage,
-              errors: json.errors || [],
-            };
-            continue;
-          }
-          throw {
-            status: response.status,
-            message: detailedMessage,
-            errors: json.errors || [],
-          };
-        }
-
-        return json;
-      } catch (error: any) {
-        lastError = error;
-        // If there's another target URL, continue loop
-        if (targetUrl !== targetUrls[targetUrls.length - 1]) {
-          continue;
-        }
+      return json;
+    } catch (error: any) {
+      if (error && typeof error.status === 'number') {
+        throw error;
       }
+      throw {
+        status: 0,
+        message: error?.message || 'Cannot connect to backend server. Ensure backend is running.',
+        errors: [],
+      };
     }
-
-    if (lastError?.status) throw lastError;
-    throw {
-      status: 0,
-      message: lastError?.message || 'Cannot connect to backend server. Ensure backend is running.',
-      errors: [],
-    };
   }
 
   public auth = {
     login: async (usernameOrEmail: string, password: string) => {
-      return this.request<{ token?: string; admin: any }>('/auth/login', {
+      const res = await this.request<{ token?: string; admin: any }>('/auth/login', {
         method: 'POST',
         body: JSON.stringify({ usernameOrEmail, password }),
       });
+      if (res.success && res.data?.token && typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('cst_admin_jwt', res.data.token);
+        } catch (e) {}
+      }
+      return res;
     },
 
     logout: async () => {
       if (typeof window !== 'undefined') {
         try {
           localStorage.removeItem('cst_lan_admin_auth');
+          localStorage.removeItem('cst_admin_jwt');
         } catch (e) {}
       }
       return this.request('/auth/logout', {
@@ -247,14 +216,7 @@ class ApiClient {
       if (token) params.set('token', token);
       const qs = params.toString() ? `?${params.toString()}` : '';
 
-      let base = API_BASE_URL;
-      if (typeof window !== 'undefined') {
-        const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-        if (isLocalHost && !API_BASE_URL.includes('localhost:5000')) {
-          base = 'http://localhost:5000/api';
-        }
-      }
-      return `${base}/admin/registrations/${registrationId}/players/${playerIndex}/config${qs}`;
+      return `${API_BASE_URL}/admin/registrations/${registrationId}/players/${playerIndex}/config${qs}`;
     },
 
     getTeamPlayerConfigDownloadUrl: (teamId: string, playerIndex: number) => {
@@ -268,14 +230,7 @@ class ApiClient {
       if (token) params.set('token', token);
       const qs = params.toString() ? `?${params.toString()}` : '';
 
-      let base = API_BASE_URL;
-      if (typeof window !== 'undefined') {
-        const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-        if (isLocalHost && !API_BASE_URL.includes('localhost:5000')) {
-          base = 'http://localhost:5000/api';
-        }
-      }
-      return `${base}/admin/teams/${teamId}/players/${playerIndex}/config${qs}`;
+      return `${API_BASE_URL}/admin/teams/${teamId}/players/${playerIndex}/config${qs}`;
     },
 
     getTeams: (params?: { search?: string; active?: string }) => {
