@@ -22,7 +22,8 @@ export const UWU_DEGREE_PROGRAMMES = [
   'Animal Science (ANS)',
   'Aquatic Resources Technology (AQT)',
   'Export Agriculture (EAG)',
-  'Plantation Management Technology (PMT)',
+  'Tea Technology and Value Addition (TEA)',
+  'Palm & Latex Technology and Value Addition (PLT)',
   'English Language & Applied Linguistics (ELAL)',
   'Bachelor of Medicine and Bachelor of Surgery (MBBS)',
 ] as const;
@@ -87,6 +88,7 @@ export interface Team {
   enrollmentNumber?: string;
   email?: string;
   column1?: string;
+  paymentSlip?: string;
   matchesPlayed?: number;
   wins?: number;
   losses?: number;

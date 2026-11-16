@@ -72,6 +72,7 @@ export function transformBackendTeam(raw: any): Team {
     year,
     enrollmentNumber,
     column1: enrollmentNumber,
+    paymentSlip: raw.paymentSlip || '',
     email,
     matchesPlayed: raw.matchesPlayed ?? 0,
     wins: raw.wins ?? 0,

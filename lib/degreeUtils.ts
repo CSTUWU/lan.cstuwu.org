@@ -82,14 +82,24 @@ export const DEGREE_REGISTRY: Record<string, DegreeInfo> = {
     name: 'Export Agriculture (EAG)',
     faculty: 'Faculty of Animal Science and Export Agriculture',
   },
+  PLT: {
+    code: 'PLT',
+    name: 'Palm & Latex Technology and Value Addition (PLT)',
+    faculty: 'Faculty of Animal Science and Export Agriculture',
+  },
   PMT: {
-    code: 'PMT',
-    name: 'Plantation Management Technology (PMT)',
+    code: 'PLT',
+    name: 'Palm & Latex Technology and Value Addition (PLT)',
     faculty: 'Faculty of Animal Science and Export Agriculture',
   },
   TEA: {
-    code: 'PMT',
-    name: 'Plantation Management Technology (PMT)',
+    code: 'TEA',
+    name: 'Tea Technology and Value Addition (TEA)',
+    faculty: 'Faculty of Animal Science and Export Agriculture',
+  },
+  TTV: {
+    code: 'TEA',
+    name: 'Tea Technology and Value Addition (TEA)',
     faculty: 'Faculty of Animal Science and Export Agriculture',
   },
   ELAL: {
@@ -202,6 +212,16 @@ export function extractDegreeFromEnrollment(enrollment: string | undefined | nul
 export function getDegreeCodeFromName(degreeName: string | undefined | null): string | null {
   if (!degreeName) return null;
   const upper = degreeName.toUpperCase();
+  if (upper.includes('TEA') || upper.includes('TTV')) return 'TEA';
+  if (
+    upper.includes('PLT') ||
+    upper.includes('PLANTATION') ||
+    upper.includes('PMT') ||
+    upper.includes('LATEX') ||
+    upper.includes('PALM')
+  ) {
+    return 'PLT';
+  }
   for (const [code, info] of Object.entries(DEGREE_REGISTRY)) {
     if (code === upper || info.name.toUpperCase().includes(upper) || upper.includes(code)) {
       return info.code;

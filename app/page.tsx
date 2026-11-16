@@ -46,7 +46,7 @@ export default function HomePage() {
       <AboutSection />
       <TournamentFormat />
       <MapPoolSection />
-      <TeamsPreview />
+      {/* <TeamsPreview /> */}
     </div>
   );
 }

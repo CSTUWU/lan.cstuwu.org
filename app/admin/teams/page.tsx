@@ -31,6 +31,7 @@ import {
   Lock,
   Radio,
   RotateCcw,
+  Receipt,
 } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
@@ -40,6 +41,7 @@ import NoticeAlert from '@/components/ui/NoticeAlert';
 import SearchFilterBar from '@/components/ui/SearchFilterBar';
 import PlayoffTreeActions from '@/components/admin/PlayoffTreeActions';
 import { downloadTeamWiseExcel, downloadAllMembersExcel } from '@/lib/exportExcel';
+import PaymentSlipModal from '@/components/admin/PaymentSlipModal';
 
 export default function AdminTeamsPage() {
   const [teams, setTeams] = useState<Team[]>([]);
@@ -47,6 +49,7 @@ export default function AdminTeamsPage() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'approved' | 'pending'>('all');
   const [expandedTeams, setExpandedTeams] = useState<Record<string, boolean>>({});
   const [copiedSteamId, setCopiedSteamId] = useState<string | null>(null);
+  const [slipViewingTeam, setSlipViewingTeam] = useState<Team | null>(null);
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [isTreePublished, setIsTreePublished] = useState<boolean>(() => isPlayoffTreePublished());
@@ -443,6 +446,21 @@ export default function AdminTeamsPage() {
                         {team.status.toUpperCase()}
                       </span>
 
+                      {team.paymentSlip && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSlipViewingTeam(team);
+                          }}
+                          className="px-2.5 py-1 text-xs font-mono bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center gap-1 transition-colors cursor-pointer"
+                          title="View Payment Slip"
+                        >
+                          <Receipt className="w-3.5 h-3.5 text-emerald-400" />
+                          <span className="hidden sm:inline">PAYMENT SLIP</span>
+                        </button>
+                      )}
+
                       <button
                         onClick={() => handleStatusToggle(team.id, team.status)}
                         className={`px-3 py-1 text-xs font-mono uppercase font-bold border transition-colors ${
@@ -505,6 +523,17 @@ export default function AdminTeamsPage() {
                             <Phone className="w-3.5 h-3.5 text-emerald-400" />
                             <span>{team.captain.whatsappNumber || team.captain.phone}</span>
                           </a>
+
+                          {team.paymentSlip && (
+                            <button
+                              type="button"
+                              onClick={() => setSlipViewingTeam(team)}
+                              className="flex items-center gap-1.5 text-sand hover:text-tacticalWhite font-bold transition-colors cursor-pointer"
+                            >
+                              <Receipt className="w-3.5 h-3.5 text-emerald-400" />
+                              <span>INSPECT PAYMENT SLIP</span>
+                            </button>
+                          )}
                         </div>
                       </div>
 
@@ -608,6 +637,19 @@ export default function AdminTeamsPage() {
         </div>
 
       </div>
+
+      {/* Payment Slip Modal Viewer */}
+      <PaymentSlipModal
+        team={slipViewingTeam}
+        isOpen={Boolean(slipViewingTeam)}
+        onClose={() => setSlipViewingTeam(null)}
+        onApprove={async (teamId) => {
+          await handleStatusToggle(teamId, 'pending');
+        }}
+        onReject={async (teamId) => {
+          await handleStatusToggle(teamId, 'approved');
+        }}
+      />
     </AdminLayout>
   );
 }
