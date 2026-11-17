@@ -47,7 +47,7 @@ export default function RegistrationSuccessCard({
               IMPORTANT: SQUAD REGISTRATION FEE (LKR 500)
             </span>
             <span className="text-tacticalWhite text-[11px] mt-1 block leading-relaxed">
-              The <strong className="text-amber-300 font-bold">LKR 500</strong> entry fee will be collected on the day of the <strong className="text-amber-400 font-bold">Qualifier / Selection Round</strong>. Please ensure your squad is prepared with the reference code: <strong className="text-amber-300 font-bold">{createdTeam.id}</strong>.
+              The <strong className="text-amber-300 font-bold">LKR 500</strong> entry fee will be collected on the day of the <strong className="text-amber-400 font-bold">Qualifier / Selection Round</strong>. You can simply provide your Team Name (<strong className="text-tacticalWhite font-bold">{createdTeam.name}</strong>) when paying at the venue.
             </span>
           </div>
         </div>
