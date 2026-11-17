@@ -164,7 +164,7 @@ export default function Step1TeamIdentity({
           </label>
           <input
             type="email"
-            placeholder="e.g. leader@std.uwu.ac.lk"
+            placeholder="e.g. leader@gmail.com"
             value={form.email}
             onChange={(e) => {
               const val = e.target.value;
@@ -244,7 +244,7 @@ export default function Step1TeamIdentity({
         <label className="block text-xs font-mono text-mutedKhaki uppercase tracking-wider mb-2">
           TEAM LOGO (FILE UPLOAD OR URL)
         </label>
-        <div className="flex flex-col sm:flex-row items-center gap-6 p-4 bg-surface/50 border border-gunmetal">
+        <div className={`flex flex-col sm:flex-row items-center gap-6 p-4 bg-surface/50 border transition-colors ${errors.logo ? 'border-red-500/60' : 'border-gunmetal'}`}>
           <div className="relative w-20 h-20 bg-surface border border-gunmetal shrink-0 overflow-hidden">
             <Image
               src={form.logoPreview}
@@ -266,9 +266,26 @@ export default function Step1TeamIdentity({
                   className="hidden"
                 />
               </label>
-              <span className="text-[10px] font-mono text-mutedKhaki self-center">
-                {form.logoFile ? form.logoFile.name : 'PNG, JPG, WEBP (MAX 2MB)'}
-              </span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[10px] font-mono text-mutedKhaki self-center">
+                  {form.logoFile ? form.logoFile.name : 'PNG, JPG, WEBP, SVG (MAX 2MB)'}
+                </span>
+                {form.logoFile && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onChange({
+                        logoFile: null,
+                        logo: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200&auto=format&fit=crop&q=80',
+                        logoPreview: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200&auto=format&fit=crop&q=80',
+                      });
+                    }}
+                    className="text-[10px] font-mono text-red-400 hover:text-red-300 underline cursor-pointer"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
             </div>
             <div>
               <input
@@ -286,6 +303,12 @@ export default function Step1TeamIdentity({
                 className="w-full bg-surface border border-gunmetal px-3 py-1.5 text-xs font-mono text-tacticalWhite focus:outline-none focus:border-olive disabled:opacity-50"
               />
             </div>
+            {errors.logo && (
+              <div className="flex items-center gap-1.5 text-xs font-mono text-red-400">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                <span>{errors.logo}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
