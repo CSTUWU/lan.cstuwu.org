@@ -164,7 +164,7 @@ export default function Step1TeamIdentity({
           </label>
           <input
             type="email"
-            placeholder="e.g. leader@std.uwu.ac.lk"
+            placeholder="e.g. leader@gmail.com"
             value={form.email}
             onChange={(e) => {
               const val = e.target.value;

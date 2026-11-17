@@ -198,7 +198,7 @@ export default function RegisterPage() {
             if (!emailVal) {
               nextErrors.email = 'Contact email address is required';
             } else {
-              nextErrors.email = 'Valid email address required (e.g. leader@std.uwu.ac.lk)';
+              nextErrors.email = 'Valid email address required (e.g. leader@gmail.com)';
             }
           }
         }
@@ -356,7 +356,7 @@ export default function RegisterPage() {
       if (!form.email.trim()) {
         newErrors.email = 'Contact email address is required';
       } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
-        newErrors.email = 'Valid email address required (e.g. leader@std.uwu.ac.lk)';
+        newErrors.email = 'Valid email address required (e.g. leader@gmail.com)';
       }
 
       const cleanWa = form.whatsappNumber.trim().replace(/[\s\-]/g, '');
