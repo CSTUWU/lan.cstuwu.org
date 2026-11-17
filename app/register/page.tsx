@@ -94,23 +94,58 @@ export default function RegisterPage() {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Image upload handling
+  // Image upload handling with strict format and size validation
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setForm((prev) => ({ ...prev, logoFile: file }));
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        setForm((prev) => ({
-          ...prev,
-          logo: result,
-          logoPreview: result,
-          logoFile: file,
-        }));
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    // 1. Strict Format Validation (PNG, JPG, JPEG, WEBP, SVG)
+    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'];
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.svg'];
+    const fileNameLower = file.name.toLowerCase();
+    const hasValidExtension = allowedExtensions.some((ext) => fileNameLower.endsWith(ext));
+    const hasValidMime = !file.type || allowedMimeTypes.includes(file.type.toLowerCase());
+
+    if (!hasValidExtension || !hasValidMime) {
+      setErrors((prev) => ({
+        ...prev,
+        logo: 'Invalid file format. Only PNG, JPG, JPEG, WEBP, and SVG formats are allowed.',
+      }));
+      e.target.value = '';
+      return;
     }
+
+    // 2. Strict File Size Validation (Max 2MB)
+    const MAX_SIZE_BYTES = 2 * 1024 * 1024;
+    if (file.size > MAX_SIZE_BYTES) {
+      const sizeInMb = (file.size / (1024 * 1024)).toFixed(2);
+      setErrors((prev) => ({
+        ...prev,
+        logo: `Image size is too large (${sizeInMb}MB). Maximum allowed logo size is 2MB.`,
+      }));
+      e.target.value = '';
+      return;
+    }
+
+    // Clear any previous logo error if validation passes
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next.logo;
+      return next;
+    });
+
+    setForm((prev) => ({ ...prev, logoFile: file }));
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = reader.result as string;
+      setForm((prev) => ({
+        ...prev,
+        logo: result,
+        logoPreview: result,
+        logoFile: file,
+      }));
+    };
+    reader.readAsDataURL(file);
   };
 
   // Step 1: Realtime validation and error clearing
@@ -121,6 +156,10 @@ export default function RegisterPage() {
       // Realtime validation & immediate error removal
       setErrors((prevErrors) => {
         const nextErrors = { ...prevErrors };
+
+        if ('logo' in updates || 'logoFile' in updates) {
+          delete nextErrors.logo;
+        }
 
         if ('teamName' in updates) {
           if (updated.teamName.trim().length >= 2) {
@@ -324,6 +363,13 @@ export default function RegisterPage() {
       } else if (!/^0\d{9}$/.test(cleanWa)) {
         newErrors.whatsappNumber = 'Must be a valid 10-digit number starting with 0 (e.g. 0771234567)';
       }
+
+      // Strict logo error check
+      if (errors.logo) {
+        newErrors.logo = errors.logo;
+      } else if (form.logoFile && form.logoFile.size > 2 * 1024 * 1024) {
+        newErrors.logo = 'Image size exceeds 2MB limit. Please upload a smaller logo.';
+      }
     }
 
     if (step === 2) {
@@ -470,7 +516,7 @@ export default function RegisterPage() {
       enrollmentNumber: members[0].enrollmentNumber.trim().toUpperCase(),
       column1: members[0].enrollmentNumber.trim().toUpperCase(),
       email: form.email.trim().toLowerCase(),
-      teamLogo: form.logo,
+      teamLogo: form.logoFile ? '' : form.logo,
       captain: captainInfo,
       players: rosterPlayers.map((p, idx) => ({
         fullName: p.name,
