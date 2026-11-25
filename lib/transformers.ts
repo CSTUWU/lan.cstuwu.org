@@ -22,7 +22,11 @@ export function transformBackendTeam(raw: any): Team {
   const email = raw.email || raw.captain?.email || '';
 
   const captain = {
-    name: raw.captain?.name || raw.captain?.fullName || 'Team Captain',
+    name:
+      raw.captain?.name ||
+      raw.captain?.fullName ||
+      (Array.isArray(raw.players) ? (raw.players[0]?.fullName || raw.players[0]?.name) : '') ||
+      '',
     whatsappNumber: raw.captain?.whatsappNumber || raw.captain?.phone || '',
     phone: raw.captain?.whatsappNumber || raw.captain?.phone || '',
     faculty: raw.captain?.faculty || degreeProgram,

@@ -1,7 +1,8 @@
 const backendUrl =
   process.env.BACKEND_URL?.trim() ||
-  process.env.NEXT_PUBLIC_API_URL?.trim()?.replace(/\/api\/?$/, '') ||
-  'https://lan-chalange-backend.vercel.app';
+  (process.env.NEXT_PUBLIC_API_URL?.trim() && !process.env.NEXT_PUBLIC_API_URL.trim().startsWith('/')
+    ? process.env.NEXT_PUBLIC_API_URL.trim().replace(/\/api\/?$/, '')
+    : '');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -33,6 +34,9 @@ const nextConfig = {
   },
   images: {
     formats: ['image/avif', 'image/webp'],
+    dangerouslyAllowSVG: true,
+    contentDispositionType: 'attachment',
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     remotePatterns: [
       {
         protocol: 'https',

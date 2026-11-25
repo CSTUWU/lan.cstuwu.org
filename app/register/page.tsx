@@ -35,6 +35,7 @@ import {
   Sparkles,
   FileCode2,
   Trash2,
+  Coins,
 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
@@ -67,6 +68,7 @@ export default function RegisterPage() {
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState<boolean>(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const [createdTeam, setCreatedTeam] = useState<Team | null>(null);
   const [submissionTimestamp, setSubmissionTimestamp] = useState<string>('');
@@ -94,23 +96,58 @@ export default function RegisterPage() {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Image upload handling
+  // Image upload handling with strict format and size validation
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setForm((prev) => ({ ...prev, logoFile: file }));
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        setForm((prev) => ({
-          ...prev,
-          logo: result,
-          logoPreview: result,
-          logoFile: file,
-        }));
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    // 1. Strict Format Validation (PNG, JPG, JPEG, WEBP, SVG)
+    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'];
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.svg'];
+    const fileNameLower = file.name.toLowerCase();
+    const hasValidExtension = allowedExtensions.some((ext) => fileNameLower.endsWith(ext));
+    const hasValidMime = !file.type || allowedMimeTypes.includes(file.type.toLowerCase());
+
+    if (!hasValidExtension || !hasValidMime) {
+      setErrors((prev) => ({
+        ...prev,
+        logo: 'Invalid file format. Only PNG, JPG, JPEG, WEBP, and SVG formats are allowed.',
+      }));
+      e.target.value = '';
+      return;
     }
+
+    // 2. Strict File Size Validation (Max 2MB)
+    const MAX_SIZE_BYTES = 2 * 1024 * 1024;
+    if (file.size > MAX_SIZE_BYTES) {
+      const sizeInMb = (file.size / (1024 * 1024)).toFixed(2);
+      setErrors((prev) => ({
+        ...prev,
+        logo: `Image size is too large (${sizeInMb}MB). Maximum allowed logo size is 2MB.`,
+      }));
+      e.target.value = '';
+      return;
+    }
+
+    // Clear any previous logo error if validation passes
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next.logo;
+      return next;
+    });
+
+    setForm((prev) => ({ ...prev, logoFile: file }));
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = reader.result as string;
+      setForm((prev) => ({
+        ...prev,
+        logo: result,
+        logoPreview: result,
+        logoFile: file,
+      }));
+    };
+    reader.readAsDataURL(file);
   };
 
   // Step 1: Realtime validation and error clearing
@@ -121,6 +158,10 @@ export default function RegisterPage() {
       // Realtime validation & immediate error removal
       setErrors((prevErrors) => {
         const nextErrors = { ...prevErrors };
+
+        if ('logo' in updates || 'logoFile' in updates) {
+          delete nextErrors.logo;
+        }
 
         if ('teamName' in updates) {
           if (updated.teamName.trim().length >= 2) {
@@ -157,7 +198,7 @@ export default function RegisterPage() {
             if (!emailVal) {
               nextErrors.email = 'Contact email address is required';
             } else {
-              nextErrors.email = 'Valid email address required (e.g. leader@std.uwu.ac.lk)';
+              nextErrors.email = 'Valid email address required (e.g. leader@gmail.com)';
             }
           }
         }
@@ -315,7 +356,7 @@ export default function RegisterPage() {
       if (!form.email.trim()) {
         newErrors.email = 'Contact email address is required';
       } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
-        newErrors.email = 'Valid email address required (e.g. leader@std.uwu.ac.lk)';
+        newErrors.email = 'Valid email address required (e.g. leader@gmail.com)';
       }
 
       const cleanWa = form.whatsappNumber.trim().replace(/[\s\-]/g, '');
@@ -323,6 +364,13 @@ export default function RegisterPage() {
         newErrors.whatsappNumber = 'WhatsApp contact number is required';
       } else if (!/^0\d{9}$/.test(cleanWa)) {
         newErrors.whatsappNumber = 'Must be a valid 10-digit number starting with 0 (e.g. 0771234567)';
+      }
+
+      // Strict logo error check
+      if (errors.logo) {
+        newErrors.logo = errors.logo;
+      } else if (form.logoFile && form.logoFile.size > 2 * 1024 * 1024) {
+        newErrors.logo = 'Image size exceeds 2MB limit. Please upload a smaller logo.';
       }
     }
 
@@ -407,6 +455,7 @@ export default function RegisterPage() {
     }
 
     if (!validateStep(1) || !validateStep(2)) {
+      setIsConfirmModalOpen(false);
       alert('Please fill out all required team and member fields.');
       return;
     }
@@ -417,10 +466,11 @@ export default function RegisterPage() {
     if (!degreeValidation.isValid) {
       setApiError(
         degreeValidation.generalError ||
-          Object.values(degreeValidation.errors)[0] ||
-          'All squad members must belong to the same degree programme identified from their enrollment numbers.'
+        Object.values(degreeValidation.errors)[0] ||
+        'All squad members must belong to the same degree programme identified from their enrollment numbers.'
       );
       setIsSubmitting(false);
+      setIsConfirmModalOpen(false);
       return;
     }
 
@@ -470,7 +520,7 @@ export default function RegisterPage() {
       enrollmentNumber: members[0].enrollmentNumber.trim().toUpperCase(),
       column1: members[0].enrollmentNumber.trim().toUpperCase(),
       email: form.email.trim().toLowerCase(),
-      teamLogo: form.logo,
+      teamLogo: form.logoFile || (form.logo && form.logo.startsWith('data:')) ? '' : form.logo,
       captain: captainInfo,
       players: rosterPlayers.map((p, idx) => ({
         fullName: p.name,
@@ -489,12 +539,29 @@ export default function RegisterPage() {
 
     try {
       const hasConfigFiles = members.some((m) => !!m.configFile);
+      const isBase64Logo = Boolean(form.logo && form.logo.startsWith('data:'));
       let res;
-      if (form.logoFile || hasConfigFiles) {
+      if (form.logoFile || hasConfigFiles || isBase64Logo) {
         const formData = new FormData();
         formData.append('data', JSON.stringify(backendPayload));
         if (form.logoFile) {
           formData.append('logo', form.logoFile);
+        } else if (isBase64Logo) {
+          try {
+            const arr = form.logo.split(',');
+            const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/png';
+            const bstr = atob(arr[1]);
+            let n = bstr.length;
+            const u8arr = new Uint8Array(n);
+            while (n--) {
+              u8arr[n] = bstr.charCodeAt(n);
+            }
+            const ext = mime.includes('jpeg') ? 'jpg' : (mime.split('/')[1] || 'png');
+            const blobFile = new File([u8arr], `team-logo.${ext}`, { type: mime });
+            formData.append('logo', blobFile);
+          } catch (e) {
+            console.warn('Failed to convert base64 logo to blob:', e);
+          }
         }
         members.forEach((m, idx) => {
           if (m.configFile) {
@@ -520,18 +587,18 @@ export default function RegisterPage() {
 
       const savedPlayers: Player[] = Array.isArray(res?.data?.players) && res.data.players.length === 5
         ? res.data.players.map((p: any, idx: number) => ({
-            id: p._id || p.id || String(idx + 1),
-            name: p.fullName || p.name || rosterPlayers[idx].name,
-            faculty: p.faculty || verifiedFaculty,
-            degreeProgram: p.degreeProgram || verifiedDegree,
-            year: p.year ? String(p.year) : rosterPlayers[idx].year,
-            ign: p.gamingName || p.inGameName || p.ign || rosterPlayers[idx].ign,
-            gamingName: p.gamingName || p.inGameName || p.ign || rosterPlayers[idx].gamingName,
-            steamId: p.steamId || '',
-            email: p.email || rosterPlayers[idx].email,
-            role: p.role || rosterPlayers[idx].role,
-            enrollmentNumber: p.enrollmentNumber ? String(p.enrollmentNumber).toUpperCase() : rosterPlayers[idx].enrollmentNumber,
-          }))
+          id: p._id || p.id || String(idx + 1),
+          name: p.fullName || p.name || rosterPlayers[idx].name,
+          faculty: p.faculty || verifiedFaculty,
+          degreeProgram: p.degreeProgram || verifiedDegree,
+          year: p.year ? String(p.year) : rosterPlayers[idx].year,
+          ign: p.gamingName || p.inGameName || p.ign || rosterPlayers[idx].ign,
+          gamingName: p.gamingName || p.inGameName || p.ign || rosterPlayers[idx].gamingName,
+          steamId: p.steamId || '',
+          email: p.email || rosterPlayers[idx].email,
+          role: p.role || rosterPlayers[idx].role,
+          enrollmentNumber: p.enrollmentNumber ? String(p.enrollmentNumber).toUpperCase() : rosterPlayers[idx].enrollmentNumber,
+        }))
         : rosterPlayers;
 
       const teamObj: Team = {
@@ -570,9 +637,11 @@ export default function RegisterPage() {
 
       setCreatedTeam(teamObj);
       setIsSubmitted(true);
+      setIsConfirmModalOpen(false);
       window.scrollTo({ top: 80, behavior: 'smooth' });
     } catch (err: any) {
       console.error('Backend registration submission failed:', err);
+      setIsConfirmModalOpen(false);
       if (err.errors && err.errors.length > 0) {
         const filtered = err.errors.filter((e: any) => !e.message?.toLowerCase().includes('steam'));
         if (filtered.length > 0) {
@@ -615,7 +684,7 @@ export default function RegisterPage() {
       <div className="absolute inset-0 tactical-grid-bg opacity-15 pointer-events-none" />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        
+
         <Breadcrumb crumbs={[{ label: 'HOME', href: '/' }, { label: 'ENLISTMENT PORTAL' }]} />
 
         {/* Institution Banner - University locked to UWU */}
@@ -649,6 +718,23 @@ export default function RegisterPage() {
             Organized by the <strong className="text-tacticalWhite">Computer Science and Technology Degree Programme</strong>, Faculty of Applied Sciences, Uva Wellassa University.
           </p>
         </div>
+
+        {/* Registration Fee Notice Banner */}
+        {!isSubmitted && (
+          <div className="bg-gradient-to-r from-amber-500/25 via-amber-500/20 to-amber-600/25 border-2 border-amber-400 p-4 sm:p-5 mb-8 flex items-start sm:items-center gap-4 font-mono text-xs text-tacticalWhite shadow-[0_0_25px_rgba(245,158,11,0.25)] relative overflow-hidden">
+            <div className="w-10 h-10 bg-amber-400/20 border border-amber-400 flex items-center justify-center shrink-0 text-amber-300">
+              <Coins className="w-5 h-5 text-amber-400" />
+            </div>
+            <div className="flex-1">
+              <span className="text-amber-400 font-bold block uppercase text-xs tracking-wider">
+                REGISTRATION FEE NOTICE // LKR 500 PER SQUAD
+              </span>
+              <span className="text-tacticalWhite text-xs mt-1 block leading-relaxed">
+                A squad enlistment fee of <strong className="text-amber-300 font-bold underline underline-offset-4">LKR 500</strong> will be collected at the venue on the day of the <strong className="text-amber-400 font-bold">Qualifier / Selection Round</strong>. No online payment is required today.
+              </span>
+            </div>
+          </div>
+        )}
 
         {!isSubmitted && (
           <StepProgressBar steps={steps} currentStep={currentStep} />
@@ -700,7 +786,7 @@ export default function RegisterPage() {
             }}
             className="bg-card/90 border border-gunmetal p-6 sm:p-10 backdrop-blur-md"
           >
-            
+
             {/* STEP 1: TEAM IDENTITY & ACADEMIC COHORT */}
             {currentStep === 1 && (
               <Step1TeamIdentity
@@ -752,7 +838,7 @@ export default function RegisterPage() {
               {currentStep === 3 && (
                 <Button
                   type="button"
-                  onClick={() => handleSubmit()}
+                  onClick={() => setIsConfirmModalOpen(true)}
                   variant="olive"
                   size="lg"
                   disabled={isSubmitting}
@@ -765,6 +851,73 @@ export default function RegisterPage() {
             </div>
 
           </form>
+        )}
+
+        {/* Payment Acknowledgement & Final Confirmation Modal */}
+        {isConfirmModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-fade-in">
+            <div className="bg-card border-2 border-amber-500/70 max-w-lg w-full p-6 sm:p-8 shadow-2xl relative text-left font-mono">
+              {/* Header */}
+              <div className="flex items-center gap-3 border-b border-gunmetal pb-4 mb-5">
+                <div className="w-10 h-10 bg-amber-500/20 border border-amber-500 flex items-center justify-center shrink-0 text-sand">
+                  <Coins className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-display font-black text-lg text-tacticalWhite uppercase tracking-wider">
+                    PAYMENT ACKNOWLEDGEMENT
+                  </h3>
+                  <span className="text-[11px] text-sand font-bold block">
+                    REGISTRATION FEE CONFIRMATION
+                  </span>
+                </div>
+              </div>
+
+              {/* Fee Details Box */}
+              <div className="bg-surface/90 border border-amber-500/30 p-4 mb-4 space-y-2">
+                <div className="flex items-center justify-between border-b border-gunmetal/60 pb-2">
+                  <span className="text-mutedKhaki text-xs uppercase">SQUAD ENTRY FEE:</span>
+                  <span className="text-sand font-bold text-base font-display tracking-wider">
+                    LKR 500
+                  </span>
+                </div>
+                <p className="text-xs text-tacticalWhite leading-relaxed">
+                  A team entry fee of <strong className="text-sand font-bold">LKR 500</strong> must be paid at the venue on the day of the <strong className="text-tacticalWhite">Qualifier / Selection Round</strong>.
+                </p>
+              </div>
+
+              <div className="p-3 bg-olive/10 border border-olive/30 mb-5 text-[11px] text-mutedKhaki flex items-center gap-2">
+                <Shield className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>
+                  By confirming, you agree to this requirement on behalf of your squad.
+                </span>
+              </div>
+
+              {/* Action Buttons: Cancel vs Confirm */}
+              <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3 pt-2 border-t border-gunmetal">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="md"
+                  disabled={isSubmitting}
+                  onClick={() => setIsConfirmModalOpen(false)}
+                  className="font-mono text-xs"
+                >
+                  CANCEL
+                </Button>
+                <Button
+                  type="button"
+                  variant="olive"
+                  size="md"
+                  disabled={isSubmitting}
+                  onClick={() => handleSubmit()}
+                  icon={isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Crosshair className="w-4 h-4" />}
+                  className="font-display font-black text-xs tracking-wider"
+                >
+                  {isSubmitting ? 'TRANSMITTING...' : 'I AGREE & TRANSMIT'}
+                </Button>
+              </div>
+            </div>
+          </div>
         )}
 
       </div>

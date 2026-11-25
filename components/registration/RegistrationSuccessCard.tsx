@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle2, Clock } from 'lucide-react';
+import { CheckCircle2, Clock, Coins } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import TeamLogoAvatar from '@/components/ui/TeamLogoAvatar';
@@ -32,9 +32,26 @@ export default function RegistrationSuccessCard({
         SQUAD ENLISTMENT SUCCESSFUL
       </h2>
 
-      <p className="text-xs sm:text-sm font-mono text-mutedKhaki max-w-lg mx-auto mb-8">
+      <p className="text-xs sm:text-sm font-mono text-mutedKhaki max-w-lg mx-auto mb-6">
         Your registration for <strong className="text-tacticalWhite">{createdTeam.name} [{createdTeam.tag}]</strong> has been recorded under reference code: <span className="text-sand font-bold">{createdTeam.id}</span>. Status: <span className="text-sand font-bold">PENDING ADMINISTRATIVE APPROVAL</span>.
       </p>
+
+      {/* Registration Fee Reminder Box */}
+      <div className="bg-gradient-to-r from-amber-500/25 via-amber-500/20 to-amber-600/25 border-2 border-amber-400 p-4 max-w-xl mx-auto mb-8 text-left font-mono text-xs text-tacticalWhite shadow-[0_0_25px_rgba(245,158,11,0.25)]">
+        <div className="flex items-start sm:items-center gap-3">
+          <div className="w-10 h-10 bg-amber-400/20 border border-amber-400 flex items-center justify-center shrink-0 text-amber-300">
+            <Coins className="w-5 h-5 text-amber-400" />
+          </div>
+          <div>
+            <span className="text-amber-400 font-bold block text-xs uppercase tracking-wider">
+              IMPORTANT: SQUAD REGISTRATION FEE (LKR 500)
+            </span>
+            <span className="text-tacticalWhite text-[11px] mt-1 block leading-relaxed">
+              The <strong className="text-amber-300 font-bold">LKR 500</strong> entry fee will be collected on the day of the <strong className="text-amber-400 font-bold">Qualifier / Selection Round</strong>. You can simply provide your Team Name (<strong className="text-tacticalWhite font-bold">{createdTeam.name}</strong>) when paying at the venue.
+            </span>
+          </div>
+        </div>
+      </div>
 
       <div className="bg-surface/80 border border-gunmetal p-6 max-w-xl mx-auto text-left font-mono text-xs mb-8">
         <div className="flex items-center gap-4 border-b border-gunmetal pb-4 mb-4">
