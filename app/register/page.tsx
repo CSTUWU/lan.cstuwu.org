@@ -470,6 +470,7 @@ export default function RegisterPage() {
         'All squad members must belong to the same degree programme identified from their enrollment numbers.'
       );
       setIsSubmitting(false);
+      setIsConfirmModalOpen(false);
       return;
     }
 
