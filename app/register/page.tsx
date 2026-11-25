@@ -519,7 +519,7 @@ export default function RegisterPage() {
       enrollmentNumber: members[0].enrollmentNumber.trim().toUpperCase(),
       column1: members[0].enrollmentNumber.trim().toUpperCase(),
       email: form.email.trim().toLowerCase(),
-      teamLogo: form.logoFile ? '' : form.logo,
+      teamLogo: form.logoFile || (form.logo && form.logo.startsWith('data:')) ? '' : form.logo,
       captain: captainInfo,
       players: rosterPlayers.map((p, idx) => ({
         fullName: p.name,
@@ -538,12 +538,29 @@ export default function RegisterPage() {
 
     try {
       const hasConfigFiles = members.some((m) => !!m.configFile);
+      const isBase64Logo = Boolean(form.logo && form.logo.startsWith('data:'));
       let res;
-      if (form.logoFile || hasConfigFiles) {
+      if (form.logoFile || hasConfigFiles || isBase64Logo) {
         const formData = new FormData();
         formData.append('data', JSON.stringify(backendPayload));
         if (form.logoFile) {
           formData.append('logo', form.logoFile);
+        } else if (isBase64Logo) {
+          try {
+            const arr = form.logo.split(',');
+            const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/png';
+            const bstr = atob(arr[1]);
+            let n = bstr.length;
+            const u8arr = new Uint8Array(n);
+            while (n--) {
+              u8arr[n] = bstr.charCodeAt(n);
+            }
+            const ext = mime.includes('jpeg') ? 'jpg' : (mime.split('/')[1] || 'png');
+            const blobFile = new File([u8arr], `team-logo.${ext}`, { type: mime });
+            formData.append('logo', blobFile);
+          } catch (e) {
+            console.warn('Failed to convert base64 logo to blob:', e);
+          }
         }
         members.forEach((m, idx) => {
           if (m.configFile) {
